@@ -114,16 +114,59 @@ class DashboardController extends Controller
             return response()->json(['error' => 'No outlet found'], 404);
         }
         
-        $shift = $this->shiftService->getCurrentShift($outlet->id);
+        // Check if this is a terminal user request
+        $terminalUser = null;
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        // If terminal user, look for shift by user, otherwise by outlet
+        if ($terminalUser && $terminalUser->user_id) {
+            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+                ->where('opened_by', $terminalUser->user_id)
+                ->whereNull('closed_at')
+                ->first();
+        } else {
+            $shift = $this->shiftService->getCurrentShift($outlet->id);
+        }
         
         if (!$shift) {
-            return response()->json(['error' => 'No open shift found'], 404);
+            return response()->json([
+                'shift' => null,
+                'has_shift' => false,
+                'summary' => [
+                    'total_sales' => 0,
+                    'total_orders' => 0,
+                    'cash_sales' => 0,
+                    'card_sales' => 0,
+                    'upi_sales' => 0,
+                    'opening_float' => 0
+                ]
+            ]);
         }
         
         $summary = $this->shiftService->getShiftSummary($shift);
         
         return response()->json([
             'shift' => $shift,
+            'has_shift' => true,
             'summary' => $summary
         ]);
     }
@@ -143,7 +186,38 @@ class DashboardController extends Controller
             return response()->json(['error' => 'No outlet found'], 404);
         }
         
-        $shift = $this->shiftService->getCurrentShift($outlet->id);
+        // Check if this is a terminal user request
+        $terminalUser = null;
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        // If terminal user, look for shift by user, otherwise by outlet
+        if ($terminalUser && $terminalUser->user_id) {
+            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+                ->where('opened_by', $terminalUser->user_id)
+                ->whereNull('closed_at')
+                ->first();
+        } else {
+            $shift = $this->shiftService->getCurrentShift($outlet->id);
+        }
         
         if (!$shift) {
             return response()->json(['error' => 'No open shift found'], 404);
