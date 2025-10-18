@@ -312,10 +312,7 @@
                 shape: formData.get('tableShape'),
                 type: formData.get('type'),
                 status: formData.get('status'),
-                description: formData.get('description').trim(),
-                totalAmount: 0,
-                orders: [],
-                createdAt: new Date().toISOString()
+                description: formData.get('description').trim()
             };
 
             if (currentEditingTable) {
@@ -608,7 +605,7 @@
                         ` : ''}
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">Created:</span>
-                            <span class="font-medium text-gray-900">${new Date(table.createdAt).toLocaleDateString()}</span>
+                            <span class="font-medium text-gray-900">${new Date(table.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
                     
@@ -656,7 +653,7 @@
                     <td class="py-3 px-4 text-sm text-gray-900">
                         ${table.status === 'occupied' ? `₹${table.totalAmount.toFixed(2)}` : '-'}
                     </td>
-                    <td class="py-3 px-4 text-sm text-gray-900">${new Date(table.createdAt).toLocaleDateString()}</td>
+                    <td class="py-3 px-4 text-sm text-gray-900">${new Date(table.created_at).toLocaleDateString()}</td>
                     <td class="py-3 px-4">
                         <div class="flex items-center justify-center gap-2">
                             <button onclick="viewTable(${table.id})" 
@@ -794,7 +791,7 @@
                         description: '',
                         orders: [],
                         totalAmount: 0,
-                        createdAt: new Date().toISOString()
+                        created_at: new Date().toISOString()
                     },
                     {
                         id: 2,
@@ -806,7 +803,7 @@
                         description: '',
                         orders: [],
                         totalAmount: 0,
-                        createdAt: new Date().toISOString()
+                        created_at: new Date().toISOString()
                     },
                     {
                         id: 3,
@@ -818,7 +815,7 @@
                         description: '',
                         orders: [],
                         totalAmount: 0,
-                        createdAt: new Date().toISOString()
+                        created_at: new Date().toISOString()
                     }
                 ];
                 
