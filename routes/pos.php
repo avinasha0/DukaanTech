@@ -143,11 +143,14 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         \Log::info('Shift open request', [
             'session_token' => $sessionToken,
+            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
+            'token_preview' => $sessionToken ? substr($sessionToken, 0, 20) . '...' : null,
             'cookies' => request()->cookies->all(),
             'headers' => request()->headers->all()
         ]);
         
         if ($sessionToken) {
+            // Try to find session with exact match first
             $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
                 ->with('terminalUser')
@@ -155,9 +158,30 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             
             if ($session && $session->terminalUser) {
                 $terminalUser = $session->terminalUser;
-                \Log::info('Found terminal user', ['user_id' => $terminalUser->id, 'terminal_id' => $terminalUser->terminal_id]);
+                \Log::info('Found terminal user with exact match', [
+                    'user_id' => $terminalUser->id, 
+                    'terminal_id' => $terminalUser->terminal_id,
+                    'session_id' => $session->id
+                ]);
             } else {
-                \Log::warning('Session not found or expired', ['session_token' => $sessionToken]);
+                // Try to find any active session for debugging
+                $allSessions = \App\Models\TerminalSession::where('expires_at', '>', now())
+                    ->with('terminalUser')
+                    ->get();
+                
+                \Log::warning('Session not found or expired', [
+                    'provided_token' => $sessionToken,
+                    'token_length' => strlen($sessionToken),
+                    'active_sessions_count' => $allSessions->count(),
+                    'active_sessions' => $allSessions->map(function($s) {
+                        return [
+                            'id' => $s->id,
+                            'token_length' => strlen($s->session_token),
+                            'expires_at' => $s->expires_at,
+                            'terminal_user_id' => $s->terminal_user_id
+                        ];
+                    })
+                ]);
             }
         } else {
             \Log::warning('No session token found in cookies');

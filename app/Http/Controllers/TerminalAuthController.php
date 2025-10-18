@@ -109,6 +109,14 @@ class TerminalAuthController extends Controller
 
         // Create session
         $session = $terminalUser->createSession($device?->id, 8); // 8 hour session
+        
+        \Log::info('Terminal session created', [
+            'terminal_user_id' => $terminalUser->id,
+            'session_id' => $session->id,
+            'session_token' => $session->session_token,
+            'token_length' => strlen($session->session_token),
+            'expires_at' => $session->expires_at->toISOString()
+        ]);
 
         // Update last login
         $terminalUser->updateLastLogin();
