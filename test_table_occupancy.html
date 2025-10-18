@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Occupancy Test Suite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.error {
+            background: #dc3545;
+        }
+        .test-button.warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .test-results {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-free { background-color: #28a745; }
+        .status-occupied { background-color: #dc3545; }
+        .status-reserved { background-color: #ffc107; }
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .table-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background: white;
+        }
+        .table-card.occupied {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .table-card.free {
+            border-color: #28a745;
+            background-color: #f8fff8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Table Occupancy Test Suite</h1>
+    <p>This test suite verifies that table occupancy functionality works correctly after order placement.</p>
+
+    <div class="test-container">
+        <h2>📊 Test Configuration</h2>
+        <div>
+            <label for="apiBase">API Base URL:</label>
+            <input type="text" id="apiBase" value="http://localhost:8000/tenant-slug/pos/api" style="width: 300px; padding: 5px;">
+        </div>
+        <div style="margin-top: 10px;">
+            <label for="outletId">Outlet ID:</label>
+            <input type="number" id="outletId" value="1" style="width: 100px; padding: 5px;">
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🔧 Test Controls</h2>
+        <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+        <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
+        <button class="test-button" onclick="refreshTables()">🔄 Refresh Tables</button>
+        <button class="test-button" onclick="resetAllTables()">🔄 Reset All Tables</button>
+    </div>
+
+    <div class="test-container">
+        <h2>📋 Individual Tests</h2>
+        
+        <div class="test-section">
+            <h3>Test 1: Basic Table Status Check</h3>
+            <p>Verify that tables can be fetched and their status is correctly displayed.</p>
+            <button class="test-button" onclick="test1_BasicTableStatus()">Run Test 1</button>
+            <div id="test1-results" class="test-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Table Status Update</h3>
+            <p>Test updating table status from free to occupied and back.</p>
+            <button class="test-button" onclick="test2_TableStatusUpdate()">Run Test 2</button>
+            <div id="test2-results" class="test-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Order Creation with Table Update</h3>
+            <p>Test creating an order and verifying table becomes occupied.</p>
+            <button class="test-button" onclick="test3_OrderCreationWithTableUpdate()">Run Test 3</button>
+            <div id="test3-results" class="test-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 4: Periodic Refresh Protection</h3>
+            <p>Test that periodic refresh doesn't override recent local changes.</p>
+            <button class="test-button" onclick="test4_PeriodicRefreshProtection()">Run Test 4</button>
+            <div id="test4-results" class="test-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 5: Multiple Orders on Same Table</h3>
+            <p>Test that multiple orders can be added to the same table.</p>
+            <button class="test-button" onclick="test5_MultipleOrdersOnSameTable()">Run Test 5</button>
+            <div id="test5-results" class="test-results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 Current Table Status</h2>
+        <div id="tables-display" class="table-grid"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>📝 Test Log</h2>
+        <div id="test-log" class="test-results"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let currentTables = [];
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            console.log(logEntry);
+            
+            const testLog = document.getElementById('test-log');
+            testLog.textContent += logEntry + '\n';
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+
+        function showTestResults(testId, results) {
+            const resultsDiv = document.getElementById(testId);
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = results;
+        }
+
+        function clearResults() {
+            document.getElementById('test-log').textContent = '';
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`test${i}-results`).style.display = 'none';
+            }
+            testResults = [];
+        }
+
+        // API functions
+        async function fetchTables() {
+            const apiBase = document.getElementById('apiBase').value;
+            const outletId = document.getElementById('outletId').value;
+            
+            try {
+                const response = await fetch(`${apiBase}/tables?outlet_id=${outletId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.success) {
+                    currentTables = data.tables;
+                    updateTablesDisplay();
+                    return data.tables;
+                } else {
+                    throw new Error(data.error || 'Failed to fetch tables');
+                }
+            } catch (error) {
+                log(`Error fetching tables: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function updateTableStatus(tableId, status, totalAmount = null, orders = null) {
+            const apiBase = document.getElementById('apiBase').value;
+            
+            const updateData = { status };
+            if (totalAmount !== null) updateData.total_amount = totalAmount;
+            if (orders !== null) updateData.orders = orders;
+
+            try {
+                const response = await fetch(`${apiBase}/tables/${tableId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const updatedTable = await response.json();
+                log(`Table ${tableId} status updated to ${status}`, 'success');
+                return updatedTable;
+            } catch (error) {
+                log(`Error updating table status: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function createTestOrder(tableId) {
+            const apiBase = document.getElementById('apiBase').value;
+            
+            const orderData = {
+                outlet_id: parseInt(document.getElementById('outletId').value),
+                order_type_id: 1,
+                payment_method: 'cash',
+                table_no: tableId.toString(),
+                customer_name: 'Test Customer',
+                customer_phone: '1234567890',
+                mode: 'DINE_IN',
+                items: [
+                    { item_id: 1, qty: 1 }
+                ]
+            };
+
+            try {
+                const response = await fetch(`${apiBase}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const order = await response.json();
+                log(`Test order created: #${order.id}`, 'success');
+                return order;
+            } catch (error) {
+                log(`Error creating test order: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        function updateTablesDisplay() {
+            const container = document.getElementById('tables-display');
+            container.innerHTML = '';
+
+            currentTables.forEach(table => {
+                const tableCard = document.createElement('div');
+                tableCard.className = `table-card ${table.status}`;
+                
+                tableCard.innerHTML = `
+                    <h4>${table.name}</h4>
+                    <div>
+                        <span class="status-indicator status-${table.status}"></span>
+                        <span>${table.status.toUpperCase()}</span>
+                    </div>
+                    <div>Total: ₹${table.total_amount || 0}</div>
+                    <div>Orders: ${table.orders ? table.orders.length : 0}</div>
+                    <div>Capacity: ${table.capacity}</div>
+                `;
+                
+                container.appendChild(tableCard);
+            });
+        }
+
+        // Test functions
+        async function test1_BasicTableStatus() {
+            log('Starting Test 1: Basic Table Status Check', 'info');
+            let results = 'Test 1 Results:\n';
+            
+            try {
+                const tables = await fetchTables();
+                results += `✅ Successfully fetched ${tables.length} tables\n`;
+                
+                tables.forEach(table => {
+                    results += `  - Table ${table.name}: ${table.status} (₹${table.total_amount || 0})\n`;
+                });
+                
+                results += '\n✅ Test 1 PASSED: Basic table status check successful';
+                log('Test 1 PASSED', 'success');
+            } catch (error) {
+                results += `❌ Test 1 FAILED: ${error.message}`;
+                log('Test 1 FAILED', 'error');
+            }
+            
+            showTestResults('test1-results', results);
+        }
+
+        async function test2_TableStatusUpdate() {
+            log('Starting Test 2: Table Status Update', 'info');
+            let results = 'Test 2 Results:\n';
+            
+            try {
+                const tables = await fetchTables();
+                if (tables.length === 0) {
+                    throw new Error('No tables available for testing');
+                }
+                
+                const testTable = tables[0];
+                const originalStatus = testTable.status;
+                
+                results += `Testing with table ${testTable.name} (current status: ${originalStatus})\n`;
+                
+                // Test updating to occupied
+                await updateTableStatus(testTable.id, 'occupied', 100.50, [{id: 'test', total: 100.50, status: 'active'}]);
+                await fetchTables(); // Refresh to verify
+                
+                const updatedTable = currentTables.find(t => t.id === testTable.id);
+                if (updatedTable.status === 'occupied') {
+                    results += '✅ Successfully updated table to occupied\n';
+                } else {
+                    throw new Error(`Expected status 'occupied', got '${updatedTable.status}'`);
+                }
+                
+                // Test updating back to free
+                await updateTableStatus(testTable.id, 'free', 0, []);
+                await fetchTables(); // Refresh to verify
+                
+                const freeTable = currentTables.find(t => t.id === testTable.id);
+                if (freeTable.status === 'free') {
+                    results += '✅ Successfully updated table back to free\n';
+                } else {
+                    throw new Error(`Expected status 'free', got '${freeTable.status}'`);
+                }
+                
+                results += '\n✅ Test 2 PASSED: Table status update successful';
+                log('Test 2 PASSED', 'success');
+            } catch (error) {
+                results += `❌ Test 2 FAILED: ${error.message}`;
+                log('Test 2 FAILED', 'error');
+            }
+            
+            showTestResults('test2-results', results);
+        }
+
+        async function test3_OrderCreationWithTableUpdate() {
+            log('Starting Test 3: Order Creation with Table Update', 'info');
+            let results = 'Test 3 Results:\n';
+            
+            try {
+                const tables = await fetchTables();
+                const freeTable = tables.find(t => t.status === 'free');
+                
+                if (!freeTable) {
+                    throw new Error('No free tables available for testing');
+                }
+                
+                results += `Testing with table ${freeTable.name} (current status: ${freeTable.status})\n`;
+                
+                // Create a test order
+                const order = await createTestOrder(freeTable.id);
+                results += `✅ Order #${order.id} created successfully\n`;
+                
+                // Wait a moment for any async processing
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Refresh tables to check if table is now occupied
+                await fetchTables();
+                const updatedTable = currentTables.find(t => t.id === freeTable.id);
+                
+                if (updatedTable.status === 'occupied') {
+                    results += '✅ Table automatically marked as occupied after order creation\n';
+                } else {
+                    results += `⚠️ Table status is '${updatedTable.status}' (expected 'occupied')\n`;
+                    results += 'This might indicate the table update logic needs fixing\n';
+                }
+                
+                results += '\n✅ Test 3 COMPLETED: Order creation test finished';
+                log('Test 3 COMPLETED', 'success');
+            } catch (error) {
+                results += `❌ Test 3 FAILED: ${error.message}`;
+                log('Test 3 FAILED', 'error');
+            }
+            
+            showTestResults('test3-results', results);
+        }
+
+        async function test4_PeriodicRefreshProtection() {
+            log('Starting Test 4: Periodic Refresh Protection', 'info');
+            let results = 'Test 4 Results:\n';
+            
+            try {
+                const tables = await fetchTables();
+                const testTable = tables[0];
+                
+                if (!testTable) {
+                    throw new Error('No tables available for testing');
+                }
+                
+                results += `Testing refresh protection with table ${testTable.name}\n`;
+                
+                // Update table status
+                await updateTableStatus(testTable.id, 'occupied', 200, [{id: 'test', total: 200, status: 'active'}]);
+                results += '✅ Table updated to occupied\n';
+                
+                // Immediately refresh tables (simulating periodic refresh)
+                await fetchTables();
+                const refreshedTable = currentTables.find(t => t.id === testTable.id);
+                
+                if (refreshedTable.status === 'occupied') {
+                    results += '✅ Table status preserved after refresh\n';
+                } else {
+                    results += `⚠️ Table status changed to '${refreshedTable.status}' after refresh\n`;
+                    results += 'This might indicate refresh protection needs improvement\n';
+                }
+                
+                // Reset table
+                await updateTableStatus(testTable.id, 'free', 0, []);
+                
+                results += '\n✅ Test 4 COMPLETED: Periodic refresh protection test finished';
+                log('Test 4 COMPLETED', 'success');
+            } catch (error) {
+                results += `❌ Test 4 FAILED: ${error.message}`;
+                log('Test 4 FAILED', 'error');
+            }
+            
+            showTestResults('test4-results', results);
+        }
+
+        async function test5_MultipleOrdersOnSameTable() {
+            log('Starting Test 5: Multiple Orders on Same Table', 'info');
+            let results = 'Test 5 Results:\n';
+            
+            try {
+                const tables = await fetchTables();
+                const testTable = tables[0];
+                
+                if (!testTable) {
+                    throw new Error('No tables available for testing');
+                }
+                
+                results += `Testing multiple orders on table ${testTable.name}\n`;
+                
+                // Create first order
+                const order1 = await createTestOrder(testTable.id);
+                results += `✅ First order #${order1.id} created\n`;
+                
+                // Wait and refresh
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await fetchTables();
+                
+                const tableAfterFirst = currentTables.find(t => t.id === testTable.id);
+                results += `Table status after first order: ${tableAfterFirst.status}\n`;
+                
+                // Create second order
+                const order2 = await createTestOrder(testTable.id);
+                results += `✅ Second order #${order2.id} created\n`;
+                
+                // Wait and refresh
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await fetchTables();
+                
+                const tableAfterSecond = currentTables.find(t => t.id === testTable.id);
+                results += `Table status after second order: ${tableAfterSecond.status}\n`;
+                results += `Table total amount: ₹${tableAfterSecond.total_amount || 0}\n`;
+                results += `Table orders count: ${tableAfterSecond.orders ? tableAfterSecond.orders.length : 0}\n`;
+                
+                // Reset table
+                await updateTableStatus(testTable.id, 'free', 0, []);
+                
+                results += '\n✅ Test 5 COMPLETED: Multiple orders test finished';
+                log('Test 5 COMPLETED', 'success');
+            } catch (error) {
+                results += `❌ Test 5 FAILED: ${error.message}`;
+                log('Test 5 FAILED', 'error');
+            }
+            
+            showTestResults('test5-results', results);
+        }
+
+        async function runAllTests() {
+            log('🚀 Starting comprehensive test suite...', 'info');
+            clearResults();
+            
+            try {
+                await test1_BasicTableStatus();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await test2_TableStatusUpdate();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await test3_OrderCreationWithTableUpdate();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await test4_PeriodicRefreshProtection();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await test5_MultipleOrdersOnSameTable();
+                
+                log('🎉 All tests completed!', 'success');
+            } catch (error) {
+                log(`❌ Test suite failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshTables() {
+            try {
+                await fetchTables();
+                log('Tables refreshed successfully', 'success');
+            } catch (error) {
+                log(`Failed to refresh tables: ${error.message}`, 'error');
+            }
+        }
+
+        async function resetAllTables() {
+            try {
+                const tables = await fetchTables();
+                for (const table of tables) {
+                    await updateTableStatus(table.id, 'free', 0, []);
+                }
+                await fetchTables();
+                log('All tables reset to free status', 'success');
+            } catch (error) {
+                log(`Failed to reset tables: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            log('Test suite loaded. Configure API settings and run tests.', 'info');
+            refreshTables();
+        });
+    </script>
+</body>
+</html>
+

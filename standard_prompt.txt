@@ -1,0 +1,11 @@
+Always tell don't make things complicated. 
+And always tell make sure existing code and features are
+ not impacting with this change. If not able to fix, tell not able to understand instead of creating mess of all existing work.
+
+Keep things simple - no overcomplicated solutions.
+Preserve existing functionality - always check that new changes don't break existing features.
+Be honest about limitations - if I can't safely implement something without risking existing work, I'll tell you upfront instead of creating problems.
+Make minimal, targeted modifications.
+Verify that existing features remain intact.
+Ask for clarification if I'm unsure about the impact.
+

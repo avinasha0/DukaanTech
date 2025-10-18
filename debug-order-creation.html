@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Creation Debug Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Order Creation Debug Tool</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Device Configuration</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tenant Slug</label>
+                    <input type="text" id="tenantSlug" value="dukaantech" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Device API Key</label>
+                    <input type="text" id="deviceKey" placeholder="pos_abc123def456ghi7" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Outlet ID</label>
+                    <input type="number" id="outletId" value="1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Order Type ID</label>
+                    <input type="number" id="orderTypeId" value="1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                    <select id="paymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="upi">UPI</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mode</label>
+                    <select id="mode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="DINE_IN">Dine In</option>
+                        <option value="TAKEAWAY">Takeaway</option>
+                        <option value="DELIVERY">Delivery</option>
+                        <option value="PICKUP">Pickup</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Table Number (for Dine In)</label>
+                <input type="text" id="tableNo" value="1" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Order Data</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Item ID</label>
+                <input type="number" id="itemId" value="1" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                <input type="number" id="quantity" value="1" min="1" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <button onclick="testOrderCreation()" 
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                Test Order Creation
+            </button>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Debug Results</h2>
+            <div id="debugResults" class="bg-gray-50 p-4 rounded-md min-h-32">
+                <p class="text-gray-500">Click "Test Order Creation" to see debug information...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testOrderCreation() {
+            const tenantSlug = document.getElementById('tenantSlug').value;
+            const deviceKey = document.getElementById('deviceKey').value;
+            const outletId = parseInt(document.getElementById('outletId').value);
+            const orderTypeId = parseInt(document.getElementById('orderTypeId').value);
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const mode = document.getElementById('mode').value;
+            const tableNo = document.getElementById('tableNo').value;
+            const itemId = parseInt(document.getElementById('itemId').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            const debugResults = document.getElementById('debugResults');
+            debugResults.innerHTML = '<p class="text-blue-600">Testing order creation...</p>';
+            
+            try {
+                // Prepare order data
+                const orderData = {
+                    outlet_id: outletId,
+                    order_type_id: orderTypeId,
+                    payment_method: paymentMethod,
+                    mode: mode,
+                    table_no: tableNo,
+                    items: [{
+                        item_id: itemId,
+                        qty: quantity
+                    }]
+                };
+                
+                debugResults.innerHTML = `
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-gray-800">Request Data:</h3>
+                        <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto">${JSON.stringify(orderData, null, 2)}</pre>
+                    </div>
+                `;
+                
+                // Make the request
+                const response = await fetch(`/${tenantSlug}/api/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        ...(deviceKey ? { 'X-Device-Key': deviceKey } : {})
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                debugResults.innerHTML += `
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-gray-800">Response Status:</h3>
+                        <p class="text-sm ${response.ok ? 'text-green-600' : 'text-red-600'}">${response.status} ${response.statusText}</p>
+                    </div>
+                `;
+                
+                const responseText = await response.text();
+                let responseData;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = responseText;
+                }
+                
+                debugResults.innerHTML += `
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-gray-800">Response Data:</h3>
+                        <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto">${JSON.stringify(responseData, null, 2)}</pre>
+                    </div>
+                `;
+                
+                if (response.ok) {
+                    debugResults.innerHTML += '<p class="text-green-600 font-semibold">✅ Order created successfully!</p>';
+                } else {
+                    debugResults.innerHTML += '<p class="text-red-600 font-semibold">❌ Order creation failed!</p>';
+                }
+                
+            } catch (error) {
+                debugResults.innerHTML += `
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-red-600">Error:</h3>
+                        <p class="text-sm text-red-600">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load CSRF token
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/sanctum/csrf-cookie');
+                if (response.ok) {
+                    console.log('CSRF token loaded');
+                }
+            } catch (error) {
+                console.warn('Could not load CSRF token:', error);
+            }
+        });
+    </script>
+    
+    <meta name="csrf-token" content="">
+</body>
+</html>
