@@ -65,6 +65,7 @@ class TestOrganizationSetup extends Command
         if (!$account->taxRates()->exists()) {
             TaxRate::create([
                 'tenant_id' => $account->id,
+                'name' => 'GST 5%',
                 'code' => 'GST5',
                 'rate' => 5.00,
                 'inclusive' => true,
@@ -72,6 +73,7 @@ class TestOrganizationSetup extends Command
             
             TaxRate::create([
                 'tenant_id' => $account->id,
+                'name' => 'GST 18%',
                 'code' => 'GST18',
                 'rate' => 18.00,
                 'inclusive' => true,

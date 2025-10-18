@@ -66,6 +66,7 @@ class OrganizationController extends Controller
             // Create default tax rates
             TaxRate::create([
                 'tenant_id' => $account->id,
+                'name' => 'GST 5%',
                 'code' => 'GST5',
                 'rate' => 5.00,
                 'inclusive' => true,
@@ -73,6 +74,7 @@ class OrganizationController extends Controller
 
             TaxRate::create([
                 'tenant_id' => $account->id,
+                'name' => 'GST 18%',
                 'code' => 'GST18',
                 'rate' => 18.00,
                 'inclusive' => true,

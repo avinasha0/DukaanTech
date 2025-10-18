@@ -89,6 +89,7 @@ class DemoTenantSeeder extends Seeder
         // Create tax rates
         $tax5 = TaxRate::create([
             'tenant_id' => $tenant->id,
+            'name' => 'GST 5%',
             'code' => 'GST5',
             'rate' => 5.00,
             'inclusive' => true,
@@ -96,6 +97,7 @@ class DemoTenantSeeder extends Seeder
 
         $tax18 = TaxRate::create([
             'tenant_id' => $tenant->id,
+            'name' => 'GST 18%',
             'code' => 'GST18',
             'rate' => 18.00,
             'inclusive' => true,
