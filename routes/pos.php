@@ -139,16 +139,17 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Get terminal user from session
         $terminalUser = null;
-        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
-        // If the token looks like a Laravel encrypted cookie, decrypt it
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
                 \Log::info('Decrypted session token', ['decrypted_token' => $sessionToken, 'token_length' => strlen($sessionToken)]);
             } catch (\Exception $e) {
-                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
-                // Keep original token if decryption fails
+                \Log::warning('Failed to decrypt session token, using header token instead', ['error' => $e->getMessage()]);
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
             }
         }
         
@@ -204,14 +205,19 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Ensure TerminalUser has a linked User record
         if (!$terminalUser->user_id) {
-            $user = \App\Models\User::create([
-                'tenant_id' => $account->id,
-                'name' => $terminalUser->name,
-                'email' => $terminalUser->terminal_id . '@terminal.local',
-                'password' => bcrypt('terminal_password'),
-                'role' => 'terminal_user',
-                'is_active' => true,
-            ]);
+            // Check if user already exists with this email
+            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
+            
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'tenant_id' => $account->id,
+                    'name' => $terminalUser->name,
+                    'email' => $terminalUser->terminal_id . '@terminal.local',
+                    'password' => bcrypt('terminal_password'),
+                    'role' => 'terminal_user',
+                    'is_active' => true,
+                ]);
+            }
             
             $terminalUser->update(['user_id' => $user->id]);
         }
@@ -246,14 +252,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Get terminal user from session
         $terminalUser = null;
-        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
-        // If the token looks like a Laravel encrypted cookie, decrypt it
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
             } catch (\Exception $e) {
-                // Keep original token if decryption fails
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
             }
         }
         
@@ -306,14 +313,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Get terminal user from session
         $terminalUser = null;
-        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
-        // If the token looks like a Laravel encrypted cookie, decrypt it
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
             } catch (\Exception $e) {
-                // Keep original token if decryption fails
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
             }
         }
         
@@ -349,14 +357,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Get terminal user from session
         $terminalUser = null;
-        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
-        // If the token looks like a Laravel encrypted cookie, decrypt it
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
             } catch (\Exception $e) {
-                // Keep original token if decryption fails
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
             }
         }
         
