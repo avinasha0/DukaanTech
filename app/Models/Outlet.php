@@ -20,10 +20,12 @@ class Outlet extends Model
         'address',
         'logo_path',
         'logo_url',
+        'is_active',
     ];
 
     protected $casts = [
         'address' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function tenant(): BelongsTo

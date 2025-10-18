@@ -189,6 +189,25 @@
             </div>
             
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 lg:gap-4 w-full lg:w-auto">
+                <!-- Outlet Selector -->
+                <div class="flex items-center gap-2">
+                    <label class="text-xs sm:text-sm text-gray-600 font-medium">Outlet:</label>
+                    <template x-if="outlets.length === 0">
+                        <div class="text-xs sm:text-sm text-gray-500 px-2 py-1">Loading...</div>
+                    </template>
+                    <template x-if="outlets.length === 1">
+                        <div class="text-xs sm:text-sm text-gray-700 px-2 py-1 font-medium" x-text="outlets[0].name"></div>
+                    </template>
+                    <template x-if="outlets.length > 1">
+                        <select x-model="outletId" @change="onOutletChange()" 
+                                class="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]">
+                            <template x-for="outlet in outlets" :key="outlet.id">
+                                <option :value="outlet.id" x-text="outlet.name"></option>
+                            </template>
+                        </select>
+                    </template>
+                </div>
+                
                 <div class="text-xs sm:text-sm text-gray-600 flex items-center">
                     Shift: <span x-text="shift?.id ?? '—'" class="font-semibold ml-1"></span>
                     <span x-show="shift" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Open</span>
@@ -967,6 +986,7 @@ function posRegister() {
         // State
         apiBase: '',
         outletId: {{ $outletId ?? 1 }},
+        outlets: [],
         devices: [],
         deviceId: null,
         deviceKey: null,
@@ -1066,7 +1086,7 @@ function posRegister() {
         },
         
         // Methods
-        init() {
+        async init() {
             // Build API base depending on path-based vs subdomain routing
             const host = window.location.host; // e.g., localhost:8000 or dukaantech.localhost:8000
             const path = window.location.pathname; // e.g., /dukaantech/pos/register or /pos/register
@@ -1081,7 +1101,10 @@ function posRegister() {
             console.log('POS initialized with shift state:', this.shift ? 'OPEN' : 'CLOSED');
             console.log('POS locked state:', this.posLocked);
 
-            // Load tables first as they are critical for POS functionality
+            // Load outlets first to set correct outletId before loading tables
+            await this.loadOutlets();
+            
+            // Load tables after outlet is selected
             this.refreshTablesFromStorage(); // Load tables from database
             
             // Load other data in parallel
@@ -1141,6 +1164,55 @@ function posRegister() {
             } catch (e) {
                 console.warn('Unable to load devices', e);
             }
+        },
+        
+        async loadOutlets() {
+            try {
+                console.log('Loading outlets...');
+                const resp = await fetch(`${this.apiBase}/outlets`);
+                if (resp.ok) {
+                    this.outlets = await resp.json();
+                    console.log('Loaded outlets:', this.outlets);
+                    
+                    // Set default outlet if none selected and outlets are available
+                    if (this.outlets.length > 0) {
+                        // If only 1 outlet exists, always select it
+                        if (this.outlets.length === 1) {
+                            this.outletId = this.outlets[0].id;
+                            console.log('Auto-selected single outlet:', this.outlets[0].name, '(ID:', this.outletId, ')');
+                            
+                            // Reload data for the selected outlet
+                            this.refreshTablesFromStorage();
+                            this.loadDevices();
+                        } else if (!this.outletId) {
+                            // Multiple outlets - select first one if none selected
+                            this.outletId = this.outlets[0].id;
+                            console.log('Set default outlet:', this.outlets[0].name, '(ID:', this.outletId, ')');
+                        }
+                    }
+                } else {
+                    console.warn('Failed to load outlets:', resp.status);
+                }
+            } catch (e) {
+                console.warn('Unable to load outlets', e);
+            }
+        },
+        
+        async onOutletChange() {
+            console.log('Outlet changed to:', this.outletId);
+            
+            // Clear current data
+            this.tables = [];
+            this.selectedTable = null;
+            this.cart = [];
+            this.cartTotal = 0;
+            
+            // Reload data for new outlet
+            this.refreshTablesFromStorage();
+            this.loadDevices();
+            
+            // Save outlet selection to localStorage
+            this.saveShiftToStorage();
         },
         
         initializeShiftState() {

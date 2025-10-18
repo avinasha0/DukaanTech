@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Item;
 use App\Models\OrderType;
 use App\Models\Device;
+use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\RestaurantTable;
 use App\Models\Order;
@@ -101,6 +102,20 @@ class PosApiController extends Controller
         }
         
         return $query->with('outlet')->get();
+    }
+    
+    /**
+     * Get outlets for the current tenant.
+     */
+    public function outlets(Request $request)
+    {
+        $tenantId = $this->getTenantId();
+        
+        return Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->select('id', 'name', 'code')
+            ->orderBy('name')
+            ->get();
     }
     
     /**

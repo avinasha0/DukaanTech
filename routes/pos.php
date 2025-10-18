@@ -8,6 +8,7 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
     Route::get('/items', [\App\Http\Controllers\PosApiController::class, 'items']);
     Route::get('/order-types', [\App\Http\Controllers\PosApiController::class, 'orderTypes']);
     Route::get('/devices', [\App\Http\Controllers\PosApiController::class, 'devices']);
+    Route::get('/outlets', [\App\Http\Controllers\PosApiController::class, 'outlets']);
 Route::get('/tables', [\App\Http\Controllers\PosApiController::class, 'listTables']);
 Route::patch('/tables/{table}/status', [\App\Http\Controllers\PosApiController::class, 'updateTableStatus']);
 Route::post('/orders/place', [\App\Http\Controllers\PosApiController::class, 'placeOrder']);

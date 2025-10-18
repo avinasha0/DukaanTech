@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\TerminalSession;
 use Illuminate\Http\Request;
@@ -16,8 +17,14 @@ class PosRegisterController extends Controller
     {
         $account = app('tenant'); // Get tenant from middleware context
         
+        // Get the first available outlet for this tenant, or default to 1
+        $outlet = Outlet::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->first();
+        
+        $outletId = $outlet ? $outlet->id : 1;
+        
         // Check for active shift server-side
-        $outletId = 1; // Default outlet
         $activeShift = Shift::where('tenant_id', $account->id)
             ->where('outlet_id', $outletId)
             ->whereNull('closed_at')
@@ -72,8 +79,14 @@ class PosRegisterController extends Controller
     {
         $account = app('tenant'); // Get tenant from middleware context
         
+        // Get the first available outlet for this tenant, or default to 1
+        $outlet = Outlet::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->first();
+        
+        $outletId = $outlet ? $outlet->id : 1;
+        
         // Check for active shift server-side
-        $outletId = 1; // Default outlet
         $activeShift = Shift::where('tenant_id', $account->id)
             ->where('outlet_id', $outletId)
             ->whereNull('closed_at')
