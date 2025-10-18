@@ -173,6 +173,11 @@ class DashboardController extends Controller
 
     public function checkoutShift(Request $request)
     {
+        \Log::info('Dashboard checkoutShift called', [
+            'request_data' => $request->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
         $data = $request->validate([
             'actual_cash' => 'required|numeric|min:0',
         ]);
