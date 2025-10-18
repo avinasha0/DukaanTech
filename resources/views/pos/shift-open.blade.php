@@ -50,11 +50,21 @@
                                     Existing Shift Found
                                 </h3>
                                 <div class="mt-2 text-sm text-yellow-700">
-                                    <p>You already have an open shift. You can either:</p>
-                                    <ul class="list-disc list-inside mt-1">
-                                        <li>Continue with existing shift</li>
-                                        <li>Close existing shift and open a new one</li>
-                                    </ul>
+                                    <p>You already have an open shift. Choose an action:</p>
+                                </div>
+                                <div class="mt-3 flex space-x-3">
+                                    <button 
+                                        @click="continueExistingShift()"
+                                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-150 ease-in-out"
+                                    >
+                                        Continue Existing Shift
+                                    </button>
+                                    <button 
+                                        @click="closeAndOpenNewShift()"
+                                        class="bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-150 ease-in-out"
+                                    >
+                                        Close & Open New Shift
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -236,9 +246,115 @@
                     }
                 },
 
+                async continueExistingShift() {
+                    this.loading = true;
+                    this.error = '';
+
+                    try {
+                        // Get existing shift data
+                        const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/current`, {
+                            method: 'GET',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
+                            },
+                            credentials: 'include'
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.shift) {
+                            // Store shift data
+                            localStorage.setItem('pos_shift_data', JSON.stringify({
+                                shift: data.shift,
+                                timestamp: Date.now(),
+                                outletId: data.shift.outlet_id
+                            }));
+
+                            // Redirect to POS terminal
+                            window.location.href = `/{{ $tenant->slug }}/pos/terminal`;
+                        } else {
+                            this.error = 'Failed to load existing shift';
+                        }
+                    } catch (error) {
+                        this.error = 'Network error. Please try again.';
+                        console.error('Error loading existing shift:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async closeAndOpenNewShift() {
+                    if (!confirm('Are you sure you want to close the existing shift and open a new one?')) {
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.error = '';
+
+                    try {
+                        // First close the existing shift
+                        const closeResponse = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/close`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                actual_cash: 0 // Default value for closing
+                            })
+                        });
+
+                        if (closeResponse.ok) {
+                            // Now open a new shift
+                            await this.openShift();
+                        } else {
+                            const closeData = await closeResponse.json();
+                            this.error = closeData.error || 'Failed to close existing shift';
+                        }
+                    } catch (error) {
+                        this.error = 'Network error. Please try again.';
+                        console.error('Error closing and opening new shift:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
                 logout() {
-                    if (confirm('Are you sure you want to logout?')) {
-                        // Clear session data
+                    if (confirm('Are you sure you want to logout? This will close your current shift.')) {
+                        this.closeShiftAndLogout();
+                    }
+                },
+
+                async closeShiftAndLogout() {
+                    this.loading = true;
+                    
+                    try {
+                        // Try to close the shift before logout
+                        const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/close`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                actual_cash: 0 // Default value for closing
+                            })
+                        });
+
+                        if (response.ok) {
+                            console.log('Shift closed successfully');
+                        } else {
+                            console.warn('Failed to close shift, but proceeding with logout');
+                        }
+                    } catch (error) {
+                        console.warn('Error closing shift, but proceeding with logout:', error);
+                    } finally {
+                        // Clear session data regardless of shift close result
                         localStorage.removeItem('terminal_user');
                         localStorage.removeItem('terminal_session_token');
                         localStorage.removeItem('pos_shift_data');

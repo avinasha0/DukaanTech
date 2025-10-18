@@ -202,13 +202,86 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         return response()->json($shift, 201);
     });
     
+    Route::post('/shifts/close', function ($tenant) {
+        $account = app('tenant'); // Get tenant from middleware context
+        
+        $data = request()->validate([
+            'actual_cash' => 'required|numeric|min:0',
+        ]);
+        
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        if (!$terminalUser) {
+            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
+        }
+        
+        // Find the open shift for this user
+        $shift = \App\Models\Shift::where('tenant_id', $account->id)
+            ->where('opened_by', $terminalUser->user_id)
+            ->whereNull('closed_at')
+            ->first();
+            
+        if (!$shift) {
+            return response()->json(['error' => 'No open shift found'], 404);
+        }
+        
+        // Calculate expected cash and variance
+        $expectedCash = $shift->opening_float; // Basic calculation - can be enhanced
+        $variance = $data['actual_cash'] - $expectedCash;
+        
+        // Close the shift
+        $shift->update([
+            'closed_at' => now(),
+            'expected_cash' => $expectedCash,
+            'actual_cash' => $data['actual_cash'],
+            'variance' => $variance
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Shift closed successfully',
+            'shift' => $shift
+        ]);
+    });
+    
     Route::get('/shifts/current', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
         
-        $outletId = request('outlet_id', 1);
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
         
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        if (!$terminalUser) {
+            return response()->json(['error' => 'Terminal session not found'], 401);
+        }
+        
+        // Find shift for this terminal user
         $shift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('outlet_id', $outletId)
+            ->where('opened_by', $terminalUser->user_id)
             ->whereNull('closed_at')
             ->first();
             
