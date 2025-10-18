@@ -279,11 +279,46 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
         }
         
+        // Ensure TerminalUser has a linked User record for shift closing
+        if (!$terminalUser->user_id) {
+            // Check if user already exists with this email
+            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
+            
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'tenant_id' => $account->id,
+                    'name' => $terminalUser->name,
+                    'email' => $terminalUser->terminal_id . '@terminal.local',
+                    'password' => bcrypt('terminal_password'),
+                    'role' => 'terminal_user',
+                    'is_active' => true,
+                ]);
+            }
+            
+            $terminalUser->update(['user_id' => $user->id]);
+            \Log::info('Linked terminal user to existing user for shift close', [
+                'terminal_user_id' => $terminalUser->id,
+                'user_id' => $user->id,
+                'user_email' => $user->email
+            ]);
+        }
+        
         // Find the open shift for this user
         $shift = \App\Models\Shift::where('tenant_id', $account->id)
             ->where('opened_by', $terminalUser->user_id)
             ->whereNull('closed_at')
             ->first();
+            
+        \Log::info('Shift close request', [
+            'terminal_user_id' => $terminalUser->id,
+            'linked_user_id' => $terminalUser->user_id,
+            'tenant_id' => $account->id,
+            'shift_found' => $shift ? true : false,
+            'shift_id' => $shift ? $shift->id : null,
+            'all_open_shifts' => \App\Models\Shift::where('tenant_id', $account->id)
+                ->whereNull('closed_at')
+                ->get(['id', 'opened_by', 'outlet_id', 'created_at'])
+        ]);
             
         if (!$shift) {
             return response()->json(['error' => 'No open shift found'], 404);
