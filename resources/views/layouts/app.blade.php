@@ -24,7 +24,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        @if(request()->is('/') || request()->is('product') || request()->is('features') || request()->is('pricing') || request()->is('integrations') || request()->is('api-documentation') || request()->is('mobile-app') || request()->is('about-us') || request()->is('careers') || request()->is('blog') || request()->is('press') || request()->is('partners') || request()->is('help-center') || request()->is('contact-us') || request()->is('training') || request()->is('system-status') || request()->is('community') || request()->is('privacy-policy') || request()->is('terms-of-service') || request()->is('cookie-policy') || request()->is('login') || request()->is('register'))
+        @if(request()->is('/') || request()->is('product') || request()->is('features') || request()->is('pricing') || request()->is('integrations') || request()->is('api-documentation') || request()->is('mobile-app') || request()->is('about-us') || request()->is('careers') || request()->is('blog') || request()->is('press') || request()->is('partners') || request()->is('help-center') || request()->is('contact-us') || request()->is('training') || request()->is('system-status') || request()->is('community') || request()->is('privacy-policy') || request()->is('terms-of-service') || request()->is('cookie-policy') || request()->is('login') || request()->is('register') || request()->is('forgot-password') || request()->is('reset-password*'))
             @yield('content')
         @else
             <div class="min-h-screen bg-gray-100">

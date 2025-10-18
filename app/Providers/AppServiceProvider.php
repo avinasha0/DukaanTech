@@ -27,11 +27,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Define permission gates
         Gate::define('manage-users', function ($user) {
-            return $user->hasPermission('manage-users') || $user->isAdmin();
+            return $user->hasPermission('view-users') || $user->isAdmin();
         });
 
         Gate::define('manage-roles', function ($user) {
-            return $user->hasPermission('manage-roles') || $user->isAdmin();
+            return $user->hasPermission('view-roles') || $user->isAdmin();
         });
 
         Gate::define('manage-settings', function ($user) {
