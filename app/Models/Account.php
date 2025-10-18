@@ -90,4 +90,9 @@ class Account extends Model
     {
         return $this->hasMany(User::class, 'tenant_id');
     }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
 }

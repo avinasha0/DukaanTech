@@ -67,6 +67,15 @@ class RegisterController extends Controller
             'status' => 'trial',
         ]);
 
+        // Assign the user to the tenant
+        $user->update(['tenant_id' => $account->id]);
+
+        // Assign admin role to the account owner (first user)
+        $adminRole = \App\Models\Role::where('slug', 'admin')->first();
+        if ($adminRole) {
+            $user->assignRole($adminRole);
+        }
+
         // Send activation email
         $this->sendActivationEmail($user);
 
