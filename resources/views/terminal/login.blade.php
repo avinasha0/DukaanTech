@@ -266,6 +266,15 @@ function terminalLogin() {
                     localStorage.setItem('terminal_user', JSON.stringify(data.user));
                     localStorage.setItem('terminal_session_token', data.session_token);
                     
+                    // Debug: Log the stored data
+                    console.log('=== LOGIN SUCCESS DEBUG ===');
+                    console.log('User data:', data.user);
+                    console.log('Session token:', data.session_token);
+                    console.log('Stored in localStorage:', {
+                        user: localStorage.getItem('terminal_user'),
+                        token: localStorage.getItem('terminal_session_token')
+                    });
+                    
                     // Redirect to shift opening screen
                     window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                 } else {

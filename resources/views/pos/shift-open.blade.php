@@ -133,6 +133,14 @@
                             </button>
                             
                             <button 
+                                type="button" 
+                                @click="testSession()"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+                            >
+                                Test Session
+                            </button>
+                            
+                            <button 
                                 type="submit" 
                                 :disabled="loading"
                                 class="flex-1 bg-royal-purple hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
@@ -187,6 +195,23 @@
                 init() {
                     this.updateTime();
                     setInterval(() => this.updateTime(), 1000);
+                    
+                    // Debug: Check session data on page load
+                    console.log('=== SHIFT OPEN DEBUG ===');
+                    console.log('Terminal user:', localStorage.getItem('terminal_user'));
+                    console.log('Session token:', localStorage.getItem('terminal_session_token'));
+                    console.log('Document cookies:', document.cookie);
+                    
+                    // Check if we have required session data
+                    const sessionToken = localStorage.getItem('terminal_session_token');
+                    const terminalUser = localStorage.getItem('terminal_user');
+                    
+                    if (!sessionToken || !terminalUser) {
+                        console.error('Missing session data, redirecting to login');
+                        alert('Session expired. Please login again.');
+                        window.location.href = `/{{ $tenant->slug }}/terminal/login`;
+                        return;
+                    }
                 },
 
                 updateTime() {
@@ -200,6 +225,36 @@
                         minute: '2-digit',
                         second: '2-digit'
                     });
+                },
+
+                async testSession() {
+                    this.loading = true;
+                    this.error = '';
+
+                    try {
+                        const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/test-session`, {
+                            method: 'GET',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
+                            },
+                            credentials: 'include'
+                        });
+
+                        const data = await response.json();
+                        console.log('Session test result:', data);
+                        
+                        if (data.session_found) {
+                            alert('✅ Session is working! User: ' + data.terminal_user.name);
+                        } else {
+                            alert('❌ Session not found. Token: ' + data.session_token);
+                        }
+                    } catch (error) {
+                        console.error('Session test error:', error);
+                        alert('❌ Session test failed: ' + error.message);
+                    } finally {
+                        this.loading = false;
+                    }
                 },
 
                 async openShift() {

@@ -291,6 +291,44 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         ]);
     });
     
+    Route::get('/shifts/test-session', function ($tenant) {
+        $account = app('tenant'); // Get tenant from middleware context
+        
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        
+        \Log::info('Test session request', [
+            'session_token' => $sessionToken,
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        return response()->json([
+            'session_token' => $sessionToken,
+            'terminal_user' => $terminalUser ? [
+                'id' => $terminalUser->id,
+                'terminal_id' => $terminalUser->terminal_id,
+                'name' => $terminalUser->name,
+                'user_id' => $terminalUser->user_id
+            ] : null,
+            'session_found' => $terminalUser ? true : false,
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all()
+        ]);
+    });
+    
     Route::get('/orders/current-shift', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
         
