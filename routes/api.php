@@ -155,10 +155,28 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
             $data = $request->all();
             
             // Create order with minimal validation
+            // Get the first available order type for this tenant, or create default ones
+            $orderType = \App\Models\OrderType::where('tenant_id', $account->id)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->first();
+            
+            if (!$orderType) {
+                // Create default order types if none exist
+                $orderType = \App\Models\OrderType::create([
+                    'tenant_id' => $account->id,
+                    'name' => 'Dine In',
+                    'slug' => 'dine-in',
+                    'color' => '#10B981',
+                    'is_active' => true,
+                    'sort_order' => 1,
+                ]);
+            }
+
             $order = \App\Models\Order::create([
                 'tenant_id' => $account->id,
                 'outlet_id' => $data['outlet_id'] ?? 1,
-                'order_type_id' => $data['order_type_id'] ?? 1,
+                'order_type_id' => $data['order_type_id'] ?? $orderType->id,
                 'payment_method' => $data['payment_method'] ?? 'cash',
                 'customer_name' => $data['customer_name'] ?? null,
                 'customer_phone' => $data['customer_phone'] ?? null,

@@ -2588,7 +2588,7 @@ function posRegister() {
                 // Prepare order data based on order type
                 const orderData = {
                     outlet_id: this.outletId,
-                    order_type_id: this.orderTypes.length > 0 ? this.orderTypes[0].id : 1,
+                    order_type_id: this.orderTypes.length > 0 ? this.orderTypes[0].id : null,
                     payment_method: this.paymentMethod,
                     special_instructions: this.customerInfo.specialInstructions,
                     items: this.cart.map(cartItem => ({

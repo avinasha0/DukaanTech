@@ -229,12 +229,30 @@ class PosApiController extends Controller
                     throw new \Exception('Table already has an open order. Please close the current order before placing a new one.');
                 }
 
+                // Get the first available order type for this tenant, or create default ones
+                $orderType = \App\Models\OrderType::where('tenant_id', $tenantId)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->first();
+                
+                if (!$orderType) {
+                    // Create default order types if none exist
+                    $orderType = \App\Models\OrderType::create([
+                        'tenant_id' => $tenantId,
+                        'name' => 'Dine In',
+                        'slug' => 'dine-in',
+                        'color' => '#10B981',
+                        'is_active' => true,
+                        'sort_order' => 1,
+                    ]);
+                }
+
                 $order = Order::create([
                     'tenant_id' => $tenantId,
                     'outlet_id' => $table->outlet_id ?? 1, // Use table's outlet or default
                     'table_id' => $table->id,
                     'status' => 'OPEN',
-                    'order_type_id' => 1, // Default dine-in order type
+                    'order_type_id' => $orderType->id,
                     'mode' => 'DINE_IN',
                 ]);
 

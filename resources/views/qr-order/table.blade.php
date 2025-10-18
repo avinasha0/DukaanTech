@@ -218,7 +218,7 @@
             const orderData = {
                 items: cart,
                 outlet_id: formData.get('outlet_id') || 1,
-                order_type_id: formData.get('order_type_id') || 1,
+                order_type_id: formData.get('order_type_id') || null,
                 payment_method: formData.get('payment_method') || 'cash',
                 customer_name: formData.get('customer_name') || null,
                 special_instructions: formData.get('special_instructions') || null,
