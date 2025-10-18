@@ -378,9 +378,19 @@
                 },
 
                 logout() {
-                    if (confirm('Are you sure you want to logout? This will close your current shift.')) {
-                        this.closeShiftAndLogout();
+                    if (confirm('Are you sure you want to logout?')) {
+                        this.logoutWithoutClosingShift();
                     }
+                },
+
+                async logoutWithoutClosingShift() {
+                    // Clear session data and logout without trying to close shift
+                    localStorage.removeItem('terminal_user');
+                    localStorage.removeItem('terminal_session_token');
+                    localStorage.removeItem('pos_shift_data');
+                    
+                    // Redirect to login
+                    window.location.href = `/{{ $tenant->slug }}/terminal/login`;
                 },
 
                 async closeShiftAndLogout() {
