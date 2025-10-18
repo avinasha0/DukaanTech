@@ -97,69 +97,7 @@ class TerminalAuthController extends Controller
             'global_cleanup' => $cleanupResult
         ]);
 
-        // Check if user already has an active session
-        $existingSession = $terminalUser->getActiveSession();
-        if ($existingSession) {
-            // Log active sessions for debugging
-            $activeSessions = $terminalUser->getActiveSessions();
-            \Log::warning("Terminal user {$terminalUser->terminal_id} has {$activeSessions->count()} active sessions", [
-                'sessions' => $activeSessions->map(function($session) {
-                    return [
-                        'id' => $session->id,
-                        'device_id' => $session->device_id,
-                        'expires_at' => $session->expires_at,
-                        'last_activity_at' => $session->last_activity_at,
-                    ];
-                })->toArray()
-            ]);
-            
-            // Check if this is a force logout request
-            if ($request->has('force_logout') && $request->force_logout === 'true') {
-                // Log force logout for all existing sessions
-                $activeSessions = $terminalUser->getActiveSessions();
-                foreach ($activeSessions as $activeSession) {
-                    TerminalLoginLog::logAction(
-                        tenantId: $tenant->id,
-                        terminalUserId: $terminalUser->id,
-                        action: 'force_logout',
-                        deviceId: $activeSession->device_id,
-                        sessionToken: $activeSession->session_token,
-                        ipAddress: $request->ip(),
-                        userAgent: $request->userAgent(),
-                        metadata: [
-                            'device_name' => $activeSession->device?->name,
-                            'session_duration' => $activeSession->created_at->diffInMinutes(now()) . ' minutes',
-                            'logout_method' => 'force_logout',
-                            'reason' => 'New login from different device'
-                        ]
-                    );
-                }
-                
-                // Force logout all sessions for this user
-                $deletedCount = $terminalUser->logoutAllSessions();
-                \Log::info("Force logout for terminal user {$terminalUser->terminal_id}, deleted {$deletedCount} sessions");
-            } else {
-                // User is already logged in, deny new login but offer force logout option
-                $sessionInfo = $activeSessions->map(function($session) {
-                    return [
-                        'device_name' => $session->device?->name ?? 'Unknown Device',
-                        'last_activity' => $session->last_activity_at?->diffForHumans() ?? 'Unknown',
-                        'expires_at' => $session->expires_at->format('Y-m-d H:i:s')
-                    ];
-                })->toArray();
-
-                return response()->json([
-                    'message' => 'This terminal user is already logged in elsewhere.',
-                    'errors' => [
-                        'terminal_id' => ['Terminal user is already logged in elsewhere.']
-                    ],
-                    'force_logout_available' => true,
-                    'active_sessions_count' => $activeSessions->count(),
-                    'session_details' => $sessionInfo,
-                    'help_text' => 'You can force logout from all other sessions to continue, or wait for the current session to expire.'
-                ], 422);
-            }
-        }
+        // Allow multiple sessions - no need to check for existing sessions
 
         // Get device if provided
         $device = null;
@@ -251,9 +189,9 @@ class TerminalAuthController extends Controller
                     ]
                 );
                 
-                // Logout all sessions for this terminal user (not just the current one)
-                $deletedCount = $terminalUser->logoutAllSessions();
-                \Log::info("Terminal user logout: {$terminalUser->terminal_id}, deleted {$deletedCount} sessions");
+                // Logout only the current session
+                $session->delete();
+                \Log::info("Terminal user logout: {$terminalUser->terminal_id}, deleted session {$session->id}");
             } else {
                 \Log::warning("Terminal session not found for logout: {$sessionToken}");
             }

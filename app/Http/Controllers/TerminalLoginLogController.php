@@ -117,11 +117,7 @@ class TerminalLoginLogController extends Controller
                 ->where('logged_at', '>=', $startDate)
                 ->count(),
             'total_logouts' => TerminalLoginLog::where('terminal_user_id', $terminalUser->id)
-                ->whereIn('action', ['logout', 'force_logout', 'session_expired'])
-                ->where('logged_at', '>=', $startDate)
-                ->count(),
-            'force_logouts' => TerminalLoginLog::where('terminal_user_id', $terminalUser->id)
-                ->where('action', 'force_logout')
+                ->whereIn('action', ['logout', 'session_expired'])
                 ->where('logged_at', '>=', $startDate)
                 ->count(),
             'session_expirations' => TerminalLoginLog::where('terminal_user_id', $terminalUser->id)
@@ -133,7 +129,7 @@ class TerminalLoginLogController extends Controller
                 ->orderBy('logged_at', 'desc')
                 ->first()?->logged_at,
             'last_logout' => TerminalLoginLog::where('terminal_user_id', $terminalUser->id)
-                ->whereIn('action', ['logout', 'force_logout', 'session_expired'])
+                ->whereIn('action', ['logout', 'session_expired'])
                 ->orderBy('logged_at', 'desc')
                 ->first()?->logged_at,
         ];

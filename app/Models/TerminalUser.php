@@ -86,14 +86,14 @@ class TerminalUser extends Model
     }
 
     /**
-     * Get active session for this user
+     * Get active sessions for this user
      */
-    public function getActiveSession()
+    public function getActiveSessions()
     {
         return $this->sessions()
             ->where('expires_at', '>', now())
             ->orderBy('last_activity_at', 'desc')
-            ->first();
+            ->get();
     }
 
     /**
@@ -123,16 +123,6 @@ class TerminalUser extends Model
     }
 
     /**
-     * Force logout all active sessions for this user
-     */
-    public function logoutAllSessions(): int
-    {
-        return $this->sessions()
-            ->where('expires_at', '>', now())
-            ->delete();
-    }
-
-    /**
      * Check if user has any active sessions
      */
     public function hasActiveSession(): bool
@@ -140,17 +130,6 @@ class TerminalUser extends Model
         return $this->sessions()
             ->where('expires_at', '>', now())
             ->exists();
-    }
-
-    /**
-     * Get all active sessions for this user (for debugging)
-     */
-    public function getActiveSessions()
-    {
-        return $this->sessions()
-            ->where('expires_at', '>', now())
-            ->orderBy('last_activity_at', 'desc')
-            ->get();
     }
 
     /**

@@ -107,7 +107,7 @@ class TerminalLoginLog extends Model
      */
     public function scopeLogouts($query)
     {
-        return $query->whereIn('action', ['logout', 'force_logout', 'session_expired']);
+        return $query->whereIn('action', ['logout', 'session_expired']);
     }
 
     /**
