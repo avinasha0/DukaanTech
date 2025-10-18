@@ -125,6 +125,43 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
         ]);
     });
     
+    Route::post('/shifts/open', function ($tenant) {
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (!$account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+        
+        $data = request()->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+            'opening_float' => 'nullable|numeric|min:0',
+        ]);
+        
+        // Check if there's already an open shift
+        $existingShift = \App\Models\Shift::where('tenant_id', $account->id)
+            ->where('outlet_id', $data['outlet_id'])
+            ->whereNull('closed_at')
+            ->first();
+            
+        if ($existingShift) {
+            return response()->json(['error' => 'There is already an open shift'], 400);
+        }
+        
+        // Find a user to assign as opened_by
+        $user = \App\Models\User::where('tenant_id', $account->id)->first();
+        if (!$user) {
+            return response()->json(['error' => 'No users found for this tenant'], 400);
+        }
+        
+        $shift = \App\Models\Shift::create([
+            'tenant_id' => $account->id,
+            'outlet_id' => $data['outlet_id'],
+            'opening_float' => $data['opening_float'] ?? 0,
+            'opened_by' => $user->id,
+        ]);
+        
+        return response()->json($shift, 201);
+    });
+    
     Route::get('/kot/status', function ($tenant) {
         $account = \App\Models\Account::where('slug', $tenant)->first();
         if (!$account) {

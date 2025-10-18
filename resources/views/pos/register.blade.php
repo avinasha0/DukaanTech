@@ -3486,6 +3486,9 @@ function posRegister() {
         
         async openShift() {
             try {
+                const openingFloat = prompt('Enter opening float amount (optional):', '0');
+                if (openingFloat === null) return; // User cancelled
+                
                 const response = await fetch(`${this.apiBase}/shifts/open`, {
                     method: 'POST',
                     headers: {
@@ -3493,17 +3496,21 @@ function posRegister() {
                     },
                     body: JSON.stringify({
                         outlet_id: this.outletId,
-                        opening_float: this.openingFloat || 0
+                        opening_float: parseFloat(openingFloat) || 0
                     })
                 });
                 
                 if (response.ok) {
                     this.shift = await response.json();
                     this.posLocked = false; // Unlock POS when shift opens
+                    this.shiftInfo = this.getCurrentShiftInfo();
                     this.shiftSummary = null; // Clear any previous shift summary
                     this.saveShiftToStorage(); // Save to localStorage
                     console.log('Shift opened successfully, unlocking POS');
                     alert('Shift opened successfully!');
+                    
+                    // Reload shift summary
+                    this.loadShiftSummary();
                 } else {
                     const error = await response.json();
                     alert('Error opening shift: ' + (error.error || 'Unknown error'));
@@ -4639,7 +4646,11 @@ function getCookie(name) {
                                 </div>
                             </div>
                             <div x-show="!shiftInfo" class="text-gray-500">
-                                No shift information available
+                                <div class="mb-2">No shift information available</div>
+                                <button @click="openShift()" 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">
+                                    Open Shift
+                                </button>
                             </div>
                         </div>
                     </div>

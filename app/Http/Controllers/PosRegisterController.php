@@ -7,6 +7,7 @@ use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\TerminalSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PosRegisterController extends Controller
 {
@@ -29,6 +30,11 @@ class PosRegisterController extends Controller
             ->where('outlet_id', $outletId)
             ->whereNull('closed_at')
             ->first();
+            
+        // If no active shift and user is authenticated, try to open one
+        if (!$activeShift && auth()->check()) {
+            $activeShift = $this->openShiftForUser(auth()->user(), $account, $outletId);
+        }
         
         // Check if user is authenticated via terminal or regular auth
         $terminalUser = null;
@@ -125,5 +131,57 @@ class PosRegisterController extends Controller
             'isTerminalAuth' => $isTerminalAuth,
             'isRegularAuth' => false // Always false for terminal-only access
         ]);
+    }
+
+    /**
+     * Automatically open a shift for the user
+     */
+    private function openShiftForUser($user, $tenant, $outletId = null)
+    {
+        try {
+            // Get the outlet
+            $outlet = null;
+            if ($outletId) {
+                $outlet = Outlet::where('tenant_id', $tenant->id)
+                    ->where('id', $outletId)
+                    ->first();
+            } else {
+                $outlet = Outlet::where('tenant_id', $tenant->id)
+                    ->where('is_active', true)
+                    ->first();
+            }
+            
+            if (!$outlet) {
+                Log::warning("No outlet found for tenant {$tenant->id}, cannot open shift");
+                return null;
+            }
+
+            // Check if there's already an open shift for this user
+            $existingShift = Shift::where('tenant_id', $tenant->id)
+                ->where('opened_by', $user->id)
+                ->where('outlet_id', $outlet->id)
+                ->whereNull('closed_at')
+                ->first();
+
+            if ($existingShift) {
+                Log::info("User {$user->id} already has an open shift: {$existingShift->id}");
+                return $existingShift;
+            }
+
+            // Create a new shift
+            $shift = Shift::create([
+                'tenant_id' => $tenant->id,
+                'opened_by' => $user->id,
+                'outlet_id' => $outlet->id,
+                'opening_float' => 0, // Default opening float
+            ]);
+
+            Log::info("Automatically opened shift {$shift->id} for user {$user->id}");
+            
+            return $shift;
+        } catch (\Exception $e) {
+            Log::error("Failed to open shift for user {$user->id}: " . $e->getMessage());
+            return null;
+        }
     }
 }
