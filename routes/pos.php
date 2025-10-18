@@ -139,7 +139,14 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         
         // Get terminal user from session
         $terminalUser = null;
-        $sessionToken = request()->cookie('terminal_session_token');
+        $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        
+        \Log::info('Shift open request', [
+            'session_token' => $sessionToken,
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
         if ($sessionToken) {
             $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
@@ -148,11 +155,16 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             
             if ($session && $session->terminalUser) {
                 $terminalUser = $session->terminalUser;
+                \Log::info('Found terminal user', ['user_id' => $terminalUser->id, 'terminal_id' => $terminalUser->terminal_id]);
+            } else {
+                \Log::warning('Session not found or expired', ['session_token' => $sessionToken]);
             }
+        } else {
+            \Log::warning('No session token found in cookies');
         }
         
         if (!$terminalUser) {
-            return response()->json(['error' => 'Terminal session not found'], 401);
+            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
         }
         
         // Ensure TerminalUser has a linked User record

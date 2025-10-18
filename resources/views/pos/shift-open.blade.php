@@ -196,13 +196,20 @@
                     this.loading = true;
                     this.error = '';
 
+                    // Debug: Check session token
+                    const sessionToken = localStorage.getItem('terminal_session_token');
+                    console.log('Session token:', sessionToken);
+                    console.log('Form data:', this.formData);
+
                     try {
                         const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/open`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
                             },
+                            credentials: 'include',
                             body: JSON.stringify(this.formData)
                         });
 
