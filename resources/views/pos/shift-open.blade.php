@@ -384,10 +384,50 @@
                 },
 
                 async logoutWithoutClosingShift() {
+                    console.log('=== LOGOUT DEBUG ===');
+                    console.log('Before logout - localStorage:', {
+                        terminal_user: localStorage.getItem('terminal_user'),
+                        terminal_session_token: localStorage.getItem('terminal_session_token'),
+                        pos_shift_data: localStorage.getItem('pos_shift_data')
+                    });
+                    
+                    try {
+                        // Call the logout endpoint to properly clean up the session
+                        const sessionToken = localStorage.getItem('terminal_session_token');
+                        const response = await fetch(`/{{ $tenant->slug }}/terminal/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Terminal-Session-Token': sessionToken || ''
+                            },
+                            credentials: 'include'
+                        });
+                        
+                        console.log('Logout API response:', response.status, response.statusText);
+                        
+                        if (response.ok) {
+                            console.log('✅ Logout API call successful');
+                        } else {
+                            console.warn('⚠️ Logout API call failed, but continuing with logout');
+                        }
+                    } catch (error) {
+                        console.error('❌ Logout API call error:', error);
+                        // Continue with logout even if API call fails
+                    }
+                    
                     // Clear session data and logout without trying to close shift
                     localStorage.removeItem('terminal_user');
                     localStorage.removeItem('terminal_session_token');
                     localStorage.removeItem('pos_shift_data');
+                    
+                    console.log('After logout - localStorage:', {
+                        terminal_user: localStorage.getItem('terminal_user'),
+                        terminal_session_token: localStorage.getItem('terminal_session_token'),
+                        pos_shift_data: localStorage.getItem('pos_shift_data')
+                    });
+                    
+                    console.log('Redirecting to:', `/{{ $tenant->slug }}/terminal/login`);
                     
                     // Redirect to login
                     window.location.href = `/{{ $tenant->slug }}/terminal/login`;
