@@ -167,6 +167,10 @@ Route::get('/{tenant}/pos/terminal', [PosRegisterController::class, 'terminalOnl
     ->name('tenant.pos.terminal')
     ->middleware(['resolve.tenant']);
 
+Route::get('/{tenant}/pos/shift-open', [PosRegisterController::class, 'shiftOpen'])
+    ->name('tenant.pos.shift-open')
+    ->middleware(['resolve.tenant']);
+
 // POS API endpoints for register functionality
 Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']], function () {
     Route::get('/categories', [PosApiController::class, 'categories']);

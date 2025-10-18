@@ -30,11 +30,6 @@ class PosRegisterController extends Controller
             ->where('outlet_id', $outletId)
             ->whereNull('closed_at')
             ->first();
-            
-        // If no active shift and user is authenticated, try to open one
-        if (!$activeShift && auth()->check()) {
-            $activeShift = $this->openShiftForUser(auth()->user(), $account, $outletId);
-        }
         
         // Check if user is authenticated via terminal or regular auth
         $terminalUser = null;
@@ -130,6 +125,55 @@ class PosRegisterController extends Controller
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => $isTerminalAuth,
             'isRegularAuth' => false // Always false for terminal-only access
+        ]);
+    }
+
+    /**
+     * Display the shift opening screen for terminal users
+     */
+    public function shiftOpen(Request $request, $tenant)
+    {
+        $account = app('tenant'); // Get tenant from middleware context
+        
+        // Check for terminal session
+        $terminalUser = null;
+        $isTerminalAuth = false;
+        
+        $sessionToken = $request->cookie('terminal_session_token');
+        if ($sessionToken) {
+            $session = TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+                $isTerminalAuth = true;
+            }
+        }
+        
+        // If no terminal authentication found, redirect to terminal login
+        if (!$isTerminalAuth) {
+            return redirect()->route('terminal.login', ['tenant' => $tenant])
+                ->with('error', 'Please login with terminal credentials to access the POS terminal');
+        }
+
+        // Get available outlets
+        $outlets = Outlet::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->get();
+
+        // Check if there's already an open shift
+        $existingShift = Shift::where('tenant_id', $account->id)
+            ->where('opened_by', $terminalUser->user_id)
+            ->whereNull('closed_at')
+            ->first();
+
+        return view('pos.shift-open', [
+            'tenant' => $account,
+            'terminalUser' => $terminalUser,
+            'outlets' => $outlets,
+            'existingShift' => $existingShift,
         ]);
     }
 

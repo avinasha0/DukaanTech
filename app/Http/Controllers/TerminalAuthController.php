@@ -130,9 +130,6 @@ class TerminalAuthController extends Controller
             ]
         );
 
-        // Automatically open a shift for the terminal user
-        $shift = $this->openShiftForUser($terminalUser, $tenant);
-
         // Set session cookie
         $response = response()->json([
             'success' => true,
@@ -145,11 +142,6 @@ class TerminalAuthController extends Controller
             ],
             'session_token' => $session->session_token,
             'expires_at' => $session->expires_at->toISOString(),
-            'shift' => $shift ? [
-                'id' => $shift->id,
-                'opening_float' => $shift->opening_float,
-                'created_at' => $shift->created_at->toISOString(),
-            ] : null,
         ]);
 
         // Set HTTP-only cookie for session token

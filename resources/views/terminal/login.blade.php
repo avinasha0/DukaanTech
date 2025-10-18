@@ -266,17 +266,8 @@ function terminalLogin() {
                     localStorage.setItem('terminal_user', JSON.stringify(data.user));
                     localStorage.setItem('terminal_session_token', data.session_token);
                     
-                    // Store shift info if available
-                    if (data.shift) {
-                        localStorage.setItem('pos_shift_data', JSON.stringify({
-                            shift: data.shift,
-                            timestamp: Date.now(),
-                            outletId: data.shift.outlet_id || null
-                        }));
-                    }
-                    
-                    // Redirect to POS terminal
-                    window.location.href = `/{{ $tenant->slug }}/pos/terminal`;
+                    // Redirect to shift opening screen
+                    window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                 } else {
                     // Handle validation errors
                     if (data.errors) {

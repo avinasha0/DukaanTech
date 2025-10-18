@@ -40,9 +40,6 @@ class AuthenticatedSessionController extends Controller
             
             // Check if organization setup is complete
             if ($this->isOrganizationSetupComplete($tenant)) {
-                // Automatically open a shift for the user
-                $this->openShiftForUser($user, $tenant);
-                
                 // Setup complete, redirect based on plan
                 if ($tenant->plan === 'free') {
                     return redirect()->to("http://localhost:8000/{$tenant->slug}/dashboard");

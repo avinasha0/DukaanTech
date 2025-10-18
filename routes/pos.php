@@ -137,22 +137,54 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             'opening_float' => 'nullable|numeric|min:0',
         ]);
         
-        // Check if there's already an open shift
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->cookie('terminal_session_token');
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        if (!$terminalUser) {
+            return response()->json(['error' => 'Terminal session not found'], 401);
+        }
+        
+        // Ensure TerminalUser has a linked User record
+        if (!$terminalUser->user_id) {
+            $user = \App\Models\User::create([
+                'tenant_id' => $account->id,
+                'name' => $terminalUser->name,
+                'email' => $terminalUser->terminal_id . '@terminal.local',
+                'password' => bcrypt('terminal_password'),
+                'role' => 'terminal_user',
+                'is_active' => true,
+            ]);
+            
+            $terminalUser->update(['user_id' => $user->id]);
+        }
+        
+        // Check if there's already an open shift for this user
         $existingShift = \App\Models\Shift::where('tenant_id', $account->id)
+            ->where('opened_by', $terminalUser->user_id)
             ->where('outlet_id', $data['outlet_id'])
             ->whereNull('closed_at')
             ->first();
             
         if ($existingShift) {
-            return response()->json(['error' => 'There is already an open shift'], 400);
+            return response()->json(['error' => 'You already have an open shift for this outlet'], 400);
         }
         
         $shift = \App\Models\Shift::create([
             'tenant_id' => $account->id,
             'outlet_id' => $data['outlet_id'],
             'opening_float' => $data['opening_float'] ?? 0,
-            'opened_by' => 1, // Default user ID for public access
-            'opened_at' => now(),
+            'opened_by' => $terminalUser->user_id,
         ]);
         
         return response()->json($shift, 201);
