@@ -141,6 +141,17 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         $terminalUser = null;
         $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
         
+        // If the token looks like a Laravel encrypted cookie, decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+                \Log::info('Decrypted session token', ['decrypted_token' => $sessionToken, 'token_length' => strlen($sessionToken)]);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
+                // Keep original token if decryption fails
+            }
+        }
+        
         \Log::info('Shift open request', [
             'session_token' => $sessionToken,
             'token_length' => $sessionToken ? strlen($sessionToken) : 0,
@@ -237,6 +248,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         $terminalUser = null;
         $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
         
+        // If the token looks like a Laravel encrypted cookie, decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                // Keep original token if decryption fails
+            }
+        }
+        
         if ($sessionToken) {
             $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
@@ -288,6 +308,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         $terminalUser = null;
         $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
         
+        // If the token looks like a Laravel encrypted cookie, decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                // Keep original token if decryption fails
+            }
+        }
+        
         if ($sessionToken) {
             $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
@@ -321,6 +350,15 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         // Get terminal user from session
         $terminalUser = null;
         $sessionToken = request()->cookie('terminal_session_token') ?? request()->header('X-Terminal-Session-Token');
+        
+        // If the token looks like a Laravel encrypted cookie, decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                // Keep original token if decryption fails
+            }
+        }
         
         \Log::info('Test session request', [
             'session_token' => $sessionToken,
