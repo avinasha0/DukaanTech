@@ -177,27 +177,25 @@ class PosRegisterController extends Controller
     {
         $account = app('tenant'); // Get tenant from middleware context
         
-        // Check for terminal session
-        $terminalUser = null;
-        $isTerminalAuth = false;
-        
-        $sessionToken = $request->cookie('terminal_session_token');
-        if ($sessionToken) {
-            $session = TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-                $isTerminalAuth = true;
-            }
+        // Get the current authenticated user
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to access the POS terminal');
         }
         
-        // If no terminal authentication found, redirect to terminal login
-        if (!$isTerminalAuth) {
-            return redirect()->route('terminal.login', ['tenant' => $tenant])
-                ->with('error', 'Please login with terminal credentials to access the POS terminal');
+        // Find or create terminal user for web user
+        $terminalUser = TerminalUser::where('user_id', $user->id)->first();
+        if (!$terminalUser) {
+            $terminalUser = TerminalUser::create([
+                'tenant_id' => $account->id,
+                'terminal_id' => 'WEB_' . $user->id,
+                'name' => $user->name,
+                'pin' => '0000',
+                'role' => 'cashier',
+                'is_active' => true,
+                'user_id' => $user->id,
+            ]);
         }
 
         // Get available outlets
@@ -207,7 +205,7 @@ class PosRegisterController extends Controller
 
         // Check if there's already an open shift
         $existingShift = Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $terminalUser->user_id)
+            ->where('opened_by', $user->id)
             ->whereNull('closed_at')
             ->first();
 

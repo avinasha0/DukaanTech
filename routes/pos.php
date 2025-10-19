@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
-// POS Public API routes - use optimized controllers with tenant context
-Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']], function () {
+// POS API routes - use optimized controllers with tenant context
+Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['web', 'auth', 'resolve.tenant']], function () {
     Route::get('/categories', [\App\Http\Controllers\PosApiController::class, 'categories']);
     Route::get('/items', [\App\Http\Controllers\PosApiController::class, 'items']);
     Route::get('/order-types', [\App\Http\Controllers\PosApiController::class, 'orderTypes']);
@@ -28,51 +28,29 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             'opening_float' => 'nullable|numeric|min:0',
         ]);
         
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
+        // Check for regular web authentication
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => 'Authentication required. Please login.'], 401);
         }
         
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        }
-        
+        // Find or create terminal user for web user
+        $terminalUser = \App\Models\TerminalUser::where('user_id', $user->id)->first();
         if (!$terminalUser) {
-            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
+            $terminalUser = \App\Models\TerminalUser::create([
+                'tenant_id' => $account->id,
+                'terminal_id' => 'WEB_' . $user->id,
+                'name' => $user->name,
+                'pin' => '0000',
+                'role' => 'cashier',
+                'is_active' => true,
+                'user_id' => $user->id,
+            ]);
         }
         
-        if (!$terminalUser->user_id) {
-            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
-            
-            if (!$user) {
-                $user = \App\Models\User::create([
-                    'tenant_id' => $account->id,
-                    'name' => $terminalUser->name,
-                    'email' => $terminalUser->terminal_id . '@terminal.local',
-                    'password' => bcrypt('terminal_password'),
-                    'role' => 'terminal_user',
-                    'is_active' => true,
-                ]);
-            }
-            
-            $terminalUser->update(['user_id' => $user->id]);
-        }
         
         $existingShift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $terminalUser->user_id)
+            ->where('opened_by', $user->id)
             ->where('outlet_id', $data['outlet_id'])
             ->whereNull('closed_at')
             ->first();
@@ -85,7 +63,7 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             'tenant_id' => $account->id,
             'outlet_id' => $data['outlet_id'],
             'opening_float' => $data['opening_float'] ?? 0,
-            'opened_by' => $terminalUser->user_id,
+            'opened_by' => $user->id,
         ]);
         
         return response()->json($shift, 201);
