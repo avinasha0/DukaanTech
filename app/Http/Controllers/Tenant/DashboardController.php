@@ -137,15 +137,11 @@ class DashboardController extends Controller
             }
         }
         
-        // If terminal user, look for shift by user, otherwise by outlet
-        if ($terminalUser && $terminalUser->user_id) {
-            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
-                ->where('opened_by', $terminalUser->user_id)
-                ->whereNull('closed_at')
-                ->first();
-        } else {
-            $shift = $this->shiftService->getCurrentShift($outlet->id);
-        }
+        // Find any open shift in the outlet
+        $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+            ->where('outlet_id', $outlet->id)
+            ->whereNull('closed_at')
+            ->first();
         
         if (!$shift) {
             return response()->json([
@@ -214,15 +210,11 @@ class DashboardController extends Controller
             }
         }
         
-        // If terminal user, look for shift by user, otherwise by outlet
-        if ($terminalUser && $terminalUser->user_id) {
-            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
-                ->where('opened_by', $terminalUser->user_id)
-                ->whereNull('closed_at')
-                ->first();
-        } else {
-            $shift = $this->shiftService->getCurrentShift($outlet->id);
-        }
+        // Find any open shift in the outlet
+        $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+            ->where('outlet_id', $outlet->id)
+            ->whereNull('closed_at')
+            ->first();
         
         if (!$shift) {
             return response()->json(['error' => 'No open shift found'], 404);
