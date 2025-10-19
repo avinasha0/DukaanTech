@@ -903,7 +903,7 @@ Route::middleware(['web', 'auth', 'resolve.tenant'])
 
 // Path-based tenant API mount (uses dedicated API routes file)
 Route::middleware(['api', 'resolve.tenant'])
-    ->prefix('{tenant}/api')
+    ->prefix('{tenant}/pos/api')
     ->group(function () {
         require base_path('routes/tenant-api.php');
     });
