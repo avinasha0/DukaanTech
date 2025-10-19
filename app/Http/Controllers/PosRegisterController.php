@@ -96,6 +96,9 @@ class PosRegisterController extends Controller
         // Clean up expired terminal sessions first
         TerminalSession::where('expires_at', '<=', now())->delete();
         
+        // Also clean up sessions that are close to expiry (within 1 hour)
+        TerminalSession::where('expires_at', '<=', now()->addHour())->where('last_activity_at', '<', now()->subHours(2))->delete();
+        
         // Check for terminal session only - NO regular web authentication allowed
         $terminalUser = null;
         $isTerminalAuth = false;
@@ -109,16 +112,31 @@ class PosRegisterController extends Controller
                 ->with('terminalUser')
                 ->first();
             
+            // Additional security: Check if this is a legitimate terminal session
+            // by verifying the session was created recently and has proper device association
             if ($session && $session->terminalUser && $session->isValid()) {
-                $terminalUser = $session->terminalUser;
-                $isTerminalAuth = true;
+                // Check if session is not too old (max 2 hours for security)
+                $sessionAge = now()->diffInHours($session->created_at);
+                if ($sessionAge <= 2) {
+                    $terminalUser = $session->terminalUser;
+                    $isTerminalAuth = true;
+                } else {
+                    // Session too old, invalidate it
+                    $session->delete();
+                }
             }
         }
         
         // If no terminal authentication found, redirect to terminal login
         if (!$isTerminalAuth) {
-            return redirect()->route('terminal.login', ['tenant' => $tenant])
+            // Clear any existing terminal session cookies as an extra security measure
+            $response = redirect()->route('terminal.login', ['tenant' => $tenant])
                 ->with('error', 'Please login with terminal credentials to access the POS terminal');
+            
+            // Clear the terminal session cookie
+            $response->cookie('terminal_session_token', '', -1, '/', null, true, true);
+            
+            return $response;
         }
         
         return view('pos.register', [
