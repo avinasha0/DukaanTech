@@ -138,19 +138,9 @@ class TerminalAuthController extends Controller
             ]
         );
 
-        // Set session cookie
-        $response = response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $terminalUser->id,
-                'terminal_id' => $terminalUser->terminal_id,
-                'name' => $terminalUser->name,
-                'role' => $terminalUser->role,
-            ],
-            'session_token' => $session->session_token,
-            'expires_at' => $session->expires_at->toISOString(),
-        ]);
+        // Set session cookie and redirect to authenticated terminal route
+        $response = redirect()->route('tenant.pos.terminal.authenticated', ['tenant' => $tenant->slug])
+            ->with('success', 'Terminal login successful');
 
         // Set HTTP-only cookie for session token
         $response->cookie('terminal_session_token', $session->session_token, 480, '/', null, true, true); // 8 hours

@@ -167,6 +167,10 @@ Route::get('/{tenant}/pos/terminal', [PosRegisterController::class, 'terminalOnl
     ->name('tenant.pos.terminal')
     ->middleware(['resolve.tenant']);
 
+Route::get('/{tenant}/pos/terminal/authenticated', [PosRegisterController::class, 'terminalAuthenticated'])
+    ->name('tenant.pos.terminal.authenticated')
+    ->middleware(['resolve.tenant', 'terminal.auth']);
+
 Route::get('/{tenant}/pos/shift-open', [PosRegisterController::class, 'shiftOpen'])
     ->name('tenant.pos.shift-open')
     ->middleware(['resolve.tenant']);

@@ -78,6 +78,8 @@ class PosRegisterController extends Controller
      */
     public function terminalOnly(Request $request, $tenant)
     {
+        
+        
         $account = app('tenant'); // Get tenant from middleware context
         
         // Get the first available outlet for this tenant, or default to 1
@@ -93,21 +95,10 @@ class PosRegisterController extends Controller
             ->whereNull('closed_at')
             ->first();
         
-        // Clean up expired terminal sessions first
-        TerminalSession::where('expires_at', '<=', now())->delete();
-        
-        // Also clean up sessions that are close to expiry (within 1 hour)
-        TerminalSession::where('expires_at', '<=', now()->addHour())->where('last_activity_at', '<', now()->subHours(2))->delete();
-        
-        // Additional cleanup: Remove any sessions older than 2 hours regardless of expiry
-        TerminalSession::where('created_at', '<', now()->subHours(2))->delete();
-        
-        // Check for terminal session only - NO regular web authentication allowed
-        $terminalUser = null;
-        $isTerminalAuth = false;
-        
         // Check for terminal session
         $sessionToken = $request->cookie('terminal_session_token');
+        $terminalUser = null;
+        $isTerminalAuth = false;
         
         if ($sessionToken) {
             $session = TerminalSession::where('session_token', $sessionToken)
@@ -115,34 +106,16 @@ class PosRegisterController extends Controller
                 ->with('terminalUser')
                 ->first();
             
-            // Additional security: Check if this is a legitimate terminal session
-            // by verifying the session was created recently and has proper device association
             if ($session && $session->terminalUser && $session->isValid()) {
-                // Check if session is not too old (max 2 hours for security)
-                $sessionAge = now()->diffInHours($session->created_at);
-                if ($sessionAge <= 2) {
-                    $terminalUser = $session->terminalUser;
-                    $isTerminalAuth = true;
-                } else {
-                    // Session too old, invalidate it
-                    $session->delete();
-                }
+                $terminalUser = $session->terminalUser;
+                $isTerminalAuth = true;
             }
         }
         
         // If no terminal authentication found, redirect to terminal login
         if (!$isTerminalAuth) {
-            // Clear any existing terminal session cookies as an extra security measure
-            $response = redirect()->route('terminal.login', ['tenant' => $tenant])
+            return redirect()->route('terminal.login', ['tenant' => $tenant])
                 ->with('error', 'Please login with terminal credentials to access the POS terminal');
-            
-            // Clear the terminal session cookie with multiple approaches
-            $response->cookie('terminal_session_token', '', -1, '/', null, true, true);
-            $response->cookie('terminal_session_token', '', -1, '/', null, false, true);
-            $response->cookie('terminal_session_token', '', -1, '/', null, true, false);
-            $response->cookie('terminal_session_token', '', -1, '/', null, false, false);
-            
-            return $response;
         }
         
         return view('pos.register', [
@@ -153,6 +126,41 @@ class PosRegisterController extends Controller
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => $isTerminalAuth,
             'isRegularAuth' => false // Always false for terminal-only access
+        ]);
+    }
+
+    /**
+     * Display the POS register page for authenticated terminal users only.
+     * This method requires terminal authentication via middleware.
+     */
+    public function terminalAuthenticated(Request $request, $tenant)
+    {
+        $account = app('tenant'); // Get tenant from middleware context
+        
+        // Get the first available outlet for this tenant, or default to 1
+        $outlet = Outlet::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->first();
+        
+        $outletId = $outlet ? $outlet->id : 1;
+        
+        // Check for active shift server-side
+        $activeShift = Shift::where('tenant_id', $account->id)
+            ->where('outlet_id', $outletId)
+            ->whereNull('closed_at')
+            ->first();
+        
+        // Get terminal user from middleware (terminal.auth middleware ensures this exists)
+        $terminalUser = $request->attributes->get('terminal_user');
+        
+        return view('pos.register', [
+            'tenant' => $account,
+            'activeShift' => $activeShift,
+            'outletId' => $outletId,
+            'kotEnabled' => $account->kot_enabled,
+            'terminalUser' => $terminalUser,
+            'isTerminalAuth' => true,
+            'isRegularAuth' => false
         ]);
     }
 
