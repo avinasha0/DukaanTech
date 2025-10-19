@@ -3,40 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Open Shift - {{ $tenant->name }}</title>
+    <title>Open Shift - {{ $tenant->name ?? 'POS Terminal' }}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-        .bg-royal-purple { background-color: #6E46AE; }
-        .text-royal-purple { color: #6E46AE; }
-        .border-royal-purple { border-color: #6E46AE; }
-        .bg-tiffany-blue { background-color: #00B6B4; }
-        .text-tiffany-blue { color: #00B6B4; }
-        .border-tiffany-blue { border-color: #00B6B4; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <!-- Header -->
-            <div class="text-center">
-                <div class="mx-auto h-16 w-16 bg-royal-purple rounded-full flex items-center justify-center">
-                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-                    Open Shift
-                </h2>
-                <p class="mt-2 text-sm text-gray-600">
-                    Welcome, {{ $terminalUser->name }} ({{ $terminalUser->terminal_id }})
-                </p>
+<body class="bg-gray-100">
+<div x-data="shiftOpen()" x-init="init()" class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="w-40 h-24 mx-auto mb-6 flex items-center justify-center">
+                <img src="/images/logos/dukaantech-logo-new.png" alt="DukaanTech Logo" class="w-full h-full object-contain">
             </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Open Shift</h1>
+            <p class="text-gray-600">Welcome, {{ $terminalUser->name }} ({{ $terminalUser->terminal_id }})</p>
+        </div>
 
-            <!-- Shift Opening Form -->
-            <div class="bg-white py-8 px-6 shadow rounded-lg">
-                <div x-data="shiftOpen()" class="space-y-6">
+        <!-- Shift Opening Form -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+            <div class="space-y-6">
                     <!-- Existing Shift Warning -->
                     <div x-show="existingShift" class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
                         <div class="flex">
@@ -70,115 +66,117 @@
                         </div>
                     </div>
 
-                    <!-- Form -->
-                    <form @submit.prevent="openShift()" class="space-y-6">
-                        <!-- Outlet Selection -->
-                        <div>
-                            <label for="outlet_id" class="block text-sm font-medium text-gray-700">
-                                Select Outlet
-                            </label>
-                            <select 
-                                id="outlet_id" 
-                                x-model="formData.outlet_id" 
-                                required
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-royal-purple focus:border-royal-purple sm:text-sm"
-                            >
-                                <option value="">Choose an outlet</option>
-                                @foreach($outlets as $outlet)
-                                    <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                <!-- Form -->
+                <form @submit.prevent="openShift()" class="space-y-6">
+                    <!-- Outlet Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Outlet</label>
+                        <select 
+                            x-model="formData.outlet_id" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg"
+                        >
+                            <option value="">Choose an outlet</option>
+                            @foreach($outlets as $outlet)
+                                <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <!-- Opening Float -->
-                        <div>
-                            <label for="opening_float" class="block text-sm font-medium text-gray-700">
-                                Opening Float (₹)
-                            </label>
-                            <input 
-                                type="number" 
-                                id="opening_float" 
-                                x-model="formData.opening_float" 
-                                step="0.01" 
-                                min="0"
-                                placeholder="0.00"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-royal-purple focus:border-royal-purple sm:text-sm"
-                            >
-                            <p class="mt-1 text-xs text-gray-500">
-                                Enter the amount of cash in the drawer at shift start
-                            </p>
-                        </div>
+                    <!-- Opening Float -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Opening Float (₹)</label>
+                        <input 
+                            type="number" 
+                            x-model="formData.opening_float" 
+                            step="0.01" 
+                            min="0"
+                            placeholder="0.00"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
+                        >
+                        <p class="mt-1 text-xs text-gray-500 text-center">
+                            Enter the amount of cash in the drawer at shift start
+                        </p>
+                    </div>
 
-                        <!-- Current Time Display -->
-                        <div class="bg-gray-50 rounded-md p-4">
-                            <div class="flex items-center">
-                                <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Current Time</p>
-                                    <p class="text-lg text-gray-600" x-text="currentTime"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex space-x-4">
-                            <button 
-                                type="button" 
-                                @click="logout()"
-                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-                            >
-                                Logout
-                            </button>
-                            
-                            <button 
-                                type="button" 
-                                @click="testSession()"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-                            >
-                                Test Session
-                            </button>
-                            
-                            <button 
-                                type="submit" 
-                                :disabled="loading"
-                                class="flex-1 bg-royal-purple hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-                            >
-                                <span x-show="!loading">Open Shift</span>
-                                <span x-show="loading" class="flex items-center justify-center">
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Opening...
-                                </span>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Error Message -->
-                    <div x-show="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-red-800" x-text="error"></p>
+                    <!-- Current Time Display -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-center">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="text-center">
+                                <p class="text-sm font-medium text-gray-900">Current Time</p>
+                                <p class="text-lg text-gray-600 font-mono" x-text="currentTime"></p>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Footer -->
-            <div class="text-center text-sm text-gray-500">
-                <p>{{ $tenant->name }} - POS Terminal</p>
+                    <!-- Error Message -->
+                    <div x-show="error" class="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"></div>
+
+                    <!-- Success Popup -->
+                    <div x-show="showSuccessPopup" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform scale-100" x-transition:leave-end="opacity-0 transform scale-95" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div class="bg-white rounded-2xl p-8 max-w-sm mx-4 text-center shadow-2xl">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">Success!</h3>
+                            <p class="text-gray-600 mb-6" x-text="successMessage"></p>
+                            <div class="flex justify-center">
+                                <div class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600">
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span x-text="loadingMessage"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="loading" class="text-center">
+                        <div class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Opening shift...
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-3">
+                        <button 
+                            type="submit" 
+                            :disabled="loading || !formData.outlet_id"
+                            class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                            <span x-show="!loading">Open Shift</span>
+                            <span x-show="loading">Opening...</span>
+                        </button>
+                        
+                        <button 
+                            type="button" 
+                            @click="logout()"
+                            class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6 text-gray-500 text-sm">
+            <p>Enter shift details to start your work session</p>
+        </div>
     </div>
+</div>
 
     <script>
         function shiftOpen() {
@@ -191,23 +189,19 @@
                     opening_float: 0
                 },
                 currentTime: '',
+                showSuccessPopup: false,
+                successMessage: '',
+                loadingMessage: '',
 
                 init() {
                     this.updateTime();
                     setInterval(() => this.updateTime(), 1000);
-                    
-                    // Debug: Check session data on page load
-                    console.log('=== SHIFT OPEN DEBUG ===');
-                    console.log('Terminal user:', localStorage.getItem('terminal_user'));
-                    console.log('Session token:', localStorage.getItem('terminal_session_token'));
-                    console.log('Document cookies:', document.cookie);
                     
                     // Check if we have required session data
                     const sessionToken = localStorage.getItem('terminal_session_token');
                     const terminalUser = localStorage.getItem('terminal_user');
                     
                     if (!sessionToken || !terminalUser) {
-                        console.error('Missing session data, redirecting to login');
                         alert('Session expired. Please login again.');
                         window.location.href = `/{{ $tenant->slug }}/terminal/login`;
                         return;
@@ -217,7 +211,6 @@
                     const outlets = @json($outlets);
                     if (outlets.length === 1) {
                         this.formData.outlet_id = outlets[0].id;
-                        console.log('Auto-selected outlet:', outlets[0].name);
                     }
                 },
 
@@ -234,35 +227,7 @@
                     });
                 },
 
-                async testSession() {
-                    this.loading = true;
-                    this.error = '';
 
-                    try {
-                        const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/test-session`, {
-                            method: 'GET',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
-                            },
-                            credentials: 'include'
-                        });
-
-                        const data = await response.json();
-                        console.log('Session test result:', data);
-                        
-                        if (data.session_found) {
-                            alert('✅ Session is working! User: ' + data.terminal_user.name);
-                        } else {
-                            alert('❌ Session not found. Token: ' + data.session_token);
-                        }
-                    } catch (error) {
-                        console.error('Session test error:', error);
-                        alert('❌ Session test failed: ' + error.message);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
 
                 async openShift() {
                     this.loading = true;
@@ -275,10 +240,6 @@
                         return;
                     }
 
-                    // Debug: Check session token
-                    const sessionToken = localStorage.getItem('terminal_session_token');
-                    console.log('Session token:', sessionToken);
-                    console.log('Form data:', this.formData);
 
                     try {
                         const response = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/open`, {
@@ -296,7 +257,6 @@
                         const contentType = response.headers.get('content-type');
                         if (!contentType || !contentType.includes('application/json')) {
                             const text = await response.text();
-                            console.error('Non-JSON response:', text);
                             this.error = 'Server error: ' + response.status + ' - ' + response.statusText;
                             this.loading = false;
                             return;
@@ -312,14 +272,20 @@
                                 outletId: data.outlet_id
                             }));
 
-                            // Redirect to POS terminal
-                            window.location.href = `/{{ $tenant->slug }}/pos/terminal`;
+                            // Show success popup
+                            this.showSuccessPopup = true;
+                            this.successMessage = 'Shift opened successfully!';
+                            this.loadingMessage = 'Redirecting to POS...';
+
+                            // Redirect to POS terminal after showing popup
+                            setTimeout(() => {
+                                window.location.href = `/{{ $tenant->slug }}/pos/terminal`;
+                            }, 2000);
                         } else {
                             this.error = data.error || 'Failed to open shift';
                         }
                     } catch (error) {
                         this.error = 'Network error. Please try again.';
-                        console.error('Error opening shift:', error);
                     } finally {
                         this.loading = false;
                     }
@@ -357,16 +323,15 @@
                         }
                     } catch (error) {
                         this.error = 'Network error. Please try again.';
-                        console.error('Error loading existing shift:', error);
                     } finally {
                         this.loading = false;
                     }
                 },
 
                 async closeAndOpenNewShift() {
-                    if (!confirm('Are you sure you want to close the existing shift and open a new one?')) {
-                        return;
-                    }
+                    this.showSuccessPopup = true;
+                    this.successMessage = 'Closing existing shift...';
+                    this.loadingMessage = 'Opening new shift...';
 
                     this.loading = true;
                     this.error = '';
@@ -387,34 +352,37 @@
                         });
 
                         if (closeResponse.ok) {
+                            // Update popup message
+                            this.successMessage = 'Shift closed successfully!';
+                            this.loadingMessage = 'Opening new shift...';
+                            
                             // Now open a new shift
                             await this.openShift();
                         } else {
                             const closeData = await closeResponse.json();
+                            this.showSuccessPopup = false;
                             this.error = closeData.error || 'Failed to close existing shift';
                         }
                     } catch (error) {
+                        this.showSuccessPopup = false;
                         this.error = 'Network error. Please try again.';
-                        console.error('Error closing and opening new shift:', error);
                     } finally {
                         this.loading = false;
                     }
                 },
 
                 logout() {
-                    if (confirm('Are you sure you want to logout?')) {
+                    this.showSuccessPopup = true;
+                    this.successMessage = 'Shift closed successfully!';
+                    this.loadingMessage = 'Logging out...';
+                    
+                    // Auto logout after showing the popup
+                    setTimeout(() => {
                         this.logoutWithoutClosingShift();
-                    }
+                    }, 2000);
                 },
 
                 async logoutWithoutClosingShift() {
-                    console.log('=== LOGOUT DEBUG ===');
-                    console.log('Before logout - localStorage:', {
-                        terminal_user: localStorage.getItem('terminal_user'),
-                        terminal_session_token: localStorage.getItem('terminal_session_token'),
-                        pos_shift_data: localStorage.getItem('pos_shift_data')
-                    });
-                    
                     try {
                         // Call the logout endpoint to properly clean up the session
                         const sessionToken = localStorage.getItem('terminal_session_token');
@@ -427,16 +395,7 @@
                             },
                             credentials: 'include'
                         });
-                        
-                        console.log('Logout API response:', response.status, response.statusText);
-                        
-                        if (response.ok) {
-                            console.log('✅ Logout API call successful');
-                        } else {
-                            console.warn('⚠️ Logout API call failed, but continuing with logout');
-                        }
                     } catch (error) {
-                        console.error('❌ Logout API call error:', error);
                         // Continue with logout even if API call fails
                     }
                     
@@ -444,14 +403,6 @@
                     localStorage.removeItem('terminal_user');
                     localStorage.removeItem('terminal_session_token');
                     localStorage.removeItem('pos_shift_data');
-                    
-                    console.log('After logout - localStorage:', {
-                        terminal_user: localStorage.getItem('terminal_user'),
-                        terminal_session_token: localStorage.getItem('terminal_session_token'),
-                        pos_shift_data: localStorage.getItem('pos_shift_data')
-                    });
-                    
-                    console.log('Redirecting to:', `/{{ $tenant->slug }}/terminal/login`);
                     
                     // Redirect to login
                     window.location.href = `/{{ $tenant->slug }}/terminal/login`;
@@ -476,12 +427,12 @@
                         });
 
                         if (response.ok) {
-                            console.log('Shift closed successfully');
+                            // Shift closed successfully
                         } else {
-                            console.warn('Failed to close shift, but proceeding with logout');
+                            // Failed to close shift, but proceeding with logout
                         }
                     } catch (error) {
-                        console.warn('Error closing shift, but proceeding with logout:', error);
+                        // Error closing shift, but proceeding with logout
                     } finally {
                         // Clear session data regardless of shift close result
                         localStorage.removeItem('terminal_user');
