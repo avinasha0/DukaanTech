@@ -251,11 +251,21 @@ function terminalLogin() {
                 const response = await fetch(`/{{ $tenant->slug }}/terminal/login`, {
                     method: 'POST',
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify(formData)
                 });
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Non-JSON response (${response.status}): ${text.slice(0, 300)}...`);
+                }
 
                 const data = await response.json();
 
@@ -273,8 +283,8 @@ function terminalLogin() {
                         token: localStorage.getItem('terminal_session_token')
                     });
                     
-                    // Redirect to shift opening screen
-                    window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                    // Redirect to the URL provided by the server
+                    window.location.href = data.redirect_url || `/{{ $tenant->slug }}/pos/shift-open`;
                 } else {
                     // Handle validation errors
                     if (data.errors) {
