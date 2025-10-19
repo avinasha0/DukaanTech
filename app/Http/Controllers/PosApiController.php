@@ -144,10 +144,44 @@ class PosApiController extends Controller
         $tenantId = $this->getTenantId();
         $outletId = $request->get('outlet_id', 1);
         
-        $shift = Shift::where('tenant_id', $tenantId)
-            ->where('outlet_id', $outletId)
-            ->whereNull('closed_at')
-            ->first();
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        // If terminal user, look for shift by user, otherwise by outlet
+        if ($terminalUser && $terminalUser->user_id) {
+            $shift = Shift::where('tenant_id', $tenantId)
+                ->where('outlet_id', $outletId)
+                ->where('opened_by', $terminalUser->user_id)
+                ->whereNull('closed_at')
+                ->first();
+        } else {
+            $shift = Shift::where('tenant_id', $tenantId)
+                ->where('outlet_id', $outletId)
+                ->whereNull('closed_at')
+                ->first();
+        }
             
         return response()->json([
             'shift' => $shift,

@@ -25,9 +25,58 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             'actual_cash' => 'required|numeric|min:0',
         ]);
         
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        
+        // If the token looks like a Laravel encrypted cookie, try to decrypt it
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                // Fall back to header token if cookie decryption fails
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        if (!$terminalUser) {
+            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
+        }
+        
+        // Ensure TerminalUser has a linked User record
+        if (!$terminalUser->user_id) {
+            // Check if user already exists with this email
+            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
+            
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'tenant_id' => $account->id,
+                    'name' => $terminalUser->name,
+                    'email' => $terminalUser->terminal_id . '@terminal.local',
+                    'password' => bcrypt('terminal_password'),
+                    'role' => 'terminal_user',
+                    'is_active' => true,
+                ]);
+            }
+            
+            $terminalUser->update(['user_id' => $user->id]);
+        }
+        
         $outletId = request('outlet_id', 1);
         $shift = \App\Models\Shift::where('tenant_id', $account->id)
             ->where('outlet_id', $outletId)
+            ->where('opened_by', $terminalUser->user_id)
             ->whereNull('closed_at')
             ->first();
             
