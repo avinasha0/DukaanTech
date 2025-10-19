@@ -35,6 +35,16 @@ class OrdersController extends Controller
                 $query->whereDate('created_at', '<=', $request->date_to);
             }
 
+            // Filter by shift_id
+            if ($request->has('shift_id') && $request->shift_id) {
+                $query->where('shift_id', $request->shift_id);
+            }
+
+            // Filter by outlet_id
+            if ($request->has('outlet_id') && $request->outlet_id) {
+                $query->where('outlet_id', $request->outlet_id);
+            }
+
             $orders = $query->paginate(20);
 
             return response()->json($orders);

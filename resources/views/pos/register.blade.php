@@ -3873,6 +3873,7 @@ function checkoutModal() {
                             this.shiftInfo = this.getCurrentShiftInfo();
                             
                             // Also store the actual shift object for validation
+                            console.log('Setting shiftObject:', shiftData.shift);
                             this.shiftObject = shiftData.shift;
                             
                             console.log('Calculated summary:', this.shiftSummary);
