@@ -1433,8 +1433,10 @@ function posRegister() {
                 const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
                 });
                 
                 if (response.ok) {
