@@ -1394,7 +1394,12 @@ function posRegister() {
                 console.log('Outlet ID:', this.outletId);
                 console.log('URL:', `${this.apiBase}/shifts/current?outlet_id=${this.outletId}`);
                 
-                const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}`);
+                const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}`, {
+                    headers: {
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
+                });
                 console.log('Response status:', response.status);
                 console.log('Response ok:', response.ok);
                 
@@ -3632,8 +3637,10 @@ function posRegister() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         actual_cash: parseFloat(this.actualCash)
                     })
@@ -3734,7 +3741,12 @@ function checkoutModal() {
             // Get current shift and calculate summary directly
             try {
                 // First get current shift
-                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`);
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
+                    headers: {
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
+                });
                 if (shiftResponse.ok) {
                     const shiftData = await shiftResponse.json();
                     console.log('Shift data received:', shiftData);
@@ -3945,8 +3957,10 @@ function checkoutModal() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         actual_cash: parseFloat(this.actualCash)
                     })
