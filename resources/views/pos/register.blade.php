@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- SEO Meta Tags -->
     <title>POS Terminal - DukaanTech</title>
@@ -160,11 +161,6 @@
                     <!-- Order Info -->
                     <div class="mt-6 pt-4 border-t">
                         <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span class="text-gray-500">Table</span>
-                                <p class="font-medium text-gray-900" x-text="selectedTable?.name || 'N/A'"></p>
-                                <p class="text-xs text-gray-500" x-text="selectedTable?.status === 'occupied' ? 'Occupied (active order present)' : 'Available for orders'"></p>
-                            </div>
                             <div>
                                 <span class="text-gray-500">Created</span>
                                 <p class="font-medium text-gray-900" x-text="selectedOrderDetails?.createdAt ? new Date(selectedOrderDetails.createdAt).toLocaleString() : 'N/A'"></p>
@@ -853,20 +849,6 @@
                                     <p class="text-xs text-gray-500 mt-1">Select from available tables</p>
                                 </div>
                                 
-                                <!-- Selected Table Info -->
-                                <div x-show="selectedTable" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <h5 class="text-sm font-medium text-blue-900" x-text="selectedTable?.name"></h5>
-                                            <p class="text-xs text-blue-700" x-text="selectedTable?.status === 'occupied' ? 'Currently occupied' : 'Available for orders'"></p>
-                                        </div>
-                                        <div class="w-3 h-3 rounded-full" 
-                                             :class="selectedTable?.status === 'occupied' ? 'bg-red-500' : 'bg-green-500'"></div>
-                                    </div>
-                                    <div x-show="selectedTable?.totalAmount > 0" class="mt-2">
-                                        <p class="text-xs text-blue-600">Current Total: ₹<span x-text="selectedTable?.totalAmount?.toFixed(2)"></span></p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         
@@ -1262,7 +1244,12 @@ function posRegister() {
             const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
             const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
             this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
-
+            
+            console.log('API Base URL constructed:', this.apiBase);
+            console.log('Host:', host);
+            console.log('Path:', path);
+            console.log('Is Path Based:', isPathBased);
+            console.log('Tenant Slug:', tenantSlug);
 
             // Alternative approach: Use server-side data as primary, localStorage as fallback
             this.initializeShiftState();
@@ -3276,14 +3263,30 @@ function posRegister() {
                     console.log('Type of order.id:', typeof order.id);
                 } else {
                     // For other order types, create the order normally
+                    console.log('Creating order with data:', orderData);
+                    console.log('API Base URL:', this.apiBase);
+                    console.log('Full URL:', `${this.apiBase}/orders`);
+                    
                     const orderResponse = await fetch(`${this.apiBase}/orders`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                             ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                         },
                         body: JSON.stringify(orderData)
                     });
+                    
+                    console.log('Order response status:', orderResponse.status);
+                    console.log('Order response headers:', orderResponse.headers);
+                    
+                    // Check if response is JSON
+                    const contentType = orderResponse.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const responseText = await orderResponse.text();
+                        console.error('Non-JSON response received:', responseText);
+                        throw new Error(`Server returned HTML instead of JSON. Status: ${orderResponse.status}. Check server logs.`);
+                    }
                     
                     order = await orderResponse.json();
                     console.log('Order creation response:', order);
@@ -3317,6 +3320,7 @@ function posRegister() {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                             ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                         },
                         body: JSON.stringify({
