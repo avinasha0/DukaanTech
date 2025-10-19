@@ -191,19 +191,10 @@ class PosApiController extends Controller
             \Log::warning('No session token provided');
         }
         
-        // If terminal user, look for shift by user, otherwise by outlet
-        if ($terminalUser && $terminalUser->user_id) {
-            $shift = Shift::where('tenant_id', $tenantId)
-                ->where('outlet_id', $outletId)
-                ->where('opened_by', $terminalUser->user_id)
-                ->whereNull('closed_at')
-                ->first();
-        } else {
-            $shift = Shift::where('tenant_id', $tenantId)
-                ->where('outlet_id', $outletId)
-                ->whereNull('closed_at')
-                ->first();
-        }
+        // Find any open shift in the tenant (ignore outlet for now)
+        $shift = Shift::where('tenant_id', $tenantId)
+            ->whereNull('closed_at')
+            ->first();
         
         \Log::info('Shift lookup result', [
             'tenant_id' => $tenantId,
