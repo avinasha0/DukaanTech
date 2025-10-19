@@ -577,8 +577,8 @@ function menuData() {
                 
                 // Load categories and items in parallel
                 const [categoriesResponse, itemsResponse] = await Promise.all([
-                    fetch(`/{{ $tenant->slug }}/api/categories`),
-                    fetch(`/{{ $tenant->slug }}/api/items`)
+                    fetch(`/{{ $tenant->slug }}/api/public/categories`),
+                    fetch(`/{{ $tenant->slug }}/api/public/items`)
                 ]);
                 
                 if (categoriesResponse.ok) {

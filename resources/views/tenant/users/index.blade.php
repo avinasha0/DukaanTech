@@ -184,18 +184,18 @@
                                         <div class="flex-shrink-0 h-12 w-12">
                                             <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                                                 <span class="text-blue-600 font-semibold text-lg">
-                                                    {{ strtoupper(substr($terminalUser->username, 0, 2)) }}
+                                                    {{ strtoupper(substr($terminalUser->terminal_id, 0, 2)) }}
                                                 </span>
                                             </div>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $terminalUser->username }}</div>
-                                            <div class="text-xs text-gray-500">Terminal User</div>
+                                            <div class="text-sm font-semibold text-gray-900">{{ $terminalUser->terminal_id }}</div>
+                                            <div class="text-xs text-gray-500">{{ ucfirst($terminalUser->role) }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900">{{ $terminalUser->username }}</div>
+                                    <div class="text-sm text-gray-900">{{ $terminalUser->terminal_id }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $terminalUser->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
@@ -246,7 +246,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Add Terminal User</h3>
+                <h3 id="modalTitle" class="text-lg font-medium text-gray-900">Add Terminal User</h3>
                 <button onclick="closeTerminalUserModal()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -255,6 +255,9 @@
             </div>
             <form id="terminalUserForm" method="POST" action="{{ route('tenant.users.store-terminal', ['tenant' => $tenant->slug]) }}">
                 @csrf
+                <input type="hidden" id="editMode" name="editMode" value="false">
+                <input type="hidden" id="terminalUserId" name="terminalUserId" value="">
+                <input type="hidden" id="methodOverride" name="_method" value="POST">
                 <div class="mb-4">
                     <label for="terminal_id" class="block text-sm font-medium text-gray-700 mb-2">Terminal ID</label>
                     <input type="text" id="terminal_id" name="terminal_id" required
@@ -269,9 +272,10 @@
                 </div>
                 <div class="mb-4">
                     <label for="pin" class="block text-sm font-medium text-gray-700 mb-2">PIN</label>
-                    <input type="text" id="pin" name="pin" required maxlength="6" pattern="[0-9]+"
+                    <input type="text" id="pin" name="pin" maxlength="6" pattern="[0-9]+"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="e.g., 1234">
+                    <p id="pinHelpText" class="text-xs text-gray-500 mt-1">Leave blank to keep current PIN when editing</p>
                 </div>
                 <div class="mb-4">
                     <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -283,12 +287,19 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="is_active" name="is_active" value="1" checked
+                               class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-700">Active</span>
+                    </label>
+                </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeTerminalUserModal()" 
                             class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" 
+                    <button type="submit" id="submitButton"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                         Add Terminal User
                     </button>
@@ -321,6 +332,21 @@
     }
 
     function openTerminalUserModal() {
+        // Reset form for create mode
+        document.getElementById('editMode').value = 'false';
+        document.getElementById('terminalUserId').value = '';
+        document.getElementById('methodOverride').value = 'POST';
+        document.getElementById('modalTitle').textContent = 'Add Terminal User';
+        document.getElementById('submitButton').textContent = 'Add Terminal User';
+        document.getElementById('terminalUserForm').action = '{{ route("tenant.users.store-terminal", ["tenant" => $tenant->slug]) }}';
+        document.getElementById('terminalUserForm').reset();
+        document.getElementById('is_active').checked = true;
+        
+        // Set PIN as required for create mode
+        document.getElementById('pin').required = true;
+        document.getElementById('pin').placeholder = 'e.g., 1234';
+        document.getElementById('pinHelpText').textContent = 'Required for new terminal users';
+        
         document.getElementById('terminalUserModal').classList.remove('hidden');
     }
 
@@ -330,8 +356,35 @@
     }
 
     function editTerminalUser(userId) {
-        // Implementation for editing terminal user
-        console.log('Edit terminal user:', userId);
+        // Get terminal user data
+        fetch(`/teabench1/users/terminal/${userId}/data`)
+            .then(response => response.json())
+            .then(data => {
+                // Set edit mode
+                document.getElementById('editMode').value = 'true';
+                document.getElementById('terminalUserId').value = userId;
+                document.getElementById('methodOverride').value = 'PUT';
+                document.getElementById('modalTitle').textContent = 'Edit Terminal User';
+                document.getElementById('submitButton').textContent = 'Update Terminal User';
+                document.getElementById('terminalUserForm').action = `{{ route("tenant.users.update-terminal", ["tenant" => $tenant->slug, "terminalUser" => ":id"]) }}`.replace(':id', userId);
+                
+                // Prefill form data
+                document.getElementById('terminal_id').value = data.terminal_id;
+                document.getElementById('name').value = data.name;
+                document.getElementById('pin').value = ''; // Don't show PIN for security
+                document.getElementById('pin').required = false; // Make PIN optional for edit
+                document.getElementById('pin').placeholder = 'Leave blank to keep current PIN';
+                document.getElementById('pinHelpText').textContent = 'Leave blank to keep current PIN';
+                document.getElementById('role').value = data.role;
+                document.getElementById('is_active').checked = data.is_active;
+                
+                // Show modal
+                document.getElementById('terminalUserModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error fetching terminal user data:', error);
+                alert('Error loading terminal user data');
+            });
     }
 </script>
 @endsection

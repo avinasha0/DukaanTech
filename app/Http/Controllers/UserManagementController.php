@@ -164,6 +164,26 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Get terminal user data for editing.
+     */
+    public function getTerminalUserData($tenant, TerminalUser $terminalUser)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        
+        // Ensure the terminal user belongs to the current tenant
+        if ($terminalUser->tenant_id !== $tenantId) {
+            abort(403, 'Unauthorized access to terminal user.');
+        }
+        
+        return response()->json([
+            'terminal_id' => $terminalUser->terminal_id,
+            'name' => $terminalUser->name,
+            'role' => $terminalUser->role,
+            'is_active' => $terminalUser->is_active,
+        ]);
+    }
+
+    /**
      * Update terminal user.
      */
     public function updateTerminalUser(Request $request, $tenant, TerminalUser $terminalUser)

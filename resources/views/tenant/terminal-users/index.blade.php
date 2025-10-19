@@ -23,6 +23,14 @@
         </div>
     @endif
 
+    <!-- Debug Information -->
+    <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg mb-4">
+        <strong>Debug Info:</strong> Found {{ $terminalUsers->count() }} terminal users
+        @if($terminalUsers->count() > 0)
+            <br>First user: {{ $terminalUsers->first()->name ?? 'No name' }} ({{ $terminalUsers->first()->terminal_id ?? 'No ID' }})
+        @endif
+    </div>
+
     <!-- Terminal Users Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         @if($terminalUsers->count() > 0)
@@ -31,19 +39,16 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Terminal ID
+                                User
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Role
+                                Username
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Last Login
+                                Created
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
@@ -57,16 +62,8 @@
                                     <div class="text-sm font-medium text-gray-900">{{ $user->terminal_id }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $user->name }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        @if($user->role === 'admin') bg-red-100 text-red-800
-                                        @elseif($user->role === 'manager') bg-yellow-100 text-yellow-800
-                                        @else bg-green-100 text-green-800
-                                        @endif">
-                                        {{ ucfirst($user->role) }}
-                                    </span>
+                                    <div class="text-sm font-medium text-gray-900">{{ $user->name ?? 'No Name' }}</div>
+                                    <div class="text-xs text-gray-500">{{ ucfirst($user->role ?? 'No Role') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -75,9 +72,12 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $user->last_login_at ? $user->last_login_at->format('M j, Y g:i A') : 'Never' }}
+                                    {{ $user->created_at->format('M j, Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                    <a href="{{ route('tenant.terminal-users.show', $user) }}" 
+                                       class="text-green-600 hover:text-green-900">View</a>
+                                    
                                     <a href="{{ route('tenant.terminal-users.edit', $user) }}" 
                                        class="text-blue-600 hover:text-blue-900">Edit</a>
                                     

@@ -897,6 +897,7 @@ Route::middleware(['web', 'auth', 'resolve.tenant'])->group(function () {
     
     // Terminal User Management Routes (integrated into users page)
     Route::post('{tenant}/users/terminal', [\App\Http\Controllers\UserManagementController::class, 'storeTerminalUser'])->name('tenant.users.store-terminal');
+    Route::get('{tenant}/users/terminal/{terminalUser}/data', [\App\Http\Controllers\UserManagementController::class, 'getTerminalUserData'])->name('tenant.users.get-terminal-data');
     Route::put('{tenant}/users/terminal/{terminalUser}', [\App\Http\Controllers\UserManagementController::class, 'updateTerminalUser'])->name('tenant.users.update-terminal');
     Route::delete('{tenant}/users/terminal/{terminalUser}', [\App\Http\Controllers\UserManagementController::class, 'destroyTerminalUser'])->name('tenant.users.destroy-terminal');
     Route::post('{tenant}/users/terminal/{terminalUser}/toggle-status', [\App\Http\Controllers\UserManagementController::class, 'toggleTerminalUserStatus'])->name('tenant.users.toggle-terminal-status');

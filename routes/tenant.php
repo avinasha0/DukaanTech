@@ -188,3 +188,15 @@ Route::post('discounts/{discount}/toggle', [DiscountController::class, 'toggle']
 Route::get('discounts-api/applicable', [DiscountController::class, 'getApplicable'])->name('tenant.discounts.applicable');
 Route::post('discounts-api/calculate', [DiscountController::class, 'calculate'])->name('tenant.discounts.calculate');
 
+// Terminal Users Management routes
+Route::resource('terminal-users', TerminalUserController::class)->names([
+    'index' => 'tenant.terminal-users.index',
+    'create' => 'tenant.terminal-users.create',
+    'store' => 'tenant.terminal-users.store',
+    'show' => 'tenant.terminal-users.show',
+    'edit' => 'tenant.terminal-users.edit',
+    'update' => 'tenant.terminal-users.update',
+    'destroy' => 'tenant.terminal-users.destroy',
+]);
+Route::post('terminal-users/{terminalUser}/toggle-status', [TerminalUserController::class, 'toggleStatus'])->name('tenant.terminal-users.toggle-status');
+

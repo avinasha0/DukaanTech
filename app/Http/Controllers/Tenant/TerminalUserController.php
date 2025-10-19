@@ -26,6 +26,18 @@ class TerminalUserController extends Controller
         return view('tenant.terminal-users.create', compact('tenant'));
     }
 
+    public function show(TerminalUser $terminalUser)
+    {
+        $tenant = app('tenant');
+        
+        // Ensure the terminal user belongs to the current tenant
+        if ($terminalUser->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access to terminal user.');
+        }
+        
+        return view('tenant.terminal-users.show', compact('tenant', 'terminalUser'));
+    }
+
     public function store(Request $request)
     {
         $tenant = app('tenant');
