@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\TerminalSession;
+use App\Models\TerminalUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
