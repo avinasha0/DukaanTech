@@ -3754,13 +3754,46 @@ function checkoutModal() {
         async open() {
             console.log('=== OPENING CHECKOUT MODAL ===');
             console.log('API Base:', this.apiBase);
+            
+            // Check if there's an active shift by calling the API
+            try {
+                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?t=${Date.now()}`, {
+                    headers: {
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
+                });
+                
+                if (shiftResponse.ok) {
+                    const shiftData = await shiftResponse.json();
+                    console.log('Checkout modal shift data:', shiftData);
+                    
+                    if (!shiftData.has_shift || !shiftData.shift) {
+                        alert('No active shift found. Please open a shift first.');
+                        window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                        return;
+                    }
+                    
+                    this.shiftInfo = shiftData.shift;
+                } else {
+                    alert('No active shift found. Please open a shift first.');
+                    window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking shift:', error);
+                alert('No active shift found. Please open a shift first.');
+                window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                return;
+            }
+            
             this.isOpen = true;
             this.loading = true;
             
             // Get current shift and calculate summary directly
             try {
                 // First get current shift
-                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
