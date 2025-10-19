@@ -204,8 +204,11 @@ class TerminalAuthController extends Controller
             'message' => 'Logged out successfully'
         ]);
 
-        // Clear session cookie
+        // Clear session cookie with multiple approaches
         $response->cookie('terminal_session_token', '', -1, '/', null, true, true);
+        $response->cookie('terminal_session_token', '', -1, '/', null, false, true);
+        $response->cookie('terminal_session_token', '', -1, '/', null, true, false);
+        $response->cookie('terminal_session_token', '', -1, '/', null, false, false);
 
         return $response;
     }

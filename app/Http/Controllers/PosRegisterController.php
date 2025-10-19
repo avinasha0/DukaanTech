@@ -99,6 +99,9 @@ class PosRegisterController extends Controller
         // Also clean up sessions that are close to expiry (within 1 hour)
         TerminalSession::where('expires_at', '<=', now()->addHour())->where('last_activity_at', '<', now()->subHours(2))->delete();
         
+        // Additional cleanup: Remove any sessions older than 2 hours regardless of expiry
+        TerminalSession::where('created_at', '<', now()->subHours(2))->delete();
+        
         // Check for terminal session only - NO regular web authentication allowed
         $terminalUser = null;
         $isTerminalAuth = false;
@@ -133,8 +136,11 @@ class PosRegisterController extends Controller
             $response = redirect()->route('terminal.login', ['tenant' => $tenant])
                 ->with('error', 'Please login with terminal credentials to access the POS terminal');
             
-            // Clear the terminal session cookie
+            // Clear the terminal session cookie with multiple approaches
             $response->cookie('terminal_session_token', '', -1, '/', null, true, true);
+            $response->cookie('terminal_session_token', '', -1, '/', null, false, true);
+            $response->cookie('terminal_session_token', '', -1, '/', null, true, false);
+            $response->cookie('terminal_session_token', '', -1, '/', null, false, false);
             
             return $response;
         }
