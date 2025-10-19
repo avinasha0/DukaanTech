@@ -3872,6 +3872,9 @@ function checkoutModal() {
                             // Set shift information based on current time
                             this.shiftInfo = this.getCurrentShiftInfo();
                             
+                            // Also store the actual shift object for validation
+                            this.shiftObject = shiftData.shift;
+                            
                             console.log('Calculated summary:', this.shiftSummary);
                             console.log('Shift info:', this.shiftInfo);
                         } else {
@@ -4014,17 +4017,18 @@ function checkoutModal() {
             // Check if there's an active shift
             console.log('=== SUBMIT FUNCTION SHIFT CHECK ===');
             console.log('this.shiftInfo:', this.shiftInfo);
-            console.log('this.shiftInfo.id:', this.shiftInfo?.id);
+            console.log('this.shiftObject:', this.shiftObject);
+            console.log('this.shiftObject.id:', this.shiftObject?.id);
             
-            if (!this.shiftInfo || !this.shiftInfo.id) {
-                console.log('❌ No shiftInfo found in submit function');
+            if (!this.shiftObject || !this.shiftObject.id) {
+                console.log('❌ No shiftObject found in submit function');
                 alert('No active shift found. Please open a shift first.');
                 // Redirect to shift opening page
                 window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                 return;
             }
             
-            console.log('✅ ShiftInfo found, proceeding with checkout');
+            console.log('✅ ShiftObject found, proceeding with checkout');
             
             if (!this.actualCash && this.actualCash !== 0) {
                 alert('Please enter the actual cash amount');
