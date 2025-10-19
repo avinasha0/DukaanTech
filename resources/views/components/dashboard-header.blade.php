@@ -2,7 +2,7 @@
 <div class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200">
     <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
         <a href="/" class="flex items-center gap-3">
-            <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="h-10 w-auto">
+            <img src="/favicon.png" alt="Favicon" class="h-10 w-auto">
         </a>
 
         <nav class="hidden md:flex items-center gap-8">

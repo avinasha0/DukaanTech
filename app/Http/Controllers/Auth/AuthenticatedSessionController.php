@@ -42,9 +42,9 @@ class AuthenticatedSessionController extends Controller
             if ($this->isOrganizationSetupComplete($tenant)) {
                 // Setup complete, redirect based on plan
                 if ($tenant->plan === 'free') {
-                    return redirect()->to("http://localhost:8000/{$tenant->slug}/dashboard");
+                    return redirect()->to(url("/{$tenant->slug}/dashboard"));
                 } else {
-                    return redirect()->to("http://{$tenant->slug}.localhost:8000/dashboard");
+                    return redirect()->to("https://{$tenant->slug}.dukaantech.com/dashboard");
                 }
             } else {
                 // Setup incomplete, redirect to organization setup

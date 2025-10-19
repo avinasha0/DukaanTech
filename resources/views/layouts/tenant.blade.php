@@ -70,12 +70,12 @@
                         </svg>
                     </button>
                     
-                    {{-- Logo/Brand --}}
+                    {{-- Favicon/Brand --}}
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                            <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="w-full h-full object-cover">
+                            <img src="/favicon.png" alt="Favicon" class="w-full h-full object-cover">
                         </div>
-                        <h1 class="text-lg font-bold text-gray-900 font-dm">{{ !empty($tenant->name) ? $tenant->name : ($tenant->website ?? 'Dukaantech POS') }}</h1>
+                        <h1 class="text-lg font-bold text-gray-900 font-dm">DukaanTech</h1>
                     </div>
                     
                     {{-- User Menu --}}
@@ -128,9 +128,9 @@
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                        <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="w-full h-full object-cover">
+                        <img src="/favicon.png" alt="Favicon" class="w-full h-full object-cover">
                     </div>
-                    <h1 class="text-lg font-bold text-gray-900 font-dm">{{ !empty($tenant->name) ? $tenant->name : ($tenant->website ?? 'Dukaantech POS') }}</h1>
+                    <h1 class="text-lg font-bold text-gray-900 font-dm">DukaanTech</h1>
                 </div>
                 
                 {{-- Close Button --}}
