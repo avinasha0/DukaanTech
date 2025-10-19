@@ -204,6 +204,17 @@ class PosApiController extends Controller
                 ->whereNull('closed_at')
                 ->first();
         }
+        
+        \Log::info('Shift lookup result', [
+            'tenant_id' => $tenantId,
+            'outlet_id' => $outletId,
+            'terminal_user_id' => $terminalUser ? $terminalUser->id : null,
+            'terminal_user_user_id' => $terminalUser ? $terminalUser->user_id : null,
+            'shift_found' => $shift ? true : false,
+            'shift_id' => $shift ? $shift->id : null,
+            'all_shifts_count' => Shift::where('tenant_id', $tenantId)->count(),
+            'open_shifts_count' => Shift::where('tenant_id', $tenantId)->whereNull('closed_at')->count()
+        ]);
             
         if (!$shift) {
             return response()->json([
