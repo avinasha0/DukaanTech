@@ -3757,6 +3757,10 @@ function checkoutModal() {
             
             // Check if there's an active shift by calling the API
             try {
+                console.log('=== CHECKOUT MODAL SHIFT CHECK ===');
+                console.log('API Base:', this.apiBase);
+                console.log('Session token:', localStorage.getItem('terminal_session_token'));
+                
                 const shiftResponse = await fetch(`${this.apiBase}/shifts/current?t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
@@ -3764,24 +3768,34 @@ function checkoutModal() {
                     credentials: 'include'
                 });
                 
+                console.log('Shift response status:', shiftResponse.status);
+                console.log('Shift response ok:', shiftResponse.ok);
+                
                 if (shiftResponse.ok) {
                     const shiftData = await shiftResponse.json();
                     console.log('Checkout modal shift data:', shiftData);
+                    console.log('Has shift:', shiftData.has_shift);
+                    console.log('Shift object:', shiftData.shift);
                     
                     if (!shiftData.has_shift || !shiftData.shift) {
+                        console.log('❌ No shift found in API response');
                         alert('No active shift found. Please open a shift first.');
                         window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                         return;
                     }
                     
+                    console.log('✅ Shift found, proceeding with modal');
                     this.shiftInfo = shiftData.shift;
                 } else {
+                    console.log('❌ API call failed with status:', shiftResponse.status);
+                    const errorText = await shiftResponse.text();
+                    console.log('Error response:', errorText);
                     alert('No active shift found. Please open a shift first.');
                     window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                     return;
                 }
             } catch (error) {
-                console.error('Error checking shift:', error);
+                console.error('❌ Error checking shift:', error);
                 alert('No active shift found. Please open a shift first.');
                 window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                 return;
