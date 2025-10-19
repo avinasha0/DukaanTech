@@ -73,7 +73,7 @@
         .font-dm { font-family: 'DM Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-50 min-h-screen" x-data="{ sidebarOpen: false, profileDropdownOpen: false }">
     <div class="flex h-screen">
         {{-- Sidebar --}}
         @include('partials.sidebar')
@@ -121,11 +121,85 @@
                     </div>
                     
                     {{-- User Menu --}}
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div class="relative" x-data="{ profileDropdownOpen: false }">
+                        {{-- Profile Button --}}
+                        <button @click="profileDropdownOpen = !profileDropdownOpen" 
+                                @click.away="profileDropdownOpen = false"
+                                class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
+                        </button>
+
+                        {{-- Dropdown Menu --}}
+                        <div x-show="profileDropdownOpen" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-72 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 max-w-[calc(100vw-2rem)]"
+                             style="display: none;">
+                            
+                            {{-- User Info Header --}}
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">
+                                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                                        </span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->name }}</p>
+                                        <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Menu Items --}}
+                            <div class="py-1">
+                                {{-- Email --}}
+                                <div class="px-4 py-2">
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Email</p>
+                                            <p class="text-sm text-gray-900 truncate">{{ Auth::user()->email }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Plan --}}
+                                <div class="px-4 py-2">
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Plan</p>
+                                            <p class="text-sm text-gray-900">Free Trial</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Divider --}}
+                                <div class="border-t border-gray-100 my-1"></div>
+
+                                {{-- Logout --}}
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" 
+                                            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        <span>Logout</span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
