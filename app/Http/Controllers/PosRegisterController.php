@@ -93,19 +93,23 @@ class PosRegisterController extends Controller
             ->whereNull('closed_at')
             ->first();
         
+        // Clean up expired terminal sessions first
+        TerminalSession::where('expires_at', '<=', now())->delete();
+        
         // Check for terminal session only - NO regular web authentication allowed
         $terminalUser = null;
         $isTerminalAuth = false;
         
         // Check for terminal session
         $sessionToken = $request->cookie('terminal_session_token');
+        
         if ($sessionToken) {
             $session = TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
                 ->with('terminalUser')
                 ->first();
             
-            if ($session && $session->terminalUser) {
+            if ($session && $session->terminalUser && $session->isValid()) {
                 $terminalUser = $session->terminalUser;
                 $isTerminalAuth = true;
             }

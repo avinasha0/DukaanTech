@@ -35,7 +35,7 @@
                     @php
                         $isPathBased = !str_contains(request()->getHost(), '.');
                         $dashboardRoute = 'tenant.dashboard';
-                        $posRoute = 'tenant.pos.register';
+                        $posRoute = 'tenant.pos.terminal';
                         $kotRoute = 'tenant.kot.public';
                     @endphp
                     <a href="{{ route($dashboardRoute, ['tenant' => $tenant->slug]) }}" class="text-gray-700 hover:text-orange-600 transition-colors">Dashboard</a>
