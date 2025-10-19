@@ -19,6 +19,13 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
     Route::get('/dashboard/shift/current', [\App\Http\Controllers\PosApiController::class, 'currentShift']);
     
     Route::post('/dashboard/shift/checkout', function ($tenant) {
+        \Log::info('=== SHIFT CHECKOUT ROUTE HIT ===', [
+            'tenant_parameter' => $tenant,
+            'tenant_from_app' => app('tenant'),
+            'request_url' => request()->url(),
+            'request_method' => request()->method()
+        ]);
+        
         $account = app('tenant'); // Get tenant from middleware context
         
         $data = request()->validate([
