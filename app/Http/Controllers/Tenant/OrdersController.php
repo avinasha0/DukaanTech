@@ -10,6 +10,16 @@ class OrdersController extends Controller
 {
     public function index(Request $request)
     {
+        \Log::info('OrdersController@index called', [
+            'url' => $request->fullUrl(),
+            'path' => $request->getPathInfo(),
+            'method' => $request->method(),
+            'expects_json' => $request->expectsJson(),
+            'is_api' => $request->is('api/*'),
+            'query_params' => $request->query(),
+            'tenant_id' => app('tenant.id')
+        ]);
+        
         // If this is an API request, return JSON
         if ($request->expectsJson() || $request->is('api/*')) {
             $query = Order::where('tenant_id', app('tenant.id'))
