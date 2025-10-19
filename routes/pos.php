@@ -18,233 +18,28 @@ Route::get('/tables/orders', [\App\Http\Controllers\PosApiController::class, 'ge
 Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'getTableStatus']);
     Route::get('/dashboard/shift/current', [\App\Http\Controllers\PosApiController::class, 'currentShift']);
     
-    Route::post('/dashboard/shift/checkout', function ($tenant) {
-        \Log::info('=== SHIFT CHECKOUT ROUTE HIT ===', [
-            'tenant_parameter' => $tenant,
-            'tenant_from_app' => app('tenant'),
-            'request_url' => request()->url(),
-            'request_method' => request()->method()
-        ]);
-        
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        $data = request()->validate([
-            'actual_cash' => 'required|numeric|min:0',
-        ]);
-        
-        // Get terminal user from session
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        \Log::info('Shift checkout API called', [
-            'tenant_id' => $account->id,
-            'actual_cash' => $data['actual_cash'],
-            'session_token_header' => request()->header('X-Terminal-Session-Token'),
-            'session_token_cookie' => request()->cookie('terminal_session_token'),
-            'session_token_final' => $sessionToken,
-            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
-            'cookies' => request()->cookies->all(),
-            'headers' => request()->headers->all()
-        ]);
-        
-        // If the token looks like a Laravel encrypted cookie, try to decrypt it
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-                \Log::info('Session token decrypted successfully', ['decrypted_length' => strlen($sessionToken)]);
-            } catch (\Exception $e) {
-                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
-                // Fall back to header token if cookie decryption fails
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
-        }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            \Log::info('Session lookup result', [
-                'session_found' => $session ? true : false,
-                'session_id' => $session ? $session->id : null,
-                'terminal_user_found' => $session && $session->terminalUser ? true : false,
-                'terminal_user_id' => $session && $session->terminalUser ? $session->terminalUser->id : null
-            ]);
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        } else {
-            \Log::warning('No session token provided for shift checkout');
-        }
-        
-        if (!$terminalUser) {
-            \Log::error('Terminal user not found for shift checkout', [
-                'session_token_provided' => $sessionToken ? true : false,
-                'session_token_length' => $sessionToken ? strlen($sessionToken) : 0
-            ]);
-            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
-        }
-        
-        // Ensure TerminalUser has a linked User record
-        if (!$terminalUser->user_id) {
-            // Check if user already exists with this email
-            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
-            
-            if (!$user) {
-                $user = \App\Models\User::create([
-                    'tenant_id' => $account->id,
-                    'name' => $terminalUser->name,
-                    'email' => $terminalUser->terminal_id . '@terminal.local',
-                    'password' => bcrypt('terminal_password'),
-                    'role' => 'terminal_user',
-                    'is_active' => true,
-                ]);
-            }
-            
-            $terminalUser->update(['user_id' => $user->id]);
-        }
-        
-        $outletId = request('outlet_id', 1);
-        $shift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('outlet_id', $outletId)
-            ->where('opened_by', $terminalUser->user_id)
-            ->whereNull('closed_at')
-            ->first();
-            
-        if (!$shift) {
-            return response()->json(['error' => 'No open shift found'], 404);
-        }
-        
-        if ($shift->closed_at) {
-            return response()->json(['error' => 'Shift is already closed'], 400);
-        }
-        
-        // Calculate expected cash
-        $cashOrders = \App\Models\Order::where('tenant_id', $account->id)
-            ->where('outlet_id', $shift->outlet_id)
-            ->where('payment_method', 'cash')
-            ->whereBetween('created_at', [$shift->created_at, now()])
-            ->with(['items.modifiers'])
-            ->get();
-            
-        $cashSales = $cashOrders->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                $subtotal = $item->qty * $item->price;
-                $modifierTotal = $item->modifiers->sum('price');
-                $tax = ($subtotal + $modifierTotal) * ($item->tax_rate / 100);
-                return $subtotal + $modifierTotal + $tax - $item->discount;
-            });
-        });
-        
-        $expectedCash = $shift->opening_float + $cashSales;
-        $variance = $data['actual_cash'] - $expectedCash;
-        
-        $shift->update([
-            'closed_at' => now(),
-            'expected_cash' => $expectedCash,
-            'actual_cash' => $data['actual_cash'],
-            'variance' => $variance
-        ]);
-        
-        // Calculate final summary
-        $orders = \App\Models\Order::where('tenant_id', $account->id)
-            ->where('outlet_id', $shift->outlet_id)
-            ->whereBetween('created_at', [$shift->created_at, $shift->closed_at])
-            ->where('status', '!=', 'CANCELLED')
-            ->with(['items.modifiers'])
-            ->get();
-            
-        $totalSales = $orders->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                $subtotal = $item->qty * $item->price;
-                $modifierTotal = $item->modifiers->sum('price');
-                $tax = ($subtotal + $modifierTotal) * ($item->tax_rate / 100);
-                return $subtotal + $modifierTotal + $tax - $item->discount;
-            });
-        });
-        
-        $cashSales = $orders->where('payment_method', 'cash')->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                $subtotal = $item->qty * $item->price;
-                $modifierTotal = $item->modifiers->sum('price');
-                $tax = ($subtotal + $modifierTotal) * ($item->tax_rate / 100);
-                return $subtotal + $modifierTotal + $tax - $item->discount;
-            });
-        });
-        
-        $cardSales = $orders->where('payment_method', 'card')->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                $subtotal = $item->qty * $item->price;
-                $modifierTotal = $item->modifiers->sum('price');
-                $tax = ($subtotal + $modifierTotal) * ($item->tax_rate / 100);
-                return $subtotal + $modifierTotal + $tax - $item->discount;
-            });
-        });
-        
-        $upiSales = $orders->where('payment_method', 'upi')->sum(function ($order) {
-            return $order->items->sum(function ($item) {
-                $subtotal = $item->qty * $item->price;
-                $modifierTotal = $item->modifiers->sum('price');
-                $tax = ($subtotal + $modifierTotal) * ($item->tax_rate / 100);
-                return $subtotal + $modifierTotal + $tax - $item->discount;
-            });
-        });
-        
-        $summary = [
-            'total_sales' => $totalSales,
-            'total_orders' => $orders->count(),
-            'cash_sales' => $cashSales,
-            'card_sales' => $cardSales,
-            'upi_sales' => $upiSales,
-            'opening_float' => $shift->opening_float,
-            'expected_cash' => $expectedCash,
-            'actual_cash' => $data['actual_cash'],
-            'variance' => $variance,
-        ];
-        
-        return response()->json([
-            'shift' => $shift,
-            'summary' => $summary,
-            'message' => 'Shift closed successfully'
-        ]);
-    });
+    Route::post('/dashboard/shift/checkout', [\App\Http\Controllers\Tenant\DashboardController::class, 'checkoutShift']);
     
     Route::post('/shifts/open', function ($tenant) {
-        $account = app('tenant'); // Get tenant from middleware context
+        $account = app('tenant');
         
         $data = request()->validate([
             'outlet_id' => 'required|exists:outlets,id',
             'opening_float' => 'nullable|numeric|min:0',
         ]);
         
-        // Get terminal user from session
         $terminalUser = null;
         $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
-        // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
-                \Log::info('Decrypted session token', ['decrypted_token' => $sessionToken, 'token_length' => strlen($sessionToken)]);
             } catch (\Exception $e) {
-                \Log::warning('Failed to decrypt session token, using header token instead', ['error' => $e->getMessage()]);
-                // Fall back to header token if cookie decryption fails
                 $sessionToken = request()->header('X-Terminal-Session-Token');
             }
         }
         
-        \Log::info('Shift open request', [
-            'session_token' => $sessionToken,
-            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
-            'token_preview' => $sessionToken ? substr($sessionToken, 0, 20) . '...' : null,
-            'cookies' => request()->cookies->all(),
-            'headers' => request()->headers->all()
-        ]);
-        
         if ($sessionToken) {
-            // Try to find session with exact match first
             $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
                 ->where('expires_at', '>', now())
                 ->with('terminalUser')
@@ -252,42 +47,14 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             
             if ($session && $session->terminalUser) {
                 $terminalUser = $session->terminalUser;
-                \Log::info('Found terminal user with exact match', [
-                    'user_id' => $terminalUser->id, 
-                    'terminal_id' => $terminalUser->terminal_id,
-                    'session_id' => $session->id
-                ]);
-            } else {
-                // Try to find any active session for debugging
-                $allSessions = \App\Models\TerminalSession::where('expires_at', '>', now())
-                    ->with('terminalUser')
-                    ->get();
-                
-                \Log::warning('Session not found or expired', [
-                    'provided_token' => $sessionToken,
-                    'token_length' => strlen($sessionToken),
-                    'active_sessions_count' => $allSessions->count(),
-                    'active_sessions' => $allSessions->map(function($s) {
-                        return [
-                            'id' => $s->id,
-                            'token_length' => strlen($s->session_token),
-                            'expires_at' => $s->expires_at,
-                            'terminal_user_id' => $s->terminal_user_id
-                        ];
-                    })
-                ]);
             }
-        } else {
-            \Log::warning('No session token found in cookies');
         }
         
         if (!$terminalUser) {
             return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
         }
         
-        // Ensure TerminalUser has a linked User record
         if (!$terminalUser->user_id) {
-            // Check if user already exists with this email
             $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
             
             if (!$user) {
@@ -304,7 +71,6 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
             $terminalUser->update(['user_id' => $user->id]);
         }
         
-        // Check if there's already an open shift for this user
         $existingShift = \App\Models\Shift::where('tenant_id', $account->id)
             ->where('opened_by', $terminalUser->user_id)
             ->where('outlet_id', $data['outlet_id'])
@@ -325,149 +91,9 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         return response()->json($shift, 201);
     });
     
-    Route::post('/shifts/close', function ($tenant) {
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        $data = request()->validate([
-            'actual_cash' => 'required|numeric|min:0',
-        ]);
-        
-        // Get terminal user from session
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        // If the token looks like a Laravel encrypted cookie, try to decrypt it
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                // Fall back to header token if cookie decryption fails
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
-        }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        }
-        
-        if (!$terminalUser) {
-            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
-        }
-        
-        // Ensure TerminalUser has a linked User record for shift closing
-        if (!$terminalUser->user_id) {
-            // Check if user already exists with this email
-            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
-            
-            if (!$user) {
-                $user = \App\Models\User::create([
-                    'tenant_id' => $account->id,
-                    'name' => $terminalUser->name,
-                    'email' => $terminalUser->terminal_id . '@terminal.local',
-                    'password' => bcrypt('terminal_password'),
-                    'role' => 'terminal_user',
-                    'is_active' => true,
-                ]);
-            }
-            
-            $terminalUser->update(['user_id' => $user->id]);
-            \Log::info('Linked terminal user to existing user for shift close', [
-                'terminal_user_id' => $terminalUser->id,
-                'user_id' => $user->id,
-                'user_email' => $user->email
-            ]);
-        }
-        
-        // Find the open shift for this user
-        $shift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $terminalUser->user_id)
-            ->whereNull('closed_at')
-            ->first();
-            
-        \Log::info('Shift close request', [
-            'terminal_user_id' => $terminalUser->id,
-            'linked_user_id' => $terminalUser->user_id,
-            'tenant_id' => $account->id,
-            'shift_found' => $shift ? true : false,
-            'shift_id' => $shift ? $shift->id : null,
-            'all_open_shifts' => \App\Models\Shift::where('tenant_id', $account->id)
-                ->whereNull('closed_at')
-                ->get(['id', 'opened_by', 'outlet_id', 'created_at'])
-        ]);
-            
-        if (!$shift) {
-            return response()->json(['error' => 'No open shift found'], 404);
-        }
-        
-        // Calculate expected cash and variance
-        $expectedCash = $shift->opening_float; // Basic calculation - can be enhanced
-        $variance = $data['actual_cash'] - $expectedCash;
-        
-        // Close the shift
-        $shift->update([
-            'closed_at' => now(),
-            'expected_cash' => $expectedCash,
-            'actual_cash' => $data['actual_cash'],
-            'variance' => $variance
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Shift closed successfully',
-            'shift' => $shift
-        ]);
-    });
+    Route::post('/shifts/close', [\App\Http\Controllers\Tenant\DashboardController::class, 'checkoutShift']);
     
-    Route::get('/shifts/current', function ($tenant) {
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        // Get terminal user from session
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        // If the token looks like a Laravel encrypted cookie, try to decrypt it
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                // Fall back to header token if cookie decryption fails
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
-        }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        }
-        
-        if (!$terminalUser) {
-            return response()->json(['error' => 'Terminal session not found'], 401);
-        }
-        
-        // Find shift for this terminal user
-        $shift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $terminalUser->user_id)
-            ->whereNull('closed_at')
-            ->first();
-            
-        return response()->json([
-            'shift' => $shift,
-            'has_shift' => $shift ? true : false
-        ]);
-    });
+    Route::get('/shifts/current', [\App\Http\Controllers\Tenant\DashboardController::class, 'getCurrentShift']);
     
     Route::get('/shifts/test-session', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context

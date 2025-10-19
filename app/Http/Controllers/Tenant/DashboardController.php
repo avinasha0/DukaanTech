@@ -242,6 +242,81 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function openShift(Request $request)
+    {
+        \Log::info('Dashboard openShift called', [
+            'request_data' => $request->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
+        $data = $request->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+            'opening_float' => 'nullable|numeric|min:0',
+        ]);
+        
+        $tenantId = app('tenant.id');
+        
+        // Get terminal user from session
+        $terminalUser = null;
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Exception $e) {
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+        
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            
+            if ($session && $session->terminalUser) {
+                $terminalUser = $session->terminalUser;
+            }
+        }
+        
+        if (!$terminalUser) {
+            return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
+        }
+        
+        // Ensure TerminalUser has a linked User record
+        if (!$terminalUser->user_id) {
+            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
+            
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'tenant_id' => $tenantId,
+                    'name' => $terminalUser->name,
+                    'email' => $terminalUser->terminal_id . '@terminal.local',
+                    'password' => bcrypt('terminal_password'),
+                    'role' => 'terminal_user',
+                    'is_active' => true,
+                ]);
+            }
+            
+            $terminalUser->update(['user_id' => $user->id]);
+        }
+        
+        // Check if there's already an open shift for this user
+        $existingShift = \App\Models\Shift::where('tenant_id', $tenantId)
+            ->where('opened_by', $terminalUser->user_id)
+            ->where('outlet_id', $data['outlet_id'])
+            ->whereNull('closed_at')
+            ->first();
+            
+        if ($existingShift) {
+            return response()->json(['error' => 'You already have an open shift for this outlet'], 400);
+        }
+        
+        $shift = $this->shiftService->openShift($data['outlet_id'], $data['opening_float'] ?? 0);
+        
+        return response()->json($shift, 201);
+    }
+
     public function getCustomers()
     {
         $tenantId = app('tenant.id');
