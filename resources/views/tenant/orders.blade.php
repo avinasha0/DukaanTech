@@ -1,18 +1,20 @@
 @extends('layouts.tenant')
 
-@section('title', 'Orders')
+@section('title', 'Order Management')
+@section('description', 'Comprehensive order management system for restaurants. Track, manage, and process orders efficiently. View order history, status updates, and customer information.')
+@section('keywords', 'order management, restaurant orders, order tracking, order processing, order history, customer orders, dine-in orders, takeaway orders, delivery orders')
 
 @section('content')
-<div class="space-y-6" x-data="ordersManager()">
+<div class="space-y-4 sm:space-y-6" x-data="ordersManager()">
     {{-- Header --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 font-dm">Orders</h1>
-                <p class="text-gray-600 mt-2">View and manage all your restaurant orders</p>
+            <div class="flex-1 min-w-0">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 font-dm">Orders</h1>
+                <p class="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">View and manage all your restaurant orders</p>
             </div>
-            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 ml-4">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
             </div>
@@ -20,11 +22,11 @@
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Order Type</label>
-                <select x-model="filters.order_type" @change="loadOrders()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Order Type</label>
+                <select x-model="filters.order_type" @change="loadOrders()" class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">All Types</option>
                     @foreach($orderTypes as $orderType)
                         <option value="{{ $orderType->id }}">{{ $orderType->name }}</option>
@@ -32,8 +34,8 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select x-model="filters.status" @change="loadOrders()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
+                <select x-model="filters.status" @change="loadOrders()" class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">All Status</option>
                     <option value="NEW">New</option>
                     <option value="IN_KITCHEN">In Kitchen</option>
@@ -44,26 +46,27 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                <input type="date" x-model="filters.date_from" @change="loadOrders()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Date From</label>
+                <input type="date" x-model="filters.date_from" @change="loadOrders()" class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                <input type="date" x-model="filters.date_to" @change="loadOrders()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Date To</label>
+                <input type="date" x-model="filters.date_to" @change="loadOrders()" class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
     </div>
 
     {{-- Orders Content --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
             <h2 class="text-lg font-semibold text-gray-900">Orders List</h2>
             <div class="flex items-center space-x-2">
                 <button @click="loadOrders()" :disabled="loading" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
                     <svg class="w-4 h-4 mr-2" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    Refresh
+                    <span class="hidden sm:inline">Refresh</span>
+                    <span class="sm:hidden">↻</span>
                 </button>
             </div>
         </div>
@@ -80,62 +83,101 @@
         </div>
 
         <!-- Empty State -->
-        <div x-show="!loading && orders.length === 0" class="text-center py-12">
-            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div x-show="!loading && orders.length === 0" class="text-center py-8 sm:py-12">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Orders Found</h3>
-            <p class="text-gray-600 mb-6">There are no orders matching your current filters.</p>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">No Orders Found</h3>
+            <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">There are no orders matching your current filters.</p>
         </div>
 
 
 
         <!-- Simple Inline Modal (Fallback) -->
-        <div x-show="showOrderModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div x-show="showOrderModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Order Details</h3>
-                    <button @click="showOrderModal = false" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    <h3 class="text-lg sm:text-xl font-bold">Order Details</h3>
+                    <button @click="showOrderModal = false" class="text-gray-500 hover:text-gray-700 text-xl sm:text-2xl p-1">&times;</button>
                 </div>
                 
                 <div x-show="selectedOrder" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <strong>Order ID:</strong> <span x-text="selectedOrder?.id"></span>
+                    <!-- Mobile Layout -->
+                    <div class="block sm:hidden space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Order ID:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.id"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.state"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Customer:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.customer_name || 'Walk-in'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Mode:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.mode || 'N/A'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Order Type:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.orderType?.name || 'N/A'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Table:</span>
+                                    <span class="font-medium" x-text="selectedOrder?.table ? selectedOrder.table.name : (selectedOrder?.table_no || 'N/A')"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Total:</span>
+                                    <span class="font-bold text-green-600">₹<span x-text="parseFloat(selectedOrder?.total || 0).toFixed(2)"></span></span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <strong>Status:</strong> <span x-text="selectedOrder?.state"></span>
-                        </div>
-                        <div>
-                            <strong>Customer:</strong> <span x-text="selectedOrder?.customer_name || 'Walk-in'"></span>
-                        </div>
-                        <div>
-                            <strong>Mode:</strong> <span x-text="selectedOrder?.mode || 'N/A'"></span>
-                        </div>
-                        <div>
-                            <strong>Order Type:</strong> <span x-text="selectedOrder?.orderType?.name || 'N/A'"></span>
-                        </div>
-                        <div>
-                            <strong>Table:</strong> <span x-text="selectedOrder?.table ? selectedOrder.table.name : (selectedOrder?.table_no || 'N/A')"></span>
-                        </div>
-                        <div>
-                            <strong>Total:</strong> ₹<span x-text="parseFloat(selectedOrder?.total || 0).toFixed(2)"></span>
+                    </div>
+                    
+                    <!-- Desktop Layout -->
+                    <div class="hidden sm:block">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <strong>Order ID:</strong> <span x-text="selectedOrder?.id"></span>
+                            </div>
+                            <div>
+                                <strong>Status:</strong> <span x-text="selectedOrder?.state"></span>
+                            </div>
+                            <div>
+                                <strong>Customer:</strong> <span x-text="selectedOrder?.customer_name || 'Walk-in'"></span>
+                            </div>
+                            <div>
+                                <strong>Mode:</strong> <span x-text="selectedOrder?.mode || 'N/A'"></span>
+                            </div>
+                            <div>
+                                <strong>Order Type:</strong> <span x-text="selectedOrder?.orderType?.name || 'N/A'"></span>
+                            </div>
+                            <div>
+                                <strong>Table:</strong> <span x-text="selectedOrder?.table ? selectedOrder.table.name : (selectedOrder?.table_no || 'N/A')"></span>
+                            </div>
+                            <div>
+                                <strong>Total:</strong> ₹<span x-text="parseFloat(selectedOrder?.total || 0).toFixed(2)"></span>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Order Items -->
                     <div class="mt-4" x-show="selectedOrder?.items && selectedOrder.items.length > 0">
-                        <h4 class="font-semibold text-gray-900 mb-2">Order Items:</h4>
+                        <h4 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Order Items:</h4>
                         <div class="space-y-2">
                             <template x-for="item in selectedOrder?.items || []" :key="item.id">
-                                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                    <div>
-                                        <span x-text="item.item?.name || 'Unknown Item'"></span>
-                                        <span class="text-sm text-gray-500"> x<span x-text="item.qty"></span></span>
+                                <div class="flex justify-between items-center p-2 sm:p-3 bg-gray-50 rounded text-sm sm:text-base">
+                                    <div class="flex-1 min-w-0">
+                                        <span class="font-medium" x-text="item.item?.name || 'Unknown Item'"></span>
+                                        <span class="text-gray-500 ml-1">x<span x-text="item.qty"></span></span>
                                     </div>
-                                    <div class="font-medium">
+                                    <div class="font-medium text-green-600 ml-2">
                                         ₹<span x-text="(item.qty * item.price).toFixed(2)"></span>
                                     </div>
                                 </div>
@@ -143,13 +185,13 @@
                         </div>
                     </div>
                     
-                    <div class="border-t pt-4">
+                    <div class="border-t pt-4 text-sm sm:text-base">
                         <strong>Created:</strong> <span x-text="formatDate(selectedOrder?.created_at)"></span>
                     </div>
                 </div>
                 
                 <div class="mt-6 flex justify-end">
-                    <button @click="showOrderModal = false" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <button @click="showOrderModal = false" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm sm:text-base">
                         Close
                     </button>
                 </div>
@@ -157,9 +199,58 @@
         </div>
 
         <!-- Orders List -->
-        <div x-show="!loading && orders.length > 0" class="space-y-4">
+        <div x-show="!loading && orders.length > 0" class="space-y-3 sm:space-y-4">
             <template x-for="order in orders" :key="order.id">
-                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <!-- Mobile Layout -->
+                    <div class="block sm:hidden">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base font-semibold text-gray-900 truncate" x-text="'Order #' + order.id"></h3>
+                                <p class="text-xs text-gray-600 mt-1" x-text="order.order_type?.name || 'Unknown Type'"></p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0" 
+                                  :class="getStatusClass(order.state)" 
+                                  x-text="order.state"></span>
+                        </div>
+                        
+                        <div class="space-y-2 mb-3">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Total:</span>
+                                <span class="font-semibold text-gray-900" x-text="'₹' + parseFloat(order.total || 0).toFixed(2)"></span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Time:</span>
+                                <span class="text-gray-900" x-text="formatDate(order.created_at)"></span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Customer:</span>
+                                <span class="text-gray-900 truncate ml-2" x-text="order.customer_name || 'Walk-in Customer'"></span>
+                            </div>
+                            <div x-show="order.table_no" class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Table:</span>
+                                <span class="text-gray-900" x-text="'Table ' + order.table_no"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button @click="viewOrder(order)" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                View
+                            </button>
+                            <button @click="updateOrderStatus(order)" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop Layout -->
+                    <div class="hidden sm:block">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
                             <div class="flex items-center space-x-4">
@@ -193,6 +284,7 @@
                                 </svg>
                                 Update
                             </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -200,17 +292,35 @@
         </div>
 
         <!-- Pagination -->
-        <div x-show="!loading && orders.length > 0" class="mt-6 flex items-center justify-between">
-            <div class="text-sm text-gray-700">
-                Showing <span x-text="pagination.from || 0"></span> to <span x-text="pagination.to || 0"></span> of <span x-text="pagination.total || 0"></span> results
+        <div x-show="!loading && orders.length > 0" class="mt-4 sm:mt-6">
+            <!-- Mobile Layout -->
+            <div class="block sm:hidden">
+                <div class="text-center text-xs text-gray-700 mb-3">
+                    Showing <span x-text="pagination.from || 0"></span> to <span x-text="pagination.to || 0"></span> of <span x-text="pagination.total || 0"></span> results
+                </div>
+                <div class="flex items-center justify-center space-x-2">
+                    <button @click="previousPage()" :disabled="!pagination.prev_page_url" class="flex-1 px-3 py-2 text-xs font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        ← Previous
+                    </button>
+                    <button @click="nextPage()" :disabled="!pagination.next_page_url" class="flex-1 px-3 py-2 text-xs font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next →
+                    </button>
+                </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <button @click="previousPage()" :disabled="!pagination.prev_page_url" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Previous
-                </button>
-                <button @click="nextPage()" :disabled="!pagination.next_page_url" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Next
-                </button>
+            
+            <!-- Desktop Layout -->
+            <div class="hidden sm:flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing <span x-text="pagination.from || 0"></span> to <span x-text="pagination.to || 0"></span> of <span x-text="pagination.total || 0"></span> results
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="previousPage()" :disabled="!pagination.prev_page_url" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Previous
+                    </button>
+                    <button @click="nextPage()" :disabled="!pagination.next_page_url" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     </div>

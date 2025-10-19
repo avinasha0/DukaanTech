@@ -23,6 +23,7 @@ use App\Http\Controllers\TaxGroupController;
 use App\Http\Controllers\Tenant\QRCodeController;
 use App\Http\Controllers\Tenant\RestaurantTableController;
 use App\Http\Controllers\Tenant\AnalyticsController;
+use App\Http\Controllers\TenantProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Device;
 
@@ -199,4 +200,13 @@ Route::resource('terminal-users', TerminalUserController::class)->names([
     'destroy' => 'tenant.terminal-users.destroy',
 ]);
 Route::post('terminal-users/{terminalUser}/toggle-status', [TerminalUserController::class, 'toggleStatus'])->name('tenant.terminal-users.toggle-status');
+
+// Profile Management routes
+Route::get('/profile', [TenantProfileController::class, 'edit'])->name('tenant.profile.edit');
+Route::patch('/profile', [TenantProfileController::class, 'update'])->name('tenant.profile.update');
+Route::put('/profile/password', [TenantProfileController::class, 'updatePassword'])->name('tenant.profile.password.update');
+Route::delete('/profile', [TenantProfileController::class, 'destroy'])->name('tenant.profile.destroy');
+Route::get('/profile/activity', [TenantProfileController::class, 'activity'])->name('tenant.profile.activity');
+Route::get('/profile/preferences', [TenantProfileController::class, 'preferences'])->name('tenant.profile.preferences');
+Route::patch('/profile/preferences', [TenantProfileController::class, 'updatePreferences'])->name('tenant.profile.preferences.update');
 

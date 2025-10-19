@@ -1,95 +1,100 @@
 @extends('layouts.tenant')
 
 @section('title', 'Menu Management')
+@section('description', 'Complete menu management system for restaurants. Add, edit, and organize menu items, categories, pricing, and inventory. Import/export menu data with ease.')
+@section('keywords', 'menu management, restaurant menu, menu items, food menu, menu categories, menu pricing, menu inventory, restaurant catalog, menu software')
 
 @section('content')
 <style>
 [x-cloak] { display: none !important; }
 </style>
-<div class="space-y-6" x-data="menuData()">
+<div class="space-y-4 sm:space-y-6" x-data="menuData()">
     {{-- Header --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 font-dm">Menu Management</h1>
-                <p class="text-gray-600 mt-2">Manage your restaurant menu items, categories, and pricing</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 font-dm">Menu Management</h1>
+                <p class="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Manage your restaurant menu items, categories, and pricing</p>
             </div>
-            <div class="flex space-x-3">
-                <button @click="openImportModal" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+            <div class="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
+                <button @click="openImportModal" class="inline-flex items-center justify-center px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors min-h-[44px]">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
                     </svg>
-                    Import Menu
+                    <span class="hidden sm:inline">Import Menu</span>
+                    <span class="sm:hidden">Import</span>
                 </button>
-                <button @click="openAddCategoryModal" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                <button @click="openAddCategoryModal" class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors min-h-[44px]">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
-                    Add Category
+                    <span class="hidden sm:inline">Add Category</span>
+                    <span class="sm:hidden">Add Category</span>
                 </button>
-                <button @click="openAddItemModal" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <button @click="openAddItemModal" class="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors min-h-[44px]">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
-                    Add Menu Item
+                    <span class="hidden sm:inline">Add Menu Item</span>
+                    <span class="sm:hidden">Add Item</span>
                 </button>
             </div>
         </div>
     </div>
 
     {{-- Loading State --}}
-    <div x-show="loading" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="ml-3 text-gray-600">Loading menu items...</span>
+    <div x-show="loading" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex items-center justify-center py-6 sm:py-8">
+            <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+            <span class="ml-3 text-gray-600 text-sm sm:text-base">Loading menu items...</span>
         </div>
     </div>
 
     {{-- Menu Content --}}
-    <div x-show="!loading" class="space-y-6">
+    <div x-show="!loading" class="space-y-4 sm:space-y-6">
         {{-- Categories --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                 <h2 class="text-lg font-semibold text-gray-900">Categories</h2>
                 <span class="text-sm text-gray-500" x-text="`${categories.length} categories`"></span>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 <template x-for="category in categories" :key="category.id">
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <h3 class="font-medium text-gray-900" x-text="category.name"></h3>
-                        <p class="text-sm text-gray-500 mt-1" x-text="`${getItemsInCategory(category.id).length} items`"></p>
+                    <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                        <h3 class="font-medium text-gray-900 text-sm sm:text-base" x-text="category.name"></h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1" x-text="`${getItemsInCategory(category.id).length} items`"></p>
                     </div>
                 </template>
             </div>
         </div>
 
         {{-- Menu Items --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                 <h2 class="text-lg font-semibold text-gray-900">Menu Items</h2>
                 <span class="text-sm text-gray-500" x-text="`${items.length} items`"></span>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 <template x-for="item in items" :key="item.id">
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
                         <div class="flex items-start justify-between mb-2">
-                            <h3 class="font-medium text-gray-900" x-text="item.name"></h3>
-                            <div class="flex items-center space-x-1">
+                            <h3 class="font-medium text-gray-900 text-sm sm:text-base flex-1 pr-2" x-text="item.name"></h3>
+                            <div class="flex items-center space-x-1 flex-shrink-0">
                                 <span x-show="item.is_veg" class="text-green-600 text-xs font-medium">VEG</span>
                                 <span x-show="!item.is_veg" class="text-red-600 text-xs font-medium">NON-VEG</span>
                             </div>
                         </div>
-                        <p class="text-lg font-semibold text-gray-900" x-text="`₹${item.price}`"></p>
-                        <p class="text-sm text-gray-500 mt-1" x-text="getCategoryName(item.category_id)"></p>
-                        <div class="flex items-center justify-between mt-3">
-                            <span class="text-xs px-2 py-1 rounded-full" 
+                        <p class="text-base sm:text-lg font-semibold text-gray-900" x-text="`₹${item.price}`"></p>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1" x-text="getCategoryName(item.category_id)"></p>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 space-y-2 sm:space-y-0">
+                            <span class="text-xs px-2 py-1 rounded-full w-fit" 
                                   :class="item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                                   x-text="item.is_active ? 'Active' : 'Inactive'"></span>
-                            <div class="flex space-x-1">
-                                <button @click="editItem(item)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                                <button @click="deleteItem(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                            <div class="flex space-x-3 sm:space-x-1">
+                                <button @click="editItem(item)" class="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors min-h-[36px] flex items-center justify-center">Edit</button>
+                                <button @click="deleteItem(item)" class="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors min-h-[36px] flex items-center justify-center">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -108,12 +113,12 @@
      x-transition:leave-end="opacity-0"
      class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm overflow-y-auto h-full w-full"
      style="z-index: 9998; display: none;">
-    <div class="relative top-20 mx-auto p-5 border-0 w-full max-w-md shadow-2xl rounded-2xl bg-white modal-content"
+    <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border-0 w-full max-w-md shadow-2xl rounded-2xl bg-white modal-content m-4 sm:m-0"
          style="z-index: 9999;">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Add New Category</h3>
-                <button @click="closeAddCategoryModal" class="text-gray-400 hover:text-gray-600">
+                <button @click="closeAddCategoryModal" class="text-gray-400 hover:text-gray-600 p-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -134,11 +139,11 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" @click="closeAddCategoryModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                    <button type="button" @click="closeAddCategoryModal" class="px-4 py-2.5 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] order-2 sm:order-1">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button type="submit" class="px-4 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px] order-1 sm:order-2">
                         Create Category
                     </button>
                 </div>
@@ -157,12 +162,12 @@
          x-transition:leave-end="opacity-0"
          class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm overflow-y-auto h-full w-full"
          style="z-index: 9998;">
-        <div class="relative top-20 mx-auto p-5 border-0 w-full max-w-md shadow-2xl rounded-2xl bg-white modal-content"
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border-0 w-full max-w-md shadow-2xl rounded-2xl bg-white modal-content m-4 sm:m-0"
              style="z-index: 9999;">
             <div class="mt-3">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-medium text-gray-900">Add New Menu Item</h3>
-                    <button @click="closeAddItemModal" class="text-gray-400 hover:text-gray-600">
+                    <button @click="closeAddItemModal" class="text-gray-400 hover:text-gray-600 p-1">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -214,11 +219,11 @@
                         </div>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" @click="closeAddItemModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                        <button type="button" @click="closeAddItemModal" class="px-4 py-2.5 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] order-2 sm:order-1">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] order-1 sm:order-2">
                             Create Menu Item
                         </button>
                     </div>
@@ -238,12 +243,12 @@
          class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm overflow-y-auto h-full w-full"
          style="z-index: 9998;"
          @click.self="closeImportModal">
-        <div class="relative top-20 mx-auto p-5 border-0 w-full max-w-lg shadow-2xl rounded-2xl bg-white modal-content"
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border-0 w-full max-w-lg shadow-2xl rounded-2xl bg-white modal-content m-4 sm:m-0"
              style="z-index: 9999;">
             <div class="mt-3">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-medium text-gray-900">Import Menu Items</h3>
-                    <button @click="closeImportModal" class="text-gray-400 hover:text-gray-600">
+                    <button @click="closeImportModal" class="text-gray-400 hover:text-gray-600 p-1">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -283,13 +288,13 @@
                         </div>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" @click="closeImportModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                        <button type="button" @click="closeImportModal" class="px-4 py-2.5 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] order-2 sm:order-1">
                             Cancel
                         </button>
                         <button type="submit" 
                                 :disabled="!selectedFileName || importing" 
-                                class="px-6 py-2 bg-purple-600 text-white font-bold text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-purple-700">
+                                class="px-6 py-2.5 bg-purple-600 text-white font-bold text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-purple-700 min-h-[44px] order-1 sm:order-2">
                             <span x-show="!importing" class="flex items-center justify-center">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
@@ -323,11 +328,11 @@
          @click.self="closeEditModal()"
          x-ref="editModal"
          x-cloak>
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" x-data="editModalData()">
+    <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white m-4 sm:m-0" x-data="editModalData()">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Edit Item</h3>
-                <button @click="closeModal(); $parent.closeEditModal();" class="text-gray-400 hover:text-gray-600">
+                <button @click="closeModal(); $parent.closeEditModal();" class="text-gray-400 hover:text-gray-600 p-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -388,11 +393,11 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" @click="closeModal(); $parent.closeEditModal();" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                    <button type="button" @click="closeModal(); $parent.closeEditModal();" class="px-4 py-2.5 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] order-2 sm:order-1">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] order-1 sm:order-2">
                         Update Item
                     </button>
                 </div>
@@ -406,7 +411,7 @@
          style="z-index: 9998;"
          x-cloak
          x-bind:class="showDeleteModal ? 'block' : 'hidden'">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white m-4 sm:m-0">
         <div class="mt-3">
             <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
                 <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,11 +440,11 @@
                 This action cannot be undone.
             </p>
             
-            <div class="flex justify-center space-x-3">
-                <button @click="closeDeleteModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-3">
+                <button @click="closeDeleteModal" class="px-4 py-2.5 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px] order-2 sm:order-1">
                     Cancel
                 </button>
-                <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button @click="confirmDelete" class="px-4 py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[44px] order-1 sm:order-2">
                     Delete Item
                 </button>
             </div>

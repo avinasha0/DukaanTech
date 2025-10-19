@@ -3,7 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
     <title>Open Shift - {{ $tenant->name ?? 'POS Terminal' }}</title>
+    <meta name="description" content="Open your restaurant shift and start processing orders. Begin your workday with proper shift management and cash drawer setup for efficient POS operations.">
+    <meta name="keywords" content="open shift, POS shift, restaurant shift, cash drawer, shift management, POS operations, restaurant workday, shift start">
+    <meta name="author" content="Dukaantech">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="language" content="English">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Open Shift - {{ $tenant->name ?? 'POS Terminal' }}">
+    <meta property="og:description" content="Open your restaurant shift and start processing orders. Begin your workday with proper shift management and cash drawer setup for efficient POS operations.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:site_name" content="Dukaantech POS">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="{{ url('/images/og-image.jpg') }}">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#6E46AE">
+    <meta name="application-name" content="Dukaantech POS Terminal">
+    <meta name="apple-mobile-web-app-title" content="Open Shift">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">

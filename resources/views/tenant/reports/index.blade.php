@@ -1,27 +1,29 @@
 @extends('layouts.tenant')
 
-@section('title', 'Reports')
+@section('title', 'Restaurant Reports & Analytics')
+@section('description', 'Comprehensive restaurant reports and analytics dashboard. Generate sales reports, track performance metrics, analyze top-selling items, and export data in multiple formats.')
+@section('keywords', 'restaurant reports, sales reports, restaurant analytics, performance metrics, business reports, sales analysis, restaurant data, export reports, POS reports')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-4 sm:space-y-6">
     {{-- Header --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 font-dm">Reports</h1>
-                <p class="text-gray-600 mt-2">Analyze your sales and performance data</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 font-dm">Reports</h1>
+                <p class="text-sm sm:text-base text-gray-600 mt-2">Analyze your sales and performance data</p>
             </div>
-            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                 </svg>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
 
     {{-- Quick Stats --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -30,14 +32,14 @@
                         </svg>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Today's Sales</p>
-                    <p class="text-2xl font-semibold text-gray-900" id="today-sales">₹0</p>
+                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Today's Sales</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900" id="today-sales">₹0</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -46,14 +48,14 @@
                         </svg>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Orders</p>
-                    <p class="text-2xl font-semibold text-gray-900" id="total-orders">0</p>
+                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Orders</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900" id="total-orders">0</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -62,14 +64,14 @@
                         </svg>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Avg Order Value</p>
-                    <p class="text-2xl font-semibold text-gray-900" id="avg-order-value">₹0</p>
+                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Avg Order Value</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900" id="avg-order-value">₹0</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -78,34 +80,34 @@
                         </svg>
                     </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Top Items</p>
-                    <p class="text-2xl font-semibold text-gray-900" id="top-items-count">0</p>
+                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Top Items</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900" id="top-items-count">0</p>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Report Templates --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-lg font-semibold text-gray-900">Pre-made Report Templates</h2>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900">Pre-made Report Templates</h2>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {{-- Sales Summary Template --}}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('sales_summary')">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('sales_summary')">
+                <div class="flex items-center mb-2 sm:mb-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Sales Summary</h3>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900">Sales Summary</h3>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Complete overview of sales performance with daily, hourly, and summary breakdowns</p>
-                <div class="flex items-center text-sm text-gray-500">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Complete overview of sales performance with daily, hourly, and summary breakdowns</p>
+                <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     PDF, CSV, Excel
@@ -113,18 +115,18 @@
             </div>
 
             {{-- Top Items Template --}}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('top_items')">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('top_items')">
+                <div class="flex items-center mb-2 sm:mb-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Top Selling Items</h3>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900">Top Selling Items</h3>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Best performing menu items with quantity sold and revenue analysis</p>
-                <div class="flex items-center text-sm text-gray-500">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Best performing menu items with quantity sold and revenue analysis</p>
+                <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     PDF, CSV, Excel
@@ -132,18 +134,18 @@
             </div>
 
             {{-- Shift Report Template --}}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('shift_report')">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('shift_report')">
+                <div class="flex items-center mb-2 sm:mb-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Shift Reports</h3>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900">Shift Reports</h3>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Detailed shift analysis with cash management and performance metrics</p>
-                <div class="flex items-center text-sm text-gray-500">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Detailed shift analysis with cash management and performance metrics</p>
+                <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     PDF, CSV, Excel
@@ -151,18 +153,18 @@
             </div>
 
             {{-- Order Summary Template --}}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('order_summary')">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('order_summary')">
+                <div class="flex items-center mb-2 sm:mb-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Order Summary</h3>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900">Order Summary</h3>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Comprehensive order analysis by type with customer details and delivery info</p>
-                <div class="flex items-center text-sm text-gray-500">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Comprehensive order analysis by type with customer details and delivery info</p>
+                <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     PDF, CSV, Excel
@@ -170,18 +172,18 @@
             </div>
 
             {{-- Custom Report Template --}}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openGenerateReportModal()">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openGenerateReportModal()">
+                <div class="flex items-center mb-2 sm:mb-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Custom Report</h3>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900">Custom Report</h3>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Create a custom report with your specific requirements and filters</p>
-                <div class="flex items-center text-sm text-gray-500">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Create a custom report with your specific requirements and filters</p>
+                <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     PDF, CSV, Excel
@@ -191,21 +193,21 @@
     </div>
 
     {{-- Action Buttons --}}
-    <div class="flex justify-center space-x-4">
-        <button onclick="openViewReportsModal()" class="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+        <button onclick="openViewReportsModal()" class="inline-flex items-center justify-center px-4 sm:px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors w-full sm:w-auto">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
             View Reports
         </button>
-        <button onclick="openGenerateReportModal()" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onclick="openGenerateReportModal()" class="inline-flex items-center justify-center px-4 sm:px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
             Generate Report
         </button>
-        <button onclick="generateTestData()" class="inline-flex items-center px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onclick="generateTestData()" class="inline-flex items-center justify-center px-4 sm:px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors w-full sm:w-auto">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Generate Test Data
@@ -215,12 +217,12 @@
 
 {{-- View Reports Modal --}}
 <div id="viewReportsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+    <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-11/12 sm:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">View Reports</h3>
+                <h3 class="text-base sm:text-lg font-medium text-gray-900">View Reports</h3>
                 <button onclick="closeViewReportsModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -281,12 +283,12 @@
 
 {{-- Generate Report Modal --}}
 <div id="generateReportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+    <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-11/12 sm:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Generate Report</h3>
+                <h3 class="text-base sm:text-lg font-medium text-gray-900">Generate Report</h3>
                 <button onclick="closeGenerateReportModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>

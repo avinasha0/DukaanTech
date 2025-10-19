@@ -1,18 +1,20 @@
 @extends('layouts.tenant')
 
-@section('title', 'Settings')
+@section('title', 'Restaurant Settings')
+@section('description', 'Configure your restaurant settings, business information, outlets, billing preferences, and notification settings. Customize your POS system to match your business needs.')
+@section('keywords', 'restaurant settings, POS configuration, business settings, outlet management, billing settings, notification settings, restaurant preferences, system configuration')
 
 @section('content')
                     <div class="space-y-6">
     {{-- Header --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center justify-between">
-                                        <div>
-                <h1 class="text-2xl font-bold text-gray-900 font-dm">Settings</h1>
-                <p class="text-gray-600 mt-2">Configure your restaurant settings and preferences</p>
-                                        </div>
-            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 font-dm">Settings</h1>
+                <p class="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Configure your restaurant settings and preferences</p>
+            </div>
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 ml-4">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
@@ -23,27 +25,27 @@
     {{-- Settings Tabs --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="border-b border-gray-200">
-            <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                <button onclick="showTab('general')" id="general-tab" class="tab-button active py-4 px-1 border-b-2 border-purple-500 font-medium text-sm text-purple-600">
+            <nav class="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-hide" aria-label="Tabs">
+                <button onclick="showTab('general')" id="general-tab" class="tab-button active py-3 sm:py-4 px-2 sm:px-1 border-b-2 border-purple-500 font-medium text-xs sm:text-sm text-purple-600 whitespace-nowrap flex-shrink-0">
                     General Settings
                 </button>
-                <button onclick="showTab('outlets')" id="outlets-tab" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('outlets')" id="outlets-tab" class="tab-button py-3 sm:py-4 px-2 sm:px-1 border-b-2 border-transparent font-medium text-xs sm:text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap flex-shrink-0">
                     Outlets
                 </button>
-                <button onclick="showTab('billing')" id="billing-tab" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('billing')" id="billing-tab" class="tab-button py-3 sm:py-4 px-2 sm:px-1 border-b-2 border-transparent font-medium text-xs sm:text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap flex-shrink-0">
                     Billing
                 </button>
-                <button onclick="showTab('notifications')" id="notifications-tab" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <button onclick="showTab('notifications')" id="notifications-tab" class="tab-button py-3 sm:py-4 px-2 sm:px-1 border-b-2 border-transparent font-medium text-xs sm:text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap flex-shrink-0">
                     Notifications
                 </button>
             </nav>
         </div>
 
         {{-- General Settings Tab --}}
-        <div id="general-content" class="tab-content p-6">
+        <div id="general-content" class="tab-content p-4 sm:p-6">
             <form id="general-settings-form" enctype="multipart/form-data">
                 @csrf
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {{-- Basic Information --}}
                     <div class="space-y-4">
                         <h3 class="text-lg font-semibold text-gray-900">Basic Information</h3>
@@ -131,30 +133,30 @@
                 </div>
 
                 {{-- Business Hours --}}
-                <div class="mt-8">
+                <div class="mt-6 sm:mt-8">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Business Hours</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         @php
                             $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                             $businessHours = $tenant->business_hours ?? [];
                         @endphp
                         @foreach($days as $day)
-                            <div class="space-y-2">
+                            <div class="space-y-2 p-3 sm:p-0 bg-gray-50 sm:bg-transparent rounded-lg sm:rounded-none">
                                 <label class="block text-sm font-medium text-gray-700 capitalize">{{ $day }}</label>
-                                <div class="flex space-x-2">
+                                <div class="flex space-x-1 sm:space-x-2">
                                     <input type="time" name="business_hours[{{ $day }}][open]" 
                                            value="{{ $businessHours[$day]['open'] ?? '09:00' }}"
-                                           class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                                    <span class="text-gray-500 self-center">to</span>
+                                           class="flex-1 px-2 py-2 sm:py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <span class="text-gray-500 self-center text-xs sm:text-sm">to</span>
                                     <input type="time" name="business_hours[{{ $day }}][close]" 
                                            value="{{ $businessHours[$day]['close'] ?? '21:00' }}"
-                                           class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                           class="flex-1 px-2 py-2 sm:py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                                 </div>
                                 <label class="flex items-center">
                                     <input type="checkbox" name="business_hours[{{ $day }}][closed]" value="1" 
                                            {{ ($businessHours[$day]['closed'] ?? false) ? 'checked' : '' }}
                                            class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                                    <span class="ml-2 text-sm text-gray-600">Closed</span>
+                                    <span class="ml-2 text-xs sm:text-sm text-gray-600">Closed</span>
                                 </label>
                             </div>
                         @endforeach
@@ -162,13 +164,13 @@
                 </div>
 
                 {{-- Form Actions --}}
-                <div class="mt-8 flex justify-end space-x-4">
+                <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                     <button type="button" onclick="resetForm()" 
-                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base">
                         Reset
                     </button>
                     <button type="submit" 
-                            class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            class="w-full sm:w-auto px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
                         Save Changes
                     </button>
                 </div>
@@ -176,21 +178,21 @@
         </div>
 
         {{-- Outlets Tab --}}
-        <div id="outlets-content" class="tab-content p-6 hidden">
-            <div class="flex justify-between items-center mb-6">
+        <div id="outlets-content" class="tab-content p-4 sm:p-6 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                 <h3 class="text-lg font-semibold text-gray-900">Manage Outlets</h3>
                 <button onclick="openAddOutletModal()" 
-                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        class="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
                     Add Outlet
                 </button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 @forelse($outlets as $outlet)
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <h4 class="font-semibold text-gray-900">{{ $outlet->name }}</h4>
+                    <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                        <h4 class="font-semibold text-gray-900 text-sm sm:text-base">{{ $outlet->name }}</h4>
                         @if(is_array($outlet->address))
-                            <p class="text-sm text-gray-600 mt-1">
+                            <p class="text-xs sm:text-sm text-gray-600 mt-1">
                                 @if(isset($outlet->address['street']))
                                     {{ $outlet->address['street'] }}<br>
                                 @endif
@@ -205,14 +207,14 @@
                                 @endif
                             </p>
                         @else
-                            <p class="text-sm text-gray-600 mt-1">{{ $outlet->address ?? 'No address provided' }}</p>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-1">{{ $outlet->address ?? 'No address provided' }}</p>
                         @endif
-                        <p class="text-sm text-gray-500 mt-1">{{ $outlet->phone ?? 'No phone provided' }}</p>
-                        <div class="mt-3 flex space-x-2">
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ $outlet->phone ?? 'No phone provided' }}</p>
+                        <div class="mt-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                             <button onclick="editOutlet({{ $outlet->id }})" 
-                                    class="text-sm text-purple-600 hover:text-purple-700">Edit</button>
+                                    class="text-xs sm:text-sm text-purple-600 hover:text-purple-700 text-left">Edit</button>
                             <button onclick="deleteOutlet({{ $outlet->id }})" 
-                                    class="text-sm text-red-600 hover:text-red-700">Delete</button>
+                                    class="text-xs sm:text-sm text-red-600 hover:text-red-700 text-left">Delete</button>
                         </div>
                     </div>
                 @empty
@@ -224,7 +226,7 @@
         </div>
 
         {{-- Billing Tab --}}
-        <div id="billing-content" class="tab-content p-6 hidden">
+        <div id="billing-content" class="tab-content p-4 sm:p-6 hidden">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Billing Settings</h3>
             <div class="space-y-4">
                 <div>
@@ -252,13 +254,13 @@
         </div>
 
         {{-- Notifications Tab --}}
-        <div id="notifications-content" class="tab-content p-6 hidden">
-            <div class="flex justify-between items-center mb-6">
+        <div id="notifications-content" class="tab-content p-4 sm:p-6 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                 <h3 class="text-lg font-semibold text-gray-900">Notification Settings</h3>
                 <button onclick="openAddSettingModal()" 
-                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        class="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
                     Add Setting
-                    </button>
+                </button>
             </div>
             <div class="space-y-4">
                 <div>
@@ -294,8 +296,8 @@
 {{-- Add Outlet Modal --}}
 <div id="add-outlet-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div class="p-6">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+            <div class="p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Add New Outlet</h3>
                 <form id="add-outlet-form">
                     @csrf
@@ -316,13 +318,13 @@
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         </div>
                     </div>
-                    <div class="mt-6 flex justify-end space-x-4">
+                    <div class="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                         <button type="button" onclick="closeAddOutletModal()" 
-                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                                class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                class="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
                             Add Outlet
                         </button>
                     </div>
@@ -335,8 +337,8 @@
 {{-- Add Setting Modal --}}
 <div id="add-setting-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div class="p-6">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+            <div class="p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Custom Setting</h3>
                 <form id="add-setting-form">
                     @csrf
@@ -360,13 +362,13 @@
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
                         </div>
                     </div>
-                    <div class="mt-6 flex justify-end space-x-4">
+                    <div class="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                         <button type="button" onclick="closeAddSettingModal()" 
-                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                                class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                class="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
                             Add Setting
                         </button>
                     </div>
@@ -596,6 +598,39 @@ function deleteCustomSetting(key) {
 .tab-button.active {
     border-bottom-color: #6E46AE !important;
     color: #6E46AE !important;
+}
+
+/* Hide scrollbar for tab navigation */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+    .tab-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Ensure form inputs are touch-friendly */
+    input[type="text"], 
+    input[type="email"], 
+    input[type="tel"], 
+    input[type="url"], 
+    input[type="time"],
+    textarea, 
+    select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Improve button touch targets */
+    button {
+        min-height: 44px;
+    }
 }
 </style>
 @endsection

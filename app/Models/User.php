@@ -26,6 +26,10 @@ class User extends Authenticatable
         'password',
         'tenant_id',
         'activation_token',
+        'timezone',
+        'language',
+        'theme',
+        'notifications',
     ];
 
     /**
@@ -48,6 +52,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notifications' => 'array',
         ];
     }
 
@@ -173,6 +178,14 @@ class User extends Authenticatable
     public function isCashier(): bool
     {
         return $this->hasRole('cashier');
+    }
+
+    /**
+     * Get notification preference with default value.
+     */
+    public function getNotificationPreference(string $key, $default = false)
+    {
+        return $this->notifications[$key] ?? $default;
     }
 
     /**

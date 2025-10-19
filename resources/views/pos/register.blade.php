@@ -3,7 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
     <title>POS Terminal - DukaanTech</title>
+    <meta name="description" content="Professional POS terminal for restaurants. Process orders, manage payments, track sales, and streamline restaurant operations with our advanced point-of-sale system.">
+    <meta name="keywords" content="POS terminal, point of sale, restaurant POS, payment processing, order management, sales terminal, restaurant technology, POS system">
+    <meta name="author" content="Dukaantech">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="language" content="English">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="POS Terminal - DukaanTech">
+    <meta property="og:description" content="Professional POS terminal for restaurants. Process orders, manage payments, track sales, and streamline restaurant operations with our advanced point-of-sale system.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:site_name" content="Dukaantech POS">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="{{ url('/images/og-image.jpg') }}">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#6E46AE">
+    <meta name="application-name" content="Dukaantech POS Terminal">
+    <meta name="apple-mobile-web-app-title" content="POS Terminal">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://cdn.tailwindcss.com?v={{ time() }}"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js?v={{ time() }}&bust={{ rand(1000,9999) }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">

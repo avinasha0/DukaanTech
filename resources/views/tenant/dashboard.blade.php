@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Dashboard')
+@section('description', 'Restaurant dashboard with real-time analytics, order management, and business insights. Monitor sales, track performance, and manage your restaurant operations efficiently.')
+@section('keywords', 'restaurant dashboard, POS dashboard, restaurant analytics, sales tracking, order management, restaurant performance, business insights, restaurant metrics')
 
 @section('content')
 <div class="space-y-6">

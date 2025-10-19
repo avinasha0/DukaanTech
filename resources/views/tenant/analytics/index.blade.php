@@ -1,89 +1,91 @@
 @extends('layouts.tenant')
 
-@section('title', 'Analytics')
+@section('title', 'Restaurant Analytics Dashboard')
+@section('description', 'Advanced restaurant analytics and insights dashboard. Track sales trends, monitor performance metrics, analyze customer behavior, and make data-driven business decisions.')
+@section('keywords', 'restaurant analytics, business intelligence, sales analytics, performance tracking, customer analytics, restaurant insights, data visualization, business metrics')
 
 @section('content')
-<div class="space-y-8">
+<div class="space-y-4 sm:space-y-6 lg:space-y-8">
     {{-- Header --}}
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <div class="flex items-center justify-between">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 font-dm">Analytics Dashboard</h1>
-                <p class="text-gray-600 mt-2">Comprehensive insights into your restaurant's performance</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 font-dm">Analytics Dashboard</h1>
+                <p class="text-sm sm:text-base text-gray-600 mt-2">Comprehensive insights into your restaurant's performance</p>
             </div>
-            <div class="flex items-center gap-4">
-                <select id="periodSelect" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-royal-purple">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                <select id="periodSelect" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-royal-purple text-sm sm:text-base">
                     <option value="7days">Last 7 Days</option>
                     <option value="30days" selected>Last 30 Days</option>
                     <option value="90days">Last 90 Days</option>
                     <option value="1year">Last Year</option>
                 </select>
-                <button onclick="refreshData()" class="px-4 py-2 bg-royal-purple text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                <button onclick="refreshData()" class="px-4 py-2 bg-royal-purple text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    Refresh
+                    <span class="hidden sm:inline">Refresh</span>
                 </button>
             </div>
         </div>
     </div>
 
     {{-- Summary Stats --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Total Sales</p>
-                    <p class="text-2xl font-bold text-gray-900" id="totalSales">₹0</p>
-                    <p class="text-sm text-green-600" id="salesGrowth">+0%</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Sales</p>
+                    <p class="text-xl sm:text-2xl font-bold text-gray-900" id="totalSales">₹0</p>
+                    <p class="text-xs sm:text-sm text-green-600" id="salesGrowth">+0%</p>
                 </div>
-                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Total Orders</p>
-                    <p class="text-2xl font-bold text-gray-900" id="totalOrders">0</p>
-                    <p class="text-sm text-green-600" id="ordersGrowth">+0%</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Orders</p>
+                    <p class="text-xl sm:text-2xl font-bold text-gray-900" id="totalOrders">0</p>
+                    <p class="text-xs sm:text-sm text-green-600" id="ordersGrowth">+0%</p>
                 </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
-                    <p class="text-2xl font-bold text-gray-900" id="avgOrderValue">₹0</p>
-                    <p class="text-sm text-gray-500">Per order</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Avg Order Value</p>
+                    <p class="text-xl sm:text-2xl font-bold text-gray-900" id="avgOrderValue">₹0</p>
+                    <p class="text-xs sm:text-sm text-gray-500">Per order</p>
                 </div>
-                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Top Category</p>
-                    <p class="text-lg font-bold text-gray-900" id="topCategory">-</p>
-                    <p class="text-sm text-gray-500">Best performer</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Top Category</p>
+                    <p class="text-lg sm:text-xl font-bold text-gray-900" id="topCategory">-</p>
+                    <p class="text-xs sm:text-sm text-gray-500">Best performer</p>
                 </div>
-                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                     </svg>
                 </div>
@@ -92,74 +94,74 @@
     </div>
 
     {{-- Charts Section --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {{-- Sales Trend Chart --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900 font-dm">Sales Trend</h3>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Sales Trend</h3>
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 bg-royal-purple rounded-full"></div>
-                    <span class="text-sm text-gray-600">Daily Sales</span>
+                    <span class="text-xs sm:text-sm text-gray-600">Daily Sales</span>
                 </div>
             </div>
-            <div class="h-64 flex items-center justify-center">
+            <div class="h-48 sm:h-56 lg:h-64 flex items-center justify-center">
                 <canvas id="salesChart" width="400" height="200"></canvas>
             </div>
         </div>
 
         {{-- Hourly Sales Chart --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900 font-dm">Today's Hourly Sales</h3>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Today's Hourly Sales</h3>
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 bg-tiffany-blue rounded-full"></div>
-                    <span class="text-sm text-gray-600">Hourly Revenue</span>
+                    <span class="text-xs sm:text-sm text-gray-600">Hourly Revenue</span>
                 </div>
             </div>
-            <div class="h-64 flex items-center justify-center">
+            <div class="h-48 sm:h-56 lg:h-64 flex items-center justify-center">
                 <canvas id="hourlyChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
 
     {{-- Top Items and Categories --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {{-- Top Items --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900 font-dm">Top Selling Items</h3>
-                <span class="text-sm text-gray-500" id="topItemsPeriod">Last 30 days</span>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Top Selling Items</h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="topItemsPeriod">Last 30 days</span>
             </div>
-            <div class="space-y-4" id="topItemsList">
-                <div class="flex items-center justify-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-purple"></div>
+            <div class="space-y-3 sm:space-y-4" id="topItemsList">
+                <div class="flex items-center justify-center py-6 sm:py-8">
+                    <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-royal-purple"></div>
                 </div>
             </div>
         </div>
 
         {{-- Category Performance --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900 font-dm">Category Performance</h3>
-                <span class="text-sm text-gray-500" id="categoryPeriod">Last 30 days</span>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Category Performance</h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="categoryPeriod">Last 30 days</span>
             </div>
-            <div class="space-y-4" id="categoryList">
-                <div class="flex items-center justify-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-purple"></div>
+            <div class="space-y-3 sm:space-y-4" id="categoryList">
+                <div class="flex items-center justify-center py-6 sm:py-8">
+                    <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-royal-purple"></div>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Order Type Analytics --}}
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900 font-dm">Order Type Performance</h3>
-            <span class="text-sm text-gray-500" id="orderTypePeriod">Last 30 days</span>
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Order Type Performance</h3>
+            <span class="text-xs sm:text-sm text-gray-500" id="orderTypePeriod">Last 30 days</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="orderTypeList">
-            <div class="flex items-center justify-center py-8">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-purple"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="orderTypeList">
+            <div class="flex items-center justify-center py-6 sm:py-8">
+                <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-royal-purple"></div>
             </div>
         </div>
     </div>
@@ -355,19 +357,19 @@ async function loadTopItems() {
             const topItemsList = document.getElementById('topItemsList');
             if (data.top_items.length > 0) {
                 topItemsList.innerHTML = data.top_items.map((item, index) => `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-royal-purple text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div class="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 bg-royal-purple text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
                                 ${index + 1}
                             </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-900">${item.name}</h4>
-                                <p class="text-sm text-gray-600">${item.total_quantity} sold</p>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-gray-900 text-sm sm:text-base truncate">${item.name}</h4>
+                                <p class="text-xs sm:text-sm text-gray-600">${item.total_quantity} sold</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-gray-900">₹${parseFloat(item.total_revenue).toLocaleString()}</p>
-                            <p class="text-sm text-gray-600">${item.order_count} orders</p>
+                        <div class="text-right flex-shrink-0 ml-2">
+                            <p class="font-semibold text-gray-900 text-sm sm:text-base">₹${parseFloat(item.total_revenue).toLocaleString()}</p>
+                            <p class="text-xs sm:text-sm text-gray-600">${item.order_count} orders</p>
                         </div>
                     </div>
                 `).join('');
@@ -397,19 +399,19 @@ async function loadCategoryPerformance() {
             const categoryList = document.getElementById('categoryList');
             if (data.category_performance.length > 0) {
                 categoryList.innerHTML = data.category_performance.map((category, index) => `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-tiffany-blue text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div class="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 bg-tiffany-blue text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0">
                                 ${index + 1}
                             </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-900">${category.name}</h4>
-                                <p class="text-sm text-gray-600">${category.total_quantity} items sold</p>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-gray-900 text-sm sm:text-base truncate">${category.name}</h4>
+                                <p class="text-xs sm:text-sm text-gray-600">${category.total_quantity} items sold</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-gray-900">₹${parseFloat(category.total_revenue).toLocaleString()}</p>
-                            <p class="text-sm text-gray-600">${category.order_count} orders</p>
+                        <div class="text-right flex-shrink-0 ml-2">
+                            <p class="font-semibold text-gray-900 text-sm sm:text-base">₹${parseFloat(category.total_revenue).toLocaleString()}</p>
+                            <p class="text-xs sm:text-sm text-gray-600">${category.order_count} orders</p>
                         </div>
                     </div>
                 `).join('');
@@ -444,23 +446,23 @@ async function loadOrderTypeAnalytics() {
             const orderTypeList = document.getElementById('orderTypeList');
             if (data.order_type_analytics.length > 0) {
                 orderTypeList.innerHTML = data.order_type_analytics.map(orderType => `
-                    <div class="bg-gray-50 rounded-lg p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="font-semibold text-gray-900">${orderType.name}</h4>
+                    <div class="bg-gray-50 rounded-lg p-4 sm:p-6">
+                        <div class="flex items-center justify-between mb-3 sm:mb-4">
+                            <h4 class="font-semibold text-gray-900 text-sm sm:text-base">${orderType.name}</h4>
                             <div class="w-3 h-3 bg-royal-purple rounded-full"></div>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Orders:</span>
-                                <span class="font-semibold">${orderType.orders_count}</span>
+                                <span class="text-xs sm:text-sm text-gray-600">Orders:</span>
+                                <span class="font-semibold text-sm sm:text-base">${orderType.orders_count}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Revenue:</span>
-                                <span class="font-semibold">₹${parseFloat(orderType.total_sales).toLocaleString()}</span>
+                                <span class="text-xs sm:text-sm text-gray-600">Revenue:</span>
+                                <span class="font-semibold text-sm sm:text-base">₹${parseFloat(orderType.total_sales).toLocaleString()}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Avg Value:</span>
-                                <span class="font-semibold">₹${parseFloat(orderType.avg_order_value).toLocaleString()}</span>
+                                <span class="text-xs sm:text-sm text-gray-600">Avg Value:</span>
+                                <span class="font-semibold text-sm sm:text-base">₹${parseFloat(orderType.avg_order_value).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>

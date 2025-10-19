@@ -261,9 +261,9 @@
             {{-- Profile and Logout Options --}}
             <div class="space-y-1">
                 {{-- Profile --}}
-                <a href="{{ route('profile.edit') }}" 
+                <a href="{{ route('tenant.profile.edit', $tenant->slug) }}" 
                    class="sidebar-item group"
-                   :class="{ 'sidebar-item-active': isActiveRoute('profile.*') }"
+                   :class="{ 'sidebar-item-active': isActiveRoute('tenant.profile.*') }"
                    :title="isCollapsed ? 'Profile' : ''">
                     <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -400,6 +400,112 @@
 
 .sidebar-item button:hover .sidebar-text {
     color: #1d4ed8;
+}
+
+/* Profile specific styles */
+.profile-avatar {
+    background: linear-gradient(135deg, #6E46AE 0%, #00B6B4 100%);
+}
+
+.profile-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.profile-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section {
+    border-left: 3px solid transparent;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.profile-section:hover {
+    border-left-color: #6E46AE;
+}
+
+/* Toggle switch styles */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #6E46AE;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* Activity log styles */
+.activity-item {
+    border-left: 3px solid #e5e7eb;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.activity-item:hover {
+    border-left-color: #6E46AE;
+}
+
+.activity-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.status-active {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
 }
 </style>
 

@@ -3,7 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
     <title>{{ $account->name }} - {{ $category->name }}</title>
+    <meta name="description" content="Browse {{ $category->name }} menu items at {{ $account->name }}. Discover our delicious {{ strtolower($category->name) }} options and place your order using QR code.">
+    <meta name="keywords" content="{{ $category->name }}, {{ $account->name }}, menu category, food items, {{ strtolower($category->name) }}, restaurant menu, QR ordering, digital menu">
+    <meta name="author" content="{{ $account->name }}">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ $account->name }} - {{ $category->name }}">
+    <meta property="og:description" content="Browse {{ $category->name }} menu items at {{ $account->name }}. Discover our delicious {{ strtolower($category->name) }} options and place your order using QR code.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:site_name" content="{{ $account->name }}">
+    <meta property="og:locale" content="en_US">
+    @if(isset($account->logo_url) && $account->logo_url)
+    <meta property="og:image" content="{{ $account->logo_url }}">
+    @else
+    <meta property="og:image" content="{{ url('/images/og-image.jpg') }}">
+    @endif
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $account->name }} - {{ $category->name }}">
+    <meta name="twitter:description" content="Browse {{ $category->name }} menu items at {{ $account->name }}. Discover our delicious {{ strtolower($category->name) }} options and place your order using QR code.">
+    @if(isset($account->logo_url) && $account->logo_url)
+    <meta name="twitter:image" content="{{ $account->logo_url }}">
+    @else
+    <meta name="twitter:image" content="{{ url('/images/og-image.jpg') }}">
+    @endif
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#6E46AE">
+    <meta name="application-name" content="{{ $account->name }} {{ $category->name }}">
+    <meta name="apple-mobile-web-app-title" content="{{ $category->name }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">

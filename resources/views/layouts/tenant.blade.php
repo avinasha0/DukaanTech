@@ -4,7 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- SEO Meta Tags -->
     <title>@yield('title', 'Dashboard') - {{ !empty($tenant->name) ? $tenant->name : $tenant->website }} - Dukaantech POS</title>
+    <meta name="description" content="@yield('description', 'Complete restaurant management solution with POS, inventory management, staff scheduling, and analytics. Streamline your restaurant operations with Dukaantech POS.')">
+    <meta name="keywords" content="@yield('keywords', 'restaurant POS, point of sale, restaurant management, inventory management, staff scheduling, restaurant analytics, food service, restaurant software, POS system, restaurant technology, Dukaantech')">
+    <meta name="author" content="Dukaantech">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="@yield('title', 'Dashboard') - {{ !empty($tenant->name) ? $tenant->name : $tenant->website }} - Dukaantech POS">
+    <meta property="og:description" content="@yield('description', 'Complete restaurant management solution with POS, inventory management, staff scheduling, and analytics. Streamline your restaurant operations with Dukaantech POS.')">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:site_name" content="Dukaantech POS">
+    <meta property="og:locale" content="en_US">
+    @if(isset($tenant->logo_url) && $tenant->logo_url)
+    <meta property="og:image" content="{{ $tenant->logo_url }}">
+    @else
+    <meta property="og:image" content="{{ url('/images/og-image.jpg') }}">
+    @endif
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', 'Dashboard') - {{ !empty($tenant->name) ? $tenant->name : $tenant->website }} - Dukaantech POS">
+    <meta name="twitter:description" content="@yield('description', 'Complete restaurant management solution with POS, inventory management, staff scheduling, and analytics. Streamline your restaurant operations with Dukaantech POS.')">
+    @if(isset($tenant->logo_url) && $tenant->logo_url)
+    <meta name="twitter:image" content="{{ $tenant->logo_url }}">
+    @else
+    <meta name="twitter:image" content="{{ url('/images/og-image.jpg') }}">
+    @endif
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#6E46AE">
+    <meta name="msapplication-TileColor" content="#6E46AE">
+    <meta name="application-name" content="Dukaantech POS">
+    <meta name="apple-mobile-web-app-title" content="Dukaantech POS">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request()->url() }}">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -367,9 +409,9 @@
                 {{-- Profile and Logout Options --}}
                 <div class="space-y-1">
                     {{-- Profile --}}
-                    <a href="{{ route('profile.edit') }}" 
+                    <a href="{{ route('tenant.profile.edit', $tenant->slug) }}" 
                        class="sidebar-item group"
-                       :class="{ 'sidebar-item-active': isActiveRoute('profile.*') }"
+                       :class="{ 'sidebar-item-active': isActiveRoute('tenant.profile.*') }"
                        @click="sidebarOpen = false">
                         <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>

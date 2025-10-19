@@ -1,282 +1,241 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Manage Tables - {{ $tenant->name }} - Dukaantech POS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-dm { font-family: 'DM Sans', sans-serif; }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen">
+@extends('layouts.tenant')
 
-    {{-- Sidebar and Main Content Container --}}
-    <div class="flex h-screen">
-        {{-- Sidebar --}}
-        @include('partials.sidebar')
+@section('title', 'Table Management')
+@section('description', 'Complete table management system for restaurants. Create, organize, and manage dining tables, track occupancy status, and optimize seating arrangements for better customer service.')
+@section('keywords', 'table management, restaurant tables, dining tables, table booking, table status, seating management, restaurant layout, table occupancy, dining room management')
 
-        {{-- Main Content Area --}}
-        <div class="flex-1 flex flex-col lg:ml-64" 
-             x-data="{ sidebarCollapsed: false }" 
-             x-init="
-                sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-                updateMargin();
-                
-                // Listen for sidebar collapse events
-                window.addEventListener('sidebar-collapsed', (e) => {
-                    sidebarCollapsed = e.detail.collapsed;
-                    updateMargin();
-                });
-                
-                function updateMargin() {
-                    if (sidebarCollapsed) { 
-                        $el.classList.remove('lg:ml-64'); 
-                        $el.classList.add('lg:ml-20'); 
-                    } else { 
-                        $el.classList.remove('lg:ml-20'); 
-                        $el.classList.add('lg:ml-64'); 
-                    }
-                }
-             ">
-            {{-- Main Content --}}
-            <div class="py-8">
-        <div class="mx-auto max-w-7xl px-4">
+@section('content')
+<div class="space-y-4 sm:space-y-6">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-            {{-- Add New Table Section --}}
-            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900">Add New Table</h2>
-                    <button onclick="toggleAddForm()" id="toggleAddBtn" 
-                            class="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors">
-                        <span id="toggleAddText">Add Table</span>
-                    </button>
-                </div>
+        {{-- Add New Table Section --}}
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Add New Table</h2>
+                <button onclick="toggleAddForm()" id="toggleAddBtn" 
+                        class="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors w-full sm:w-auto">
+                    <span id="toggleAddText">Add Table</span>
+                </button>
+            </div>
                 
                 <div id="addTableForm" class="hidden">
                     <form id="tableForm" onsubmit="handleTableSubmit(event)">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Name/Number *</label>
-                                <input type="text" id="tableName" name="name" required
-                                       placeholder="e.g., Table 1, A1, VIP-1" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Capacity</label>
-                                <input type="number" id="tableCapacity" name="capacity" min="1" max="20"
-                                       placeholder="Number of seats" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                            </div>
-                        </div>
-                        
-                        {{-- Table Shape Selection --}}
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">Table Shape</label>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {{-- Round Table --}}
-                                <label class="relative cursor-pointer">
-                                    <input type="radio" name="tableShape" value="round" class="sr-only" checked>
-                                    <div class="border-2 border-gray-300 rounded-full p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="round">
-                                        <div class="w-10 h-10 mx-auto mb-2">
-                                            <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.1"/>
-                                                <circle cx="12" cy="12" r="8"/>
-                                                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                                                <circle cx="8" cy="8" r="1" fill="currentColor"/>
-                                                <circle cx="16" cy="8" r="1" fill="currentColor"/>
-                                                <circle cx="8" cy="16" r="1" fill="currentColor"/>
-                                                <circle cx="16" cy="16" r="1" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <span class="text-sm text-gray-600 font-medium">Round</span>
-                                    </div>
-                                </label>
-                                
-                                {{-- Rectangular Table --}}
-                                <label class="relative cursor-pointer">
-                                    <input type="radio" name="tableShape" value="rectangular" class="sr-only">
-                                    <div class="border-2 border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="rectangular">
-                                        <div class="w-10 h-8 mx-auto mb-2">
-                                            <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.1"/>
-                                                <rect x="4" y="6" width="16" height="12" rx="2"/>
-                                                <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
-                                                <circle cx="7" cy="9" r="1" fill="currentColor"/>
-                                                <circle cx="17" cy="9" r="1" fill="currentColor"/>
-                                                <circle cx="7" cy="15" r="1" fill="currentColor"/>
-                                                <circle cx="17" cy="15" r="1" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <span class="text-sm text-gray-600 font-medium">Rectangular</span>
-                                    </div>
-                                </label>
-                                
-                                {{-- Oval Table --}}
-                                <label class="relative cursor-pointer">
-                                    <input type="radio" name="tableShape" value="oval" class="sr-only">
-                                    <div class="border-2 border-gray-300 rounded-full p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="oval">
-                                        <div class="w-10 h-8 mx-auto mb-2">
-                                            <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <ellipse cx="12" cy="12" rx="10" ry="6" fill="currentColor" fill-opacity="0.1"/>
-                                                <ellipse cx="12" cy="12" rx="10" ry="6"/>
-                                                <ellipse cx="12" cy="12" rx="3" ry="2" fill="currentColor"/>
-                                                <circle cx="6" cy="8" r="1" fill="currentColor"/>
-                                                <circle cx="18" cy="8" r="1" fill="currentColor"/>
-                                                <circle cx="6" cy="16" r="1" fill="currentColor"/>
-                                                <circle cx="18" cy="16" r="1" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <span class="text-sm text-gray-600 font-medium">Oval</span>
-                                    </div>
-                                </label>
-                                
-                                {{-- Square Table --}}
-                                <label class="relative cursor-pointer">
-                                    <input type="radio" name="tableShape" value="square" class="sr-only">
-                                    <div class="border-2 border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="square">
-                                        <div class="w-10 h-10 mx-auto mb-2">
-                                            <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <path d="M4 8h16v8H4z" fill="currentColor" fill-opacity="0.1"/>
-                                                <path d="M4 8h16v8H4z"/>
-                                                <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
-                                                <circle cx="6" cy="6" r="1" fill="currentColor"/>
-                                                <circle cx="18" cy="6" r="1" fill="currentColor"/>
-                                                <circle cx="6" cy="18" r="1" fill="currentColor"/>
-                                                <circle cx="18" cy="18" r="1" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <span class="text-sm text-gray-600 font-medium">Square</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Type</label>
-                                <select id="tableType" name="type" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                                    <option value="standard">Standard</option>
-                                    <option value="booth">Booth</option>
-                                    <option value="bar">Bar</option>
-                                    <option value="outdoor">Outdoor</option>
-                                    <option value="private">Private Room</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                <select id="tableStatus" name="status" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                                    <option value="free">Not Occupied</option>
-                                    <option value="occupied">Occupied</option>
-                                    <option value="reserved">Reserved</option>
-                                    <option value="maintenance">Under Maintenance</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea id="tableDescription" name="description" rows="3"
-                                      placeholder="Optional description or special notes about this table"
-                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"></textarea>
-                        </div>
-                        
-                        <div class="flex gap-3">
-                            <button type="submit" id="submitBtn"
-                                    class="px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors">
-                                <span id="submitText">Add Table</span>
-                            </button>
-                            <button type="button" onclick="resetForm()" 
-                                    class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                                Reset
-                            </button>
-                            <button type="button" onclick="cancelEdit()" id="cancelBtn" class="hidden px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Table Name/Number *</label>
+                    <input type="text" id="tableName" name="name" required
+                           placeholder="e.g., Table 1, A1, VIP-1" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
                 </div>
-                <p class="text-sm text-gray-500 mt-2">Tables will appear in your POS terminal for dine-in orders</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Table Capacity</label>
+                    <input type="number" id="tableCapacity" name="capacity" min="1" max="20"
+                           placeholder="Number of seats" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
             </div>
+                        
+            {{-- Table Shape Selection --}}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Table Shape</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {{-- Round Table --}}
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="tableShape" value="round" class="sr-only" checked>
+                        <div class="border-2 border-gray-300 rounded-full p-3 sm:p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="round">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2">
+                                <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.1"/>
+                                    <circle cx="12" cy="12" r="8"/>
+                                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                                    <circle cx="8" cy="8" r="1" fill="currentColor"/>
+                                    <circle cx="16" cy="8" r="1" fill="currentColor"/>
+                                    <circle cx="8" cy="16" r="1" fill="currentColor"/>
+                                    <circle cx="16" cy="16" r="1" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600 font-medium">Round</span>
+                        </div>
+                    </label>
+                                
+                    {{-- Rectangular Table --}}
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="tableShape" value="rectangular" class="sr-only">
+                        <div class="border-2 border-gray-300 rounded-lg p-3 sm:p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="rectangular">
+                            <div class="w-8 h-6 sm:w-10 sm:h-8 mx-auto mb-2">
+                                <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.1"/>
+                                    <rect x="4" y="6" width="16" height="12" rx="2"/>
+                                    <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
+                                    <circle cx="7" cy="9" r="1" fill="currentColor"/>
+                                    <circle cx="17" cy="9" r="1" fill="currentColor"/>
+                                    <circle cx="7" cy="15" r="1" fill="currentColor"/>
+                                    <circle cx="17" cy="15" r="1" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600 font-medium">Rectangular</span>
+                        </div>
+                    </label>
+                                
+                    {{-- Oval Table --}}
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="tableShape" value="oval" class="sr-only">
+                        <div class="border-2 border-gray-300 rounded-full p-3 sm:p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="oval">
+                            <div class="w-8 h-6 sm:w-10 sm:h-8 mx-auto mb-2">
+                                <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <ellipse cx="12" cy="12" rx="10" ry="6" fill="currentColor" fill-opacity="0.1"/>
+                                    <ellipse cx="12" cy="12" rx="10" ry="6"/>
+                                    <ellipse cx="12" cy="12" rx="3" ry="2" fill="currentColor"/>
+                                    <circle cx="6" cy="8" r="1" fill="currentColor"/>
+                                    <circle cx="18" cy="8" r="1" fill="currentColor"/>
+                                    <circle cx="6" cy="16" r="1" fill="currentColor"/>
+                                    <circle cx="18" cy="16" r="1" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600 font-medium">Oval</span>
+                        </div>
+                    </label>
+                    
+                    {{-- Square Table --}}
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="tableShape" value="square" class="sr-only">
+                        <div class="border-2 border-gray-300 rounded-lg p-3 sm:p-4 text-center hover:border-orange-500 transition-colors table-shape-option" data-shape="square">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2">
+                                <svg class="w-full h-full text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path d="M4 8h16v8H4z" fill="currentColor" fill-opacity="0.1"/>
+                                    <path d="M4 8h16v8H4z"/>
+                                    <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
+                                    <circle cx="6" cy="6" r="1" fill="currentColor"/>
+                                    <circle cx="18" cy="6" r="1" fill="currentColor"/>
+                                    <circle cx="6" cy="18" r="1" fill="currentColor"/>
+                                    <circle cx="18" cy="18" r="1" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600 font-medium">Square</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+                        
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Table Type</label>
+                    <select id="tableType" name="type" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        <option value="standard">Standard</option>
+                        <option value="booth">Booth</option>
+                        <option value="bar">Bar</option>
+                        <option value="outdoor">Outdoor</option>
+                        <option value="private">Private Room</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="tableStatus" name="status" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        <option value="free">Not Occupied</option>
+                        <option value="occupied">Occupied</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="maintenance">Under Maintenance</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea id="tableDescription" name="description" rows="3"
+                          placeholder="Optional description or special notes about this table"
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"></textarea>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button type="submit" id="submitBtn"
+                        class="px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors w-full sm:w-auto">
+                    <span id="submitText">Add Table</span>
+                </button>
+                <button type="button" onclick="resetForm()" 
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors w-full sm:w-auto">
+                    Reset
+                </button>
+                <button type="button" onclick="cancelEdit()" id="cancelBtn" class="hidden px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors w-full sm:w-auto">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+    <p class="text-sm text-gray-500 mt-2">Tables will appear in your POS terminal for dine-in orders</p>
+</div>
 
-            {{-- Tables Grid --}}
-            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-4">
-                        <h2 class="text-xl font-semibold text-gray-900">Your Tables</h2>
-                        <div class="flex gap-2">
-                            <button onclick="toggleViewMode('grid')" id="gridViewBtn" 
-                                    class="p-2 rounded-lg bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                                </svg>
-                            </button>
-                            <button onclick="toggleViewMode('list')" id="listViewBtn" 
-                                    class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="text-sm text-gray-600">
-                        <span id="tableCount">0</span> tables created
+        {{-- Tables Grid --}}
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Your Tables</h2>
+                    <div class="flex gap-2">
+                        <button onclick="toggleViewMode('grid')" id="gridViewBtn" 
+                                class="p-2 rounded-lg bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="toggleViewMode('list')" id="listViewBtn" 
+                                class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                
-                {{-- Grid View --}}
-                <div id="gridView" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Tables will be dynamically added here -->
-                </div>
-                
-                {{-- List View --}}
-                <div id="listView" class="hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-200">
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Table</th>
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Type</th>
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Capacity</th>
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Current Total</th>
-                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Created</th>
-                                    <th class="text-center py-3 px-4 font-semibold text-gray-900">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="listViewBody">
-                                <!-- Table rows will be dynamically added here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                {{-- Empty State --}}
-                <div id="emptyState" class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No tables created yet</h3>
-                    <p class="text-gray-600 mb-4">Create your first table to start managing dine-in orders</p>
+                <div class="text-sm text-gray-600">
+                    <span id="tableCount">0</span> tables created
                 </div>
             </div>
-        </div>
+                
+            {{-- Grid View --}}
+            <div id="gridView" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Tables will be dynamically added here -->
+            </div>
+            
+            {{-- List View --}}
+            <div id="listView" class="hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Table</th>
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm hidden sm:table-cell">Type</th>
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Capacity</th>
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Status</th>
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm hidden md:table-cell">Total</th>
+                                <th class="text-left py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm hidden lg:table-cell">Created</th>
+                                <th class="text-center py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listViewBody">
+                            <!-- Table rows will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            {{-- Empty State --}}
+            <div id="emptyState" class="text-center py-8 sm:py-12">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No tables created yet</h3>
+                <p class="text-sm sm:text-base text-gray-600 mb-4">Create your first table to start managing dine-in orders</p>
             </div>
         </div>
     </div>
+</div>
 
+@endsection
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <script>
+@push('scripts')
+<script>
         // Global variables
         let currentEditingTable = null;
         let currentViewMode = 'grid';
@@ -567,13 +526,13 @@
             const statusBg = table.status === 'occupied' ? '#fef2f2' : '#f0fdf4';
             
             return `
-                <div class="bg-white border-2 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                <div class="bg-white border-2 rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200"
                      style="border-color: ${statusColor}; background-color: ${statusBg};">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-gray-900">${table.name}</h3>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900">${table.name}</h3>
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full" style="background-color: ${statusColor}"></div>
-                            <span class="text-sm font-medium" style="color: ${statusColor}">
+                            <span class="text-xs sm:text-sm font-medium" style="color: ${statusColor}">
                                 ${table.status === 'occupied' ? 'Occupied' : 'Not Occupied'}
                             </span>
                         </div>
@@ -584,47 +543,47 @@
                         ${getTableShapeIcon(table.shape || 'square')}
                     </div>
                     
-                    <div class="space-y-3 mb-4">
-                        <div class="flex justify-between text-sm">
+                    <div class="space-y-2 sm:space-y-3 mb-4">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Shape:</span>
                             <span class="font-medium text-gray-900 capitalize">${table.shape || 'Square'}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Type:</span>
                             <span class="font-medium text-gray-900 capitalize">${table.type || 'Standard'}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Capacity:</span>
                             <span class="font-medium text-gray-900">${table.capacity || 4} seats</span>
                         </div>
                         ${table.status === 'occupied' ? `
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Current Total:</span>
                             <span class="font-medium text-gray-900">₹${table.totalAmount.toFixed(2)}</span>
                         </div>
                         ` : ''}
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Created:</span>
                             <span class="font-medium text-gray-900">${new Date(table.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
                     
-                    <div class="flex gap-2">
+                    <div class="grid grid-cols-2 gap-2">
                         <button onclick="viewTable(${table.id})" 
-                                class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                class="px-2 sm:px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors">
                             View
                         </button>
                         <button onclick="editTable(${table.id})" 
-                                class="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                class="px-2 sm:px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors">
                             Edit
                         </button>
                         <button onclick="toggleTableStatus(${table.id})" 
-                                class="flex-1 px-3 py-2 text-white text-sm font-medium rounded-lg transition-colors"
+                                class="px-2 sm:px-3 py-2 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
                                 style="background-color: ${statusColor};">
                             ${table.status === 'occupied' ? 'Free' : 'Occupy'}
                         </button>
                         <button onclick="deleteTable(${table.id})" 
-                                class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                class="px-2 sm:px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors">
                             Delete
                         </button>
                     </div>
@@ -638,40 +597,43 @@
             
             return `
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-4">
-                        <div class="font-medium text-gray-900">${table.name}</div>
-                        ${table.description ? `<div class="text-sm text-gray-500">${table.description}</div>` : ''}
+                    <td class="py-3 px-2 sm:px-4">
+                        <div class="font-medium text-gray-900 text-sm">${table.name}</div>
+                        ${table.description ? `<div class="text-xs text-gray-500">${table.description}</div>` : ''}
+                        <div class="sm:hidden text-xs text-gray-500 mt-1">
+                            ${table.type || 'Standard'} • ${table.capacity || 4} seats
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-sm text-gray-900 capitalize">${table.type || 'Standard'}</td>
-                    <td class="py-3 px-4 text-sm text-gray-900">${table.capacity || 4} seats</td>
-                    <td class="py-3 px-4">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                    <td class="py-3 px-2 sm:px-4 text-sm text-gray-900 capitalize hidden sm:table-cell">${table.type || 'Standard'}</td>
+                    <td class="py-3 px-2 sm:px-4 text-sm text-gray-900 hidden sm:table-cell">${table.capacity || 4} seats</td>
+                    <td class="py-3 px-2 sm:px-4">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" 
                               style="background-color: ${statusBg}; color: ${statusColor};">
-                            ${table.status === 'occupied' ? 'Occupied' : 'Not Occupied'}
+                            ${table.status === 'occupied' ? 'Occupied' : 'Free'}
                         </span>
                     </td>
-                    <td class="py-3 px-4 text-sm text-gray-900">
+                    <td class="py-3 px-2 sm:px-4 text-sm text-gray-900 hidden md:table-cell">
                         ${table.status === 'occupied' ? `₹${table.totalAmount.toFixed(2)}` : '-'}
                     </td>
-                    <td class="py-3 px-4 text-sm text-gray-900">${new Date(table.created_at).toLocaleDateString()}</td>
-                    <td class="py-3 px-4">
-                        <div class="flex items-center justify-center gap-2">
+                    <td class="py-3 px-2 sm:px-4 text-sm text-gray-900 hidden lg:table-cell">${new Date(table.created_at).toLocaleDateString()}</td>
+                    <td class="py-3 px-2 sm:px-4">
+                        <div class="flex items-center justify-center gap-1 sm:gap-2">
                             <button onclick="viewTable(${table.id})" 
-                                    class="p-1 text-blue-600 hover:text-blue-800 transition-colors">
+                                    class="p-1 text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm">
                                 View
                             </button>
                             <button onclick="editTable(${table.id})" 
-                                    class="p-1 text-orange-600 hover:text-orange-800 transition-colors">
+                                    class="p-1 text-orange-600 hover:text-orange-800 transition-colors text-xs sm:text-sm">
                                 Edit
                             </button>
                             <button onclick="toggleTableStatus(${table.id})" 
-                                    class="p-1 transition-colors"
+                                    class="p-1 transition-colors text-xs sm:text-sm"
                                     style="color: ${statusColor};">
                                 Toggle
                             </button>
                             <button onclick="deleteTable(${table.id})" 
-                                    class="p-1 text-gray-600 hover:text-red-600 transition-colors">
-                                Delete
+                                    class="p-1 text-gray-600 hover:text-red-600 transition-colors text-xs sm:text-sm">
+                                Del
                             </button>
                         </div>
                     </td>
@@ -824,6 +786,5 @@
                 alert('Tables reset to 3 default tables (T1, T2, T3)');
             }
         }
-    </script>
-</body>
-</html>
+</script>
+@endpush
