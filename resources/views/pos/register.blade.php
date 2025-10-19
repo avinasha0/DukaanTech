@@ -1430,7 +1430,7 @@ function posRegister() {
             if (!this.shift) return;
             
             try {
-                const response = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
+                const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -3758,7 +3758,7 @@ function checkoutModal() {
             // Get current shift and calculate summary directly
             try {
                 // First get current shift
-                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
