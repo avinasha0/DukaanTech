@@ -3532,6 +3532,14 @@ function posRegister() {
             console.log('Current shiftSummary:', this.shiftSummary);
             console.log('API Base:', this.apiBase);
             
+            // Check if there's an active shift
+            if (!this.shift || !this.shift.id) {
+                alert('No active shift found. Please open a shift first.');
+                // Redirect to shift opening page
+                window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                return;
+            }
+            
             this.showShiftCheckoutModal = true;
             
             // Calculate summary directly from current shift data
@@ -3625,6 +3633,15 @@ function posRegister() {
         
         async checkoutShift() {
             console.log('Checkout shift clicked!');
+            
+            // Check if there's an active shift
+            if (!this.shift || !this.shift.id) {
+                alert('No active shift found. Please open a shift first.');
+                // Redirect to shift opening page
+                window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                return;
+            }
+            
             if (!this.actualCash && this.actualCash !== 0) {
                 alert('Please enter the actual cash amount');
                 return;
@@ -3944,6 +3961,14 @@ function checkoutModal() {
             console.log('Actual cash:', this.actualCash);
             console.log('API Base:', this.apiBase);
             console.log('URL:', `${this.apiBase}/dashboard/shift/checkout`);
+            
+            // Check if there's an active shift
+            if (!this.shiftInfo || !this.shiftInfo.id) {
+                alert('No active shift found. Please open a shift first.');
+                // Redirect to shift opening page
+                window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
+                return;
+            }
             
             if (!this.actualCash && this.actualCash !== 0) {
                 alert('Please enter the actual cash amount');
