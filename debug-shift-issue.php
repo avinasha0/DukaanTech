@@ -16,50 +16,45 @@ echo "Generated: " . now() . "\n\n";
 // 1. Check tenant info
 echo "1. TENANT INFORMATION\n";
 echo "====================\n";
-$tenant = app('tenant');
-if ($tenant) {
-    echo "Tenant ID: " . $tenant->id . "\n";
-    echo "Tenant Slug: " . $tenant->slug . "\n";
-    echo "Tenant Name: " . $tenant->name . "\n";
-} else {
-    echo "❌ No tenant found\n";
+$tenants = \App\Models\Account::all();
+echo "Total tenants: " . $tenants->count() . "\n";
+foreach ($tenants as $tenant) {
+    echo "- Tenant ID: {$tenant->id}, Slug: {$tenant->slug}, Name: {$tenant->name}\n";
 }
 echo "\n";
 
 // 2. Check outlets
 echo "2. OUTLET INFORMATION\n";
 echo "====================\n";
-$outlets = \App\Models\Outlet::where('tenant_id', $tenant->id ?? 1)->get();
+$outlets = \App\Models\Outlet::all();
 echo "Total outlets: " . $outlets->count() . "\n";
 foreach ($outlets as $outlet) {
-    echo "- Outlet ID: {$outlet->id}, Name: {$outlet->name}\n";
+    echo "- Outlet ID: {$outlet->id}, Tenant: {$outlet->tenant_id}, Name: {$outlet->name}\n";
 }
 echo "\n";
 
 // 3. Check shifts
 echo "3. SHIFT INFORMATION\n";
 echo "===================\n";
-$allShifts = \App\Models\Shift::where('tenant_id', $tenant->id ?? 1)->get();
+$allShifts = \App\Models\Shift::all();
 echo "Total shifts: " . $allShifts->count() . "\n";
 
-$openShifts = \App\Models\Shift::where('tenant_id', $tenant->id ?? 1)
-    ->whereNull('closed_at')
-    ->get();
+$openShifts = \App\Models\Shift::whereNull('closed_at')->get();
 echo "Open shifts: " . $openShifts->count() . "\n";
 
 foreach ($openShifts as $shift) {
-    echo "- Shift ID: {$shift->id}, Outlet: {$shift->outlet_id}, Opened by: {$shift->opened_by}, Created: {$shift->created_at}\n";
+    echo "- Shift ID: {$shift->id}, Tenant: {$shift->tenant_id}, Outlet: {$shift->outlet_id}, Opened by: {$shift->opened_by}, Created: {$shift->created_at}\n";
 }
 echo "\n";
 
 // 4. Check terminal users
 echo "4. TERMINAL USER INFORMATION\n";
 echo "===========================\n";
-$terminalUsers = \App\Models\TerminalUser::where('tenant_id', $tenant->id ?? 1)->get();
+$terminalUsers = \App\Models\TerminalUser::all();
 echo "Total terminal users: " . $terminalUsers->count() . "\n";
 
 foreach ($terminalUsers as $tu) {
-    echo "- Terminal User ID: {$tu->id}, Name: {$tu->name}, Terminal ID: {$tu->terminal_id}, User ID: " . ($tu->user_id ?? 'NULL') . "\n";
+    echo "- Terminal User ID: {$tu->id}, Tenant: {$tu->tenant_id}, Name: {$tu->name}, Terminal ID: {$tu->terminal_id}, User ID: " . ($tu->user_id ?? 'NULL') . "\n";
 }
 echo "\n";
 
@@ -78,11 +73,11 @@ echo "\n";
 // 6. Check users
 echo "6. USER INFORMATION\n";
 echo "==================\n";
-$users = \App\Models\User::where('tenant_id', $tenant->id ?? 1)->get();
+$users = \App\Models\User::all();
 echo "Total users: " . $users->count() . "\n";
 
 foreach ($users as $user) {
-    echo "- User ID: {$user->id}, Name: {$user->name}, Email: {$user->email}, Role: {$user->role}\n";
+    echo "- User ID: {$user->id}, Tenant: {$user->tenant_id}, Name: {$user->name}, Email: {$user->email}, Role: {$user->role}\n";
 }
 echo "\n";
 
