@@ -143,36 +143,6 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         ]);
     });
     
-    Route::get('/orders/current-shift', function ($tenant) {
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        $data = request()->validate([
-            'outlet_id' => 'required|exists:outlets,id',
-            'shift_id' => 'required|exists:shifts,id'
-        ]);
-
-        // Get the shift to verify it belongs to current tenant and outlet
-        $shift = \App\Models\Shift::where('id', $data['shift_id'])
-            ->where('tenant_id', $account->id)
-            ->where('outlet_id', $data['outlet_id'])
-            ->first();
-
-        if (!$shift) {
-            return response()->json(['error' => 'Shift not found'], 404);
-        }
-
-        // Get last 10 orders created during this shift
-        $orders = \App\Models\Order::where('tenant_id', $account->id)
-            ->where('outlet_id', $data['outlet_id'])
-            ->whereBetween('created_at', [$shift->created_at, $shift->closed_at ?? now()])
-            ->with(['orderType', 'items.item', 'outlet'])
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
-
-        return response()->json($orders);
-    });
-    
     Route::get('/kot/status', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
         $outletId = request('outlet_id', 1);

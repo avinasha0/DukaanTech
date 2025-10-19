@@ -28,6 +28,30 @@
             align-items: center !important;
             justify-content: center !important;
         }
+        
+        /* Mobile overflow prevention */
+        @media (max-width: 640px) {
+            .mobile-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+            .mobile-text {
+                font-size: 0.75rem !important;
+            }
+            .mobile-padding {
+                padding: 0.75rem !important;
+            }
+        }
+        
+        /* Ensure no horizontal overflow */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -170,9 +194,9 @@
     </div>
 
     <!-- Top Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3">
-        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-4">
-            <div class="flex items-center gap-3 w-full lg:w-auto">
+    <header class="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3 overflow-hidden max-w-full">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-4 w-full max-w-full overflow-hidden">
+            <div class="flex items-center gap-3 w-full lg:w-auto min-w-0">
                 <!-- Mobile Menu Toggle Button -->
                 <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,19 +212,19 @@
                 </div>
             </div>
             
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 lg:gap-4 w-full lg:w-auto">
+            <div class="flex flex-row items-center gap-1 sm:gap-2 lg:gap-4 w-full lg:w-auto min-w-0 overflow-hidden">
                 <!-- Outlet Selector -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs sm:text-sm text-gray-600 font-medium">Outlet:</label>
+                <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-600 font-medium">Outlet:</label>
                     <template x-if="outlets.length === 0">
-                        <div class="text-xs sm:text-sm text-gray-500 px-2 py-1">Loading...</div>
+                        <div class="text-xs text-gray-500 px-1 py-0.5">Loading...</div>
                     </template>
                     <template x-if="outlets.length === 1">
-                        <div class="text-xs sm:text-sm text-gray-700 px-2 py-1 font-medium" x-text="outlets[0].name"></div>
+                        <div class="text-xs text-gray-700 px-1 py-0.5 font-medium" x-text="outlets[0].name"></div>
                     </template>
                     <template x-if="outlets.length > 1">
                         <select x-model="outletId" @change="onOutletChange()" 
-                                class="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]">
+                                class="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[80px]">
                             <template x-for="outlet in outlets" :key="outlet.id">
                                 <option :value="outlet.id" x-text="outlet.name"></option>
                             </template>
@@ -208,48 +232,55 @@
                     </template>
                 </div>
                 
-                <div class="text-xs sm:text-sm text-gray-600 flex items-center">
+                <div class="text-xs text-gray-600 flex items-center">
                     Shift: <span x-text="shift?.id ?? '—'" class="font-semibold ml-1"></span>
-                    <span x-show="shift" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Open</span>
+                    <span x-show="shift" class="ml-1 px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">Open</span>
                 </div>
                 
                 @if($isTerminalAuth && $terminalUser)
-                <div class="text-xs sm:text-sm text-gray-600 flex items-center">
-                    User: <span class="font-semibold ml-1">{{ $terminalUser->name }}</span>
-                    <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{{ ucfirst($terminalUser->role) }}</span>
+                <div class="text-xs text-gray-600 flex items-center">
+                    <span class="font-semibold">{{ $terminalUser->name }}</span>
+                    <span class="ml-1 px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">{{ ucfirst($terminalUser->role) }}</span>
                 </div>
                 @endif
                 
                 <!-- View Orders Button -->
                 <template x-if="shift">
-                    <button @click="openOrdersModal()" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-colors">
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button @click="openOrdersModal()" class="inline-flex items-center justify-center rounded bg-blue-600 px-2 py-1 text-white text-xs font-semibold hover:bg-blue-700 transition-colors">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                         </svg>
-                        <span class="hidden sm:inline">Recent Orders</span>
-                        <span class="sm:hidden">Recent</span>
+                        <span class="hidden lg:inline">Recent Orders</span>
                     </button>
                 </template>
                 
                 <!-- Product Visibility Button -->
                 <template x-if="shift">
-                    <button @click="openProductVisibilityModal()" class="inline-flex items-center justify-center rounded-md bg-purple-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-purple-700 transition-colors">
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Show/Hide Products</span>
-                        <span class="sm:hidden">Products</span>
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <button @click="openProductVisibilityModal()" class="inline-flex items-center justify-center rounded bg-purple-600 px-2 py-1 text-white text-xs font-semibold hover:bg-purple-700 transition-colors">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <span class="hidden sm:inline">Products</span>
+                        </button>
+                        
+                        <!-- Mobile-only Checkout Button -->
+                        <button @click="$dispatch('open-checkout', {outletId: outletId})" class="lg:hidden inline-flex items-center justify-center rounded bg-orange-600 px-2 py-1 text-white text-xs font-semibold hover:bg-orange-700 transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                        </button>
+                    </div>
                 </template>
                 
+                <!-- Desktop Checkout Button -->
                 <template x-if="shift">
-                    <button @click="$dispatch('open-checkout', {outletId: outletId})" class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-colors">
+                    <button @click="$dispatch('open-checkout', {outletId: outletId})" class="hidden lg:inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-colors">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                         </svg>
-                        <span class="hidden sm:inline">Checkout & Logout</span>
-                        <span class="sm:hidden">Checkout</span>
+                        <span>Checkout & Logout</span>
                     </button>
                 </template>
                 
@@ -276,6 +307,29 @@
             <!-- Mobile Categories List -->
             <div class="flex-1 overflow-y-auto p-4">
                 <div class="space-y-2">
+                    <!-- Tables Button -->
+                    <button 
+                        @click="toggleTables()"
+                        :class="showTables ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                        class="w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <span>Tables</span>
+                    </button>
+                    
+                    <!-- All Categories Button -->
+                    <button 
+                        @click="selectAllCategories()"
+                        :class="showAllCategories ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                        class="w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
+                        <span>All Categories</span>
+                    </button>
                     
                     <template x-for="category in categories" :key="category.id">
                         <button 
@@ -294,24 +348,24 @@
 
 
     <!-- Main POS Layout -->
-    <div class="flex flex-col lg:flex-row h-[calc(100vh-70px)] sm:h-[calc(100vh-80px)]">
+    <div class="flex flex-col lg:flex-row min-h-[calc(100vh-70px)] sm:min-h-[calc(100vh-80px)] lg:h-[calc(100vh-70px)] lg:overflow-hidden">
         <!-- Mobile Cart Panel (Hidden on desktop) -->
-        <div class="lg:hidden bg-white border-b border-gray-200 p-3 sm:p-4">
+        <div class="lg:hidden bg-white border-b border-gray-200 p-3 sm:p-4 overflow-hidden max-w-full">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-base sm:text-lg font-semibold text-gray-900">Cart (<span x-text="cartItemCount"></span> items)</h3>
                 <div class="text-base sm:text-lg font-bold text-orange-600" x-text="'₹' + cartTotal"></div>
             </div>
             
             <!-- Cart Items List -->
-            <div class="mb-3 max-h-40 overflow-y-auto">
+            <div class="mb-2 max-h-32 overflow-y-auto">
                 <template x-if="cart.length > 0">
                     <div class="space-y-2">
                         <template x-for="item in cart" :key="item.id">
-                            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200">
-                                <div class="flex-1 min-w-0 flex items-center gap-2">
-                                    <div class="font-medium text-gray-900 truncate text-sm" x-text="item.name"></div>
-                                    <div class="text-xs text-gray-500" x-text="'₹' + item.price"></div>
-                                    <div class="text-xs text-gray-600 font-semibold" x-text="'×' + item.qty + ' = ₹' + (item.price * item.qty)"></div>
+                            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200 w-full max-w-full overflow-hidden">
+                                <div class="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
+                                    <div class="font-medium text-gray-900 truncate text-sm flex-1 min-w-0" x-text="item.name"></div>
+                                    <div class="text-xs text-gray-500 flex-shrink-0" x-text="'₹' + item.price"></div>
+                                    <div class="text-xs text-gray-600 font-semibold flex-shrink-0" x-text="'×' + item.qty + ' = ₹' + (item.price * item.qty)"></div>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2 flex-shrink-0">
                                     <button @click="updateQuantity(item.id, item.qty - 1)" class="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">-</button>
@@ -335,20 +389,102 @@
                 </template>
             </div>
             
+            <!-- Order Type Tabs - Mobile -->
+            <div class="mb-2">
+                <div class="flex space-x-0.5 bg-gray-100 rounded p-0.5">
+                    <button @click="handleTabChange('dine-in')" 
+                            :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
+                        Dine In
+                    </button>
+                    <button @click="handleTabChange('delivery')" 
+                            :class="selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
+                        Delivery
+                    </button>
+                    <button @click="handleTabChange('pick-up')" 
+                            :class="selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
+                        Pickup
+                    </button>
+                </div>
+                
+                <!-- Dine In Sub-tabs -->
+                <div x-show="selectedOrderType === 'dine-in'" class="mt-1">
+                    <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5">
+                        <button @click="selectedDineInTab = 'table'" 
+                                :class="selectedDineInTab === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Table
+                        </button>
+                        <button @click="selectedDineInTab = 'customer'" 
+                                :class="selectedDineInTab === 'customer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Customer
+                        </button>
+                        <button @click="selectedDineInTab = 'count'" 
+                                :class="selectedDineInTab === 'count' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Count
+                        </button>
+                    </div>
+                    
+                    <!-- Table Dropdown -->
+                    <div x-show="selectedDineInTab === 'table'" class="mt-2">
+                        <select x-model="customerInfo.tableNo" @change="handleTableSelection()" 
+                                class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Choose table...</option>
+                            <template x-for="table in tables" :key="table.id">
+                                <option :value="table.name" 
+                                        :disabled="table.status === 'occupied'"
+                                        :class="table.status === 'occupied' ? 'text-gray-400' : ''">
+                                    <span x-text="table.name"></span>
+                                    <span x-text="table.status === 'occupied' ? ' (Occupied)' : ' (Available)'"></span>
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Payment Methods -->
             <div class="mb-3">
-                <div class="grid grid-cols-3 gap-2 mb-2">
-                    <label class="flex items-center justify-center py-2 px-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
+                <div class="grid grid-cols-3 gap-1 mb-2">
+                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                         <input type="radio" x-model="paymentMethod" value="cash" class="sr-only">
-                        <span class="text-xs sm:text-sm font-medium">Cash</span>
+                        <div class="flex flex-col items-center gap-0.5">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span class="text-xs font-medium hidden sm:block">Cash</span>
+                        </div>
                     </label>
-                    <label class="flex items-center justify-center py-2 px-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
+                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
                         <input type="radio" x-model="paymentMethod" value="card" class="sr-only">
-                        <span class="text-xs sm:text-sm font-medium">Card</span>
+                        <div class="flex flex-col items-center gap-0.5">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            <span class="text-xs font-medium hidden sm:block">Card</span>
+                        </div>
                     </label>
-                    <label class="flex items-center justify-center py-2 px-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
+                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
                         <input type="radio" x-model="paymentMethod" value="upi" class="sr-only">
-                        <span class="text-xs sm:text-sm font-medium">UPI</span>
+                        <div class="flex flex-col items-center gap-0.5">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            <span class="text-xs font-medium hidden sm:block">UPI</span>
+                        </div>
                     </label>
                 </div>
                 <!-- Payment Method Validation Error -->
@@ -358,17 +494,26 @@
             </div>
             
             <div class="space-y-2">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button @click="createOrder()" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-red-500 text-white py-2.5 px-3 rounded-lg font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm transition-colors">
-                    Create Order
-                </button>
-                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-green-500 text-white py-2.5 px-3 rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm transition-colors">
-                        Order with Print & KOT
+                <div class="grid grid-cols-3 gap-1">
+                    <button @click="createOrder()" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span class="text-xs font-medium hidden sm:block">Create Order</span>
+                    </button>
+                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="text-xs font-medium hidden sm:block">Print & KOT</span>
+                    </button>
+                    <button @click="printCurrentOrder()" :disabled="cart.length === 0" class="bg-gray-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        <span class="text-xs font-medium hidden sm:block">Print Bill</span>
                     </button>
                 </div>
-                <button @click="printCurrentOrder()" :disabled="cart.length === 0" class="w-full bg-gray-500 text-white py-2.5 px-3 rounded-lg font-semibold hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm transition-colors">
-                    Print Bill
-                </button>
             </div>
         </div>
 
@@ -434,8 +579,8 @@
         </div>
 
         <!-- Middle Panel - Products -->
-        <div class="flex-1 bg-white overflow-y-auto">
-            <div class="p-3 sm:p-4 lg:p-6">
+        <div class="flex-1 bg-white overflow-x-hidden lg:overflow-y-auto">
+            <div class="p-3 sm:p-4 lg:p-6 max-w-full">
                 <!-- Tables View -->
                 <div x-show="showTables" class="mb-6">
                     <div class="flex items-center justify-between mb-4">
@@ -573,14 +718,14 @@
                 </div>
 
                 <!-- Products Grid -->
-                <div x-show="!showTables" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
+                <div x-show="!showTables" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 w-full max-w-full mobile-grid">
                     <template x-for="item in filteredItems" :key="item.id">
                         <button 
                             @click="addToCart(item)"
-                            class="bg-white border border-green-200 rounded-lg p-2.5 sm:p-3 lg:p-4 hover:border-green-400 hover:shadow-md transition-all text-left min-h-[80px] sm:min-h-[90px] flex flex-col justify-between"
+                            class="bg-white border border-green-200 rounded-lg p-2.5 sm:p-3 lg:p-4 hover:border-green-400 hover:shadow-md transition-all text-left min-h-[80px] sm:min-h-[90px] flex flex-col justify-between w-full max-w-full overflow-hidden mobile-padding"
                         >
-                            <div class="font-medium text-gray-900 mb-1 text-xs sm:text-sm lg:text-base line-clamp-2" x-text="item.name"></div>
-                            <div class="text-sm sm:text-base lg:text-lg font-bold text-green-600" x-text="'₹' + (item.price || 0)"></div>
+                            <div class="font-medium text-gray-900 mb-1 text-xs sm:text-sm lg:text-base line-clamp-2 break-words mobile-text" x-text="item.name"></div>
+                            <div class="text-sm sm:text-base lg:text-lg font-bold text-green-600 truncate mobile-text" x-text="'₹' + (item.price || 0)"></div>
                         </button>
                     </template>
                 </div>
@@ -1491,6 +1636,9 @@ function posRegister() {
             console.log('selectedCategory after:', this.selectedCategory);
             console.log('showAllCategories after:', this.showAllCategories);
             console.log('=== END TOGGLE TABLES DEBUG ===');
+            
+            // Close mobile menu after selection
+            this.mobileMenuOpen = false;
         },
 
         selectAllCategories() {
@@ -1507,6 +1655,9 @@ function posRegister() {
             console.log('selectedCategory after:', this.selectedCategory);
             console.log('showAllCategories after:', this.showAllCategories);
             console.log('=== END SELECT ALL CATEGORIES DEBUG ===');
+            
+            // Close mobile menu after selection
+            this.mobileMenuOpen = false;
         },
         
         selectOrderType(orderType) {
@@ -4197,8 +4348,10 @@ function ordersModal() {
         },
         
         open(detail) {
+            console.log('Orders modal opening on mobile');
             this.shiftId = detail.shiftId;
             this.isOpen = true;
+            console.log('Modal isOpen set to:', this.isOpen);
             this.loadOrders();
         },
         
@@ -4223,6 +4376,8 @@ function ordersModal() {
                 if (response.ok) {
                     const data = await response.json();
                     this.orders = data || [];
+                    console.log('Orders loaded successfully:', this.orders.length, 'orders');
+                    console.log('Orders data:', this.orders);
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.error || `HTTP ${response.status}: Failed to load orders`);
@@ -4828,25 +4983,25 @@ function getCookie(name) {
         class="relative z-50"
     >
         <!-- Backdrop -->
-        <div x-show="isOpen" x-transition.opacity class="fixed inset-0 bg-black/50" aria-hidden="true"></div>
+        <div x-show="isOpen" x-transition.opacity class="fixed inset-0 bg-black/50 z-40" aria-hidden="true"></div>
 
         <!-- Panel -->
-        <div x-show="isOpen" x-transition x-trap.noscroll="isOpen" class="fixed inset-0 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true">
-            <div class="w-full max-w-6xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
-                <div class="flex items-center justify-between p-3 sm:p-4 border-b">
-                    <h2 class="text-base sm:text-lg font-semibold">Recent Orders</h2>
-                    <button class="p-2 text-lg" @click="close()" aria-label="Close">✕</button>
+        <div x-show="isOpen" x-transition x-trap.noscroll="isOpen" class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 z-[9999]" role="dialog" aria-modal="true">
+            <div class="w-full max-w-sm sm:max-w-2xl rounded-lg bg-white shadow-xl max-h-[70vh] sm:max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between p-2 sm:p-4 border-b">
+                    <h2 class="text-sm sm:text-lg font-semibold">Recent Orders</h2>
+                    <button class="p-1 sm:p-2 text-lg" @click="close()" aria-label="Close">✕</button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-3 sm:p-4">
+                <div class="flex-1 overflow-y-auto p-2 sm:p-4">
                     <!-- Loading State -->
-                    <div x-show="loading" class="flex items-center justify-center py-8">
-                        <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
-                        <span class="ml-2 text-gray-600 text-sm sm:text-base">Loading orders...</span>
+                    <div x-show="loading" class="flex items-center justify-center py-4 sm:py-8">
+                        <div class="animate-spin rounded-full h-5 w-5 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-2 text-gray-600 text-xs sm:text-base">Loading orders...</span>
                     </div>
 
                     <!-- Orders List -->
-                    <div x-show="!loading" class="space-y-2">
+                    <div x-show="!loading" class="space-y-1 sm:space-y-2">
                         <!-- Table Header - Hidden on mobile, shown on larger screens -->
                         <div class="hidden lg:grid bg-gray-50 rounded-lg p-3 grid-cols-12 gap-4 text-sm font-medium text-gray-700">
                             <div class="col-span-2">Order #</div>
@@ -4859,53 +5014,34 @@ function getCookie(name) {
                         </div>
                         
                         <!-- Orders Rows -->
-                        <template x-for="order in orders" :key="order.id">
+                        <div x-show="orders.length > 0">
                             <!-- Desktop Layout -->
                             <div class="hidden lg:grid border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors grid-cols-12 gap-4 items-center text-sm">
-                                <!-- Order ID -->
                                 <div class="col-span-2 font-semibold text-gray-900">
-                                    #<span x-text="order.id"></span>
+                                    #<span x-text="orders[0]?.id"></span>
                                 </div>
-                                
-                                <!-- Time -->
                                 <div class="col-span-2 text-gray-600">
-                                    <span x-text="formatOrderTime(order.created_at)"></span>
+                                    <span x-text="formatOrderTime(orders[0]?.created_at)"></span>
                                 </div>
-                                
-                                <!-- Status -->
                                 <div class="col-span-2">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium" 
-                                          :class="getOrderStatusColor(order.state)" 
-                                          x-text="order.state"></span>
+                                          :class="getOrderStatusColor(orders[0]?.state)" 
+                                          x-text="orders[0]?.state"></span>
                                 </div>
-                                
-                                <!-- Customer/Table -->
                                 <div class="col-span-2 text-gray-600">
-                                    <div x-show="order.customer_name" class="font-medium" x-text="order.customer_name"></div>
-                                    <div x-show="order.table_no" class="text-xs" x-text="'Table: ' + order.table_no"></div>
-                                    <div x-show="!order.customer_name && !order.table_no" class="text-gray-400">Walk-in</div>
-                                    <div x-show="order.source === 'mobile_qr'" class="inline-flex items-center mt-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                        </svg>
-                                        Mobile QR
-                                    </div>
+                                    <div x-show="orders[0]?.customer_name" class="font-medium" x-text="orders[0]?.customer_name"></div>
+                                    <div x-show="orders[0]?.table_no" class="text-xs" x-text="'Table: ' + orders[0]?.table_no"></div>
+                                    <div x-show="!orders[0]?.customer_name && !orders[0]?.table_no" class="text-gray-400">Walk-in</div>
                                 </div>
-                                
-                                <!-- Items Summary -->
                                 <div class="col-span-2 text-gray-600">
-                                    <div x-text="(order.items?.length || 0) + ' items'"></div>
-                                    <div class="text-xs text-gray-500" x-text="order.payment_method?.toUpperCase() || 'CASH'"></div>
+                                    <div x-text="(orders[0]?.items?.length || 0) + ' items'"></div>
+                                    <div class="text-xs text-gray-500" x-text="orders[0]?.payment_method?.toUpperCase() || 'CASH'"></div>
                                 </div>
-                                
-                                <!-- Total -->
                                 <div class="col-span-1 text-right">
-                                    <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
+                                    <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(orders[0]).toFixed(2)"></div>
                                 </div>
-                                
-                                <!-- Actions -->
                                 <div class="col-span-1 text-center">
-                                    <button @click="viewOrderDetails(order)" 
+                                    <button @click="viewOrderDetails(orders[0])" 
                                             class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
                                         View
                                     </button>
@@ -4913,48 +5049,18 @@ function getCookie(name) {
                             </div>
                             
                             <!-- Mobile Layout -->
-                            <div class="lg:hidden border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors space-y-2">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <div class="font-semibold text-gray-900 text-sm">
-                                            #<span x-text="order.id"></span>
-                                        </div>
-                                        <div class="text-xs text-gray-600" x-text="formatOrderTime(order.created_at)"></div>
+                            <div class="block lg:hidden border border-gray-200 rounded-lg p-3 bg-white mb-2 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <div class="text-sm font-bold text-gray-900">
+                                        Order #<span x-text="orders[0]?.id"></span>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="font-bold text-green-600 text-sm" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium" 
-                                              :class="getOrderStatusColor(order.state)" 
-                                              x-text="order.state"></span>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex justify-between items-center text-xs text-gray-600">
-                                    <div>
-                                        <div x-show="order.customer_name" class="font-medium" x-text="order.customer_name"></div>
-                                        <div x-show="order.table_no" x-text="'Table: ' + order.table_no"></div>
-                                        <div x-show="!order.customer_name && !order.table_no" class="text-gray-400">Walk-in</div>
-                                        <div x-show="order.source === 'mobile_qr'" class="inline-flex items-center mt-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                            </svg>
-                                            Mobile QR
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div x-text="(order.items?.length || 0) + ' items'"></div>
-                                        <div class="text-gray-500" x-text="order.payment_method?.toUpperCase() || 'CASH'"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex justify-end">
-                                    <button @click="viewOrderDetails(order)" 
-                                            class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
-                                        View
+                                    <button @click="viewOrderDetails(orders[0])" 
+                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium underline">
+                                        View Details
                                     </button>
                                 </div>
                             </div>
-                        </template>
+                        </div>
 
                         <!-- No Orders State -->
                         <div x-show="!loading && orders.length === 0" class="text-center py-8 text-gray-500">
