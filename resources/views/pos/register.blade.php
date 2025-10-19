@@ -244,7 +244,7 @@
                 </template>
                 
                 <template x-if="shift">
-                    <button @click="$dispatch('open-checkout')" class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-colors">
+                    <button @click="$dispatch('open-checkout', {outletId: outletId})" class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-colors">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                         </svg>
@@ -3695,17 +3695,22 @@ function checkoutModal() {
             this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
         },
         
-        async open() {
+        async open(event) {
             console.log('=== OPENING CHECKOUT MODAL ===');
             console.log('API Base:', this.apiBase);
+            
+            // Get outlet ID from the event or default to 1
+            const outletId = event?.detail?.outletId || 1;
+            console.log('Using outlet ID:', outletId);
             
             // Check if there's an active shift by calling the API
             try {
                 console.log('=== CHECKOUT MODAL SHIFT CHECK ===');
                 console.log('API Base:', this.apiBase);
+                console.log('Outlet ID:', outletId);
                 console.log('Session token:', localStorage.getItem('terminal_session_token'));
                 
-                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${outletId}&t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
