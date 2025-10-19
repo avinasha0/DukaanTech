@@ -212,6 +212,13 @@
                         window.location.href = `/{{ $tenant->slug }}/terminal/login`;
                         return;
                     }
+                    
+                    // Auto-select first outlet if only one is available
+                    const outlets = @json($outlets);
+                    if (outlets.length === 1) {
+                        this.formData.outlet_id = outlets[0].id;
+                        console.log('Auto-selected outlet:', outlets[0].name);
+                    }
                 },
 
                 updateTime() {
@@ -261,6 +268,13 @@
                     this.loading = true;
                     this.error = '';
 
+                    // Validate form data
+                    if (!this.formData.outlet_id) {
+                        this.error = 'Please select an outlet';
+                        this.loading = false;
+                        return;
+                    }
+
                     // Debug: Check session token
                     const sessionToken = localStorage.getItem('terminal_session_token');
                     console.log('Session token:', sessionToken);
@@ -277,6 +291,16 @@
                             credentials: 'include',
                             body: JSON.stringify(this.formData)
                         });
+
+                        // Check if response is JSON
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            const text = await response.text();
+                            console.error('Non-JSON response:', text);
+                            this.error = 'Server error: ' + response.status + ' - ' + response.statusText;
+                            this.loading = false;
+                            return;
+                        }
 
                         const data = await response.json();
 
