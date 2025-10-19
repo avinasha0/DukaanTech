@@ -148,11 +148,24 @@ class PosApiController extends Controller
         $terminalUser = null;
         $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
+        \Log::info('CurrentShift API called', [
+            'tenant_id' => $tenantId,
+            'outlet_id' => $outletId,
+            'session_token_header' => request()->header('X-Terminal-Session-Token'),
+            'session_token_cookie' => request()->cookie('terminal_session_token'),
+            'session_token_final' => $sessionToken,
+            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
         // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
+                \Log::info('Session token decrypted successfully', ['decrypted_length' => strlen($sessionToken)]);
             } catch (\Exception $e) {
+                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
                 // Fall back to header token if cookie decryption fails
                 $sessionToken = request()->header('X-Terminal-Session-Token');
             }
@@ -164,9 +177,18 @@ class PosApiController extends Controller
                 ->with('terminalUser')
                 ->first();
             
+            \Log::info('Session lookup result', [
+                'session_found' => $session ? true : false,
+                'session_id' => $session ? $session->id : null,
+                'terminal_user_found' => $session && $session->terminalUser ? true : false,
+                'terminal_user_id' => $session && $session->terminalUser ? $session->terminalUser->id : null
+            ]);
+            
             if ($session && $session->terminalUser) {
                 $terminalUser = $session->terminalUser;
             }
+        } else {
+            \Log::warning('No session token provided');
         }
         
         // If terminal user, look for shift by user, otherwise by outlet

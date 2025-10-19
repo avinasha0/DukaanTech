@@ -29,11 +29,24 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
         $terminalUser = null;
         $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
         
+        \Log::info('Shift checkout API called', [
+            'tenant_id' => $account->id,
+            'actual_cash' => $data['actual_cash'],
+            'session_token_header' => request()->header('X-Terminal-Session-Token'),
+            'session_token_cookie' => request()->cookie('terminal_session_token'),
+            'session_token_final' => $sessionToken,
+            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all()
+        ]);
+        
         // If the token looks like a Laravel encrypted cookie, try to decrypt it
         if ($sessionToken && strlen($sessionToken) > 100) {
             try {
                 $sessionToken = decrypt($sessionToken);
+                \Log::info('Session token decrypted successfully', ['decrypted_length' => strlen($sessionToken)]);
             } catch (\Exception $e) {
+                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
                 // Fall back to header token if cookie decryption fails
                 $sessionToken = request()->header('X-Terminal-Session-Token');
             }
@@ -45,12 +58,25 @@ Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'ge
                 ->with('terminalUser')
                 ->first();
             
+            \Log::info('Session lookup result', [
+                'session_found' => $session ? true : false,
+                'session_id' => $session ? $session->id : null,
+                'terminal_user_found' => $session && $session->terminalUser ? true : false,
+                'terminal_user_id' => $session && $session->terminalUser ? $session->terminalUser->id : null
+            ]);
+            
             if ($session && $session->terminalUser) {
                 $terminalUser = $session->terminalUser;
             }
+        } else {
+            \Log::warning('No session token provided for shift checkout');
         }
         
         if (!$terminalUser) {
+            \Log::error('Terminal user not found for shift checkout', [
+                'session_token_provided' => $sessionToken ? true : false,
+                'session_token_length' => $sessionToken ? strlen($sessionToken) : 0
+            ]);
             return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
         }
         
