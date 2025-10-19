@@ -1392,9 +1392,9 @@ function posRegister() {
                 console.log('=== CHECKING SHIFT ===');
                 console.log('API Base:', this.apiBase);
                 console.log('Outlet ID:', this.outletId);
-                console.log('URL:', `${this.apiBase}/shifts/current?outlet_id=${this.outletId}`);
+                console.log('URL:', `${this.apiBase}/dashboard/shift/current?outlet_id=${this.outletId}`);
                 
-                const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}`, {
+                const response = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${this.outletId}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
@@ -1430,7 +1430,7 @@ function posRegister() {
             if (!this.shift) return;
             
             try {
-                const response = await fetch(`${this.apiBase}/shifts/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
+                const response = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${this.outletId}&t=${Date.now()}`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -3544,75 +3544,19 @@ function posRegister() {
             
             this.showShiftCheckoutModal = true;
             
-            // Calculate summary directly from current shift data
+            // Use existing shift summary data instead of recalculating
             if (this.shift && this.shift.id) {
-                try {
-                    // Get orders for this shift
-                    const ordersResponse = await fetch(`${this.apiBase}/orders?shift_id=${this.shift.id}&outlet_id=${this.outletId}&t=${Date.now()}`);
-                    if (ordersResponse.ok) {
-                        const orders = await ordersResponse.json();
-                        console.log('Orders for shift:', orders);
-                        
-                        // Calculate summary
-                        let totalSales = 0;
-                        let totalOrders = 0;
-                        let cashSales = 0;
-                        let cardSales = 0;
-                        let upiSales = 0;
-                        
-                        orders.forEach(order => {
-                            if (order.status !== 'CANCELLED') {
-                                totalOrders++;
-                                
-                                // Calculate order total
-                                let orderTotal = 0;
-                                if (order.items && order.items.length > 0) {
-                                    order.items.forEach(item => {
-                                        const subtotal = item.qty * item.price;
-                                        const modifierTotal = item.modifiers ? item.modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0) : 0;
-                                        const tax = (subtotal + modifierTotal) * (item.tax_rate / 100);
-                                        orderTotal += subtotal + modifierTotal + tax - (item.discount || 0);
-                                    });
-                                }
-                                orderTotal = Math.round(orderTotal * 100) / 100;
-                                
-                                totalSales += orderTotal;
-                                
-                                // Categorize by payment method
-                                if (order.payment_method === 'cash') {
-                                    cashSales += orderTotal;
-                                } else if (order.payment_method === 'card') {
-                                    cardSales += orderTotal;
-                                } else if (order.payment_method === 'upi') {
-                                    upiSales += orderTotal;
-                                }
-                            }
-                        });
-                        
-                        this.shiftSummary = {
-                            total_sales: totalSales,
-                            total_orders: totalOrders,
-                            cash_sales: cashSales,
-                            card_sales: cardSales,
-                            upi_sales: upiSales,
-                            opening_float: this.shift?.opening_float || 0
-                        };
-                        
-                        console.log('Calculated summary:', this.shiftSummary);
-                    } else {
-                        throw new Error('Failed to fetch orders');
-                    }
-                } catch (error) {
-                    console.error('Error calculating summary:', error);
-                    this.shiftSummary = {
-                        total_sales: 0,
-                        total_orders: 0,
-                        cash_sales: 0,
-                        card_sales: 0,
-                        upi_sales: 0,
-                        opening_float: this.shift?.opening_float || 0
-                    };
-                }
+                // Use the existing shiftSummary if available, otherwise set defaults
+                this.shiftSummary = this.shiftSummary || {
+                    total_sales: 0,
+                    total_orders: 0,
+                    cash_sales: 0,
+                    card_sales: 0,
+                    upi_sales: 0,
+                    opening_float: this.shift?.opening_float || 0
+                };
+                
+                console.log('Using existing summary:', this.shiftSummary);
             } else {
                 // No shift available
                 this.shiftSummary = {
@@ -3761,7 +3705,7 @@ function checkoutModal() {
                 console.log('API Base:', this.apiBase);
                 console.log('Session token:', localStorage.getItem('terminal_session_token'));
                 
-                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
@@ -3807,7 +3751,7 @@ function checkoutModal() {
             // Get current shift and calculate summary directly
             try {
                 // First get current shift
-                const shiftResponse = await fetch(`${this.apiBase}/shifts/current?t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
@@ -3818,69 +3762,25 @@ function checkoutModal() {
                     console.log('Shift data received:', shiftData);
                     
                     if (shiftData.shift && shiftData.shift.id) {
-                        // Get orders for this shift
-                        const ordersResponse = await fetch(`${this.apiBase}/orders?shift_id=${shiftData.shift.id}&outlet_id=1&t=${Date.now()}`);
-                        if (ordersResponse.ok) {
-                            const orders = await ordersResponse.json();
-                            console.log('Orders for shift:', orders);
-                            
-                            // Calculate summary
-                            let totalSales = 0;
-                            let totalOrders = 0;
-                            let cashSales = 0;
-                            let cardSales = 0;
-                            let upiSales = 0;
-                            
-                            orders.forEach(order => {
-                                if (order.status !== 'CANCELLED') {
-                                    totalOrders++;
-                                    
-                                    // Calculate order total
-                                    let orderTotal = 0;
-                                    if (order.items && order.items.length > 0) {
-                                        order.items.forEach(item => {
-                                            const subtotal = item.qty * item.price;
-                                            const modifierTotal = item.modifiers ? item.modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0) : 0;
-                                            const tax = (subtotal + modifierTotal) * (item.tax_rate / 100);
-                                            orderTotal += subtotal + modifierTotal + tax - (item.discount || 0);
-                                        });
-                                    }
-                                    orderTotal = Math.round(orderTotal * 100) / 100;
-                                    
-                                    totalSales += orderTotal;
-                                    
-                                    // Categorize by payment method
-                                    if (order.payment_method === 'cash') {
-                                        cashSales += orderTotal;
-                                    } else if (order.payment_method === 'card') {
-                                        cardSales += orderTotal;
-                                    } else if (order.payment_method === 'upi') {
-                                        upiSales += orderTotal;
-                                    }
-                                }
-                            });
-                            
-                            this.shiftSummary = {
-                                total_sales: totalSales,
-                                total_orders: totalOrders,
-                                cash_sales: cashSales,
-                                card_sales: cardSales,
-                                upi_sales: upiSales,
-                                opening_float: shiftData.shift?.opening_float || 0
-                            };
-                            
-                            // Set shift information based on current time
-                            this.shiftInfo = this.getCurrentShiftInfo();
-                            
-                            // Also store the actual shift object for validation
-                            console.log('Setting shiftObject:', shiftData.shift);
-                            this.shiftObject = shiftData.shift;
-                            
-                            console.log('Calculated summary:', this.shiftSummary);
-                            console.log('Shift info:', this.shiftInfo);
-                        } else {
-                            throw new Error('Failed to fetch orders');
-                        }
+                        // Use the summary data from the API response instead of recalculating
+                        this.shiftSummary = shiftData.summary || {
+                            total_sales: 0,
+                            total_orders: 0,
+                            cash_sales: 0,
+                            card_sales: 0,
+                            upi_sales: 0,
+                            opening_float: shiftData.shift?.opening_float || 0
+                        };
+                        
+                        // Set shift information based on current time
+                        this.shiftInfo = this.getCurrentShiftInfo();
+                        
+                        // Also store the actual shift object for validation
+                        console.log('Setting shiftObject:', shiftData.shift);
+                        this.shiftObject = shiftData.shift;
+                        
+                        console.log('Using API summary:', this.shiftSummary);
+                        console.log('Shift info:', this.shiftInfo);
                     } else {
                         // No shift available
                         this.shiftSummary = {

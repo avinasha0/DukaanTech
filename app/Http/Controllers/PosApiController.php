@@ -205,9 +205,29 @@ class PosApiController extends Controller
                 ->first();
         }
             
+        if (!$shift) {
+            return response()->json([
+                'shift' => null,
+                'has_shift' => false,
+                'summary' => [
+                    'total_sales' => 0,
+                    'total_orders' => 0,
+                    'cash_sales' => 0,
+                    'card_sales' => 0,
+                    'upi_sales' => 0,
+                    'opening_float' => 0
+                ]
+            ]);
+        }
+        
+        // Calculate summary using ShiftService
+        $shiftService = new \App\Services\ShiftService();
+        $summary = $shiftService->getShiftSummary($shift);
+        
         return response()->json([
             'shift' => $shift,
-            'has_shift' => $shift !== null
+            'has_shift' => true,
+            'summary' => $summary
         ]);
     }
     
