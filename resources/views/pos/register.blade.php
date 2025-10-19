@@ -4012,12 +4012,19 @@ function checkoutModal() {
             console.log('URL:', `${this.apiBase}/dashboard/shift/checkout`);
             
             // Check if there's an active shift
+            console.log('=== SUBMIT FUNCTION SHIFT CHECK ===');
+            console.log('this.shiftInfo:', this.shiftInfo);
+            console.log('this.shiftInfo.id:', this.shiftInfo?.id);
+            
             if (!this.shiftInfo || !this.shiftInfo.id) {
+                console.log('❌ No shiftInfo found in submit function');
                 alert('No active shift found. Please open a shift first.');
                 // Redirect to shift opening page
                 window.location.href = `/{{ $tenant->slug }}/pos/shift-open`;
                 return;
             }
+            
+            console.log('✅ ShiftInfo found, proceeding with checkout');
             
             if (!this.actualCash && this.actualCash !== 0) {
                 alert('Please enter the actual cash amount');
