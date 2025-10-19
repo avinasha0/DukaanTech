@@ -118,6 +118,12 @@ class PosRegisterController extends Controller
                 ->with('error', 'Please login with terminal credentials to access the POS terminal');
         }
         
+        // If no active shift found, redirect to shift opening page
+        if (!$activeShift) {
+            return redirect()->route('tenant.pos.shift-open', ['tenant' => $tenant])
+                ->with('info', 'Please open a shift to access the POS terminal');
+        }
+        
         return view('pos.register', [
             'tenant' => $account,
             'activeShift' => $activeShift,

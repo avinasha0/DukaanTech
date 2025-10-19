@@ -1314,10 +1314,17 @@ function posRegister() {
         async loadOutlets() {
             try {
                 console.log('Loading outlets...');
+                console.log('API Base URL:', this.apiBase);
+                console.log('Full URL:', `${this.apiBase}/outlets`);
+                
                 const resp = await fetch(`${this.apiBase}/outlets`);
+                console.log('Response status:', resp.status);
+                console.log('Response ok:', resp.ok);
+                
                 if (resp.ok) {
                     this.outlets = await resp.json();
                     console.log('Loaded outlets:', this.outlets);
+                    console.log('Outlets count:', this.outlets.length);
                     
                     // Set default outlet if none selected and outlets are available
                     if (this.outlets.length > 0) {
@@ -1334,12 +1341,17 @@ function posRegister() {
                             this.outletId = this.outlets[0].id;
                             console.log('Set default outlet:', this.outlets[0].name, '(ID:', this.outletId, ')');
                         }
+                    } else {
+                        console.warn('No outlets found for this tenant');
                     }
                 } else {
                     console.warn('Failed to load outlets:', resp.status);
+                    const errorText = await resp.text();
+                    console.error('Error response:', errorText);
                 }
             } catch (e) {
                 console.warn('Unable to load outlets', e);
+                console.error('Error stack:', e.stack);
             }
         },
         
@@ -1538,6 +1550,7 @@ function posRegister() {
                 console.log('API Base:', this.apiBase);
                 console.log('Outlet ID:', this.outletId);
                 console.log('URL:', `${this.apiBase}/dashboard/shift/current?outlet_id=${this.outletId}`);
+                console.log('Session token:', localStorage.getItem('terminal_session_token'));
                 
                 const response = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${this.outletId}`, {
                     headers: {

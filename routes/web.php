@@ -181,6 +181,7 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
     Route::get('/items', [PosApiController::class, 'items']);
     Route::get('/order-types', [PosApiController::class, 'orderTypes']);
     Route::get('/devices', [PosApiController::class, 'devices']);
+    Route::get('/outlets', [PosApiController::class, 'outlets']);
     Route::get('/dashboard/shift/current', [PosApiController::class, 'currentShift']);
     
     Route::get('/orders/current-shift', function ($tenant) {

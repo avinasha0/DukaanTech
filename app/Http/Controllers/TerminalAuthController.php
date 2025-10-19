@@ -149,7 +149,7 @@ class TerminalAuthController extends Controller
                 'role' => $terminalUser->role,
             ],
             'session_token' => $session->session_token,
-            'redirect_url' => route('tenant.pos.terminal.authenticated', ['tenant' => $tenant->slug])
+            'redirect_url' => route('tenant.pos.terminal', ['tenant' => $tenant->slug])
         ], 200);
 
         // Set HTTP-only cookie for session token
