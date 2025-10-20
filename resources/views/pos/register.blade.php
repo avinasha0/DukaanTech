@@ -616,12 +616,12 @@
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <!-- All Tables with Dynamic Shapes -->
                         <template x-for="table in tables" :key="table.id">
-                            <div class="bg-white border-2 p-4 shadow-sm transition-all duration-300 relative group hover:shadow-lg flex flex-col items-center justify-center"
+                            <div class="bg-white border-2 p-2 sm:p-4 shadow-sm transition-all duration-300 relative group hover:shadow-lg flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px]"
                                  :class="[
-                                     table.name === 'T1' ? 'w-32 h-32 rounded-full' : 
-                                     table.name === 'T2' ? 'w-40 h-24 rounded-lg' : 
-                                     table.name === 'T3' ? 'w-36 h-28 rounded-full' : 
-                                     'w-32 h-32 rounded-lg',
+                                     table.name === 'T1' ? 'rounded-full' : 
+                                     table.name === 'T2' ? 'rounded-lg' : 
+                                     table.name === 'T3' ? 'rounded-full' : 
+                                     'rounded-lg',
                                      table.status === 'free' ? 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:scale-105' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50 cursor-pointer hover:scale-105'
                                  ]"
                                  @click="handleTableClick(table)"
@@ -629,9 +629,9 @@
                                  @mouseleave="showTooltip = null">
                                 
                                 <!-- Table Icon -->
-                                <div class="mb-2">
+                                <div class="mb-1 sm:mb-2">
                                     <!-- Round Table Icon (T1) -->
-                                    <svg x-show="table.name === 'T1'" class="w-8 h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T1'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.1"/>
                                         <circle cx="12" cy="12" r="8"/>
                                         <circle cx="12" cy="12" r="2" fill="currentColor"/>
@@ -642,7 +642,7 @@
                                     </svg>
                                     
                                     <!-- Rectangular Table Icon (T2) -->
-                                    <svg x-show="table.name === 'T2'" class="w-6 h-6 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T2'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.1"/>
                                         <rect x="4" y="6" width="16" height="12" rx="2"/>
                                         <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
@@ -653,7 +653,7 @@
                                     </svg>
                                     
                                     <!-- Oval Table Icon (T3) -->
-                                    <svg x-show="table.name === 'T3'" class="w-7 h-7 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <ellipse cx="12" cy="12" rx="10" ry="6" fill="currentColor" fill-opacity="0.1"/>
                                         <ellipse cx="12" cy="12" rx="10" ry="6"/>
                                         <ellipse cx="12" cy="12" rx="3" ry="2" fill="currentColor"/>
@@ -664,7 +664,7 @@
                                     </svg>
                                     
                                     <!-- Default Square Table Icon (T4+) -->
-                                    <svg x-show="table.name !== 'T1' && table.name !== 'T2' && table.name !== 'T3'" class="w-8 h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name !== 'T1' && table.name !== 'T2' && table.name !== 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path d="M4 8h16v8H4z" fill="currentColor" fill-opacity="0.1"/>
                                         <path d="M4 8h16v8H4z"/>
                                         <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
@@ -676,7 +676,7 @@
                                 </div>
                                 
                                 <!-- Table Name -->
-                                <h4 class="text-sm font-semibold text-gray-900 mb-1" x-text="table.name"></h4>
+                                <h4 class="text-xs sm:text-sm font-semibold text-gray-900 mb-1" x-text="table.name"></h4>
                                 
                                 <!-- Status Indicator -->
                                 <div class="flex items-center justify-center gap-1 mb-1">
@@ -698,24 +698,24 @@
                                 </div>
                                 
                                 <!-- Action Buttons -->
-                                <div class="mt-1 space-y-1">
+                                <div class="mt-1 space-y-1 w-full">
                                     <button x-show="table.status === 'free'" 
-                                            class="w-full px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                            class="w-full px-1 sm:px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Available</span>
                                     </button>
                                     <button x-show="table.status === 'occupied'" @click.stop="showTableOrderDetails(table)" 
-                                            class="w-full px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                            class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                                         </svg>
                                         <span>Orders</span>
                                     </button>
                                     <button x-show="table.status === 'occupied'" @click.stop="addItemsToTable(table)" 
-                                            class="w-full px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                            class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Add Items</span>
                                     </button>
                                     <button x-show="table.status === 'occupied'" @click.stop="markTableAsPaidFromCard(table)" 
-                                            class="w-full px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                            class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Mark Paid</span>
                                     </button>
                                 </div>
