@@ -40,16 +40,16 @@
        x-transition:leave-end="opacity-0 scale-95"
        class="md:hidden">
     <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-      <a href="/" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Home</a>
-      <a href="/about-us" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">About Us</a>
-      <a href="/pricing" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Pricing</a>
-      <a href="/contact-us" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Contact Us</a>
+      <a href="/" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Home</a>
+      <a href="/about-us" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">About Us</a>
+      <a href="/pricing" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Pricing</a>
+      <a href="/contact-us" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Contact Us</a>
       
       {{-- Mobile Auth Buttons --}}
       <div class="pt-4 pb-3 border-t border-gray-200">
         <div class="px-3 space-y-2">
-          <a href="/login" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Login</a>
-          <a href="/register" class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-md hover:shadow-lg transition-all text-center">
+          <a href="/login" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Login</a>
+          <a href="/register" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-md hover:shadow-lg transition-all text-center">
             Start Free Trial
           </a>
         </div>
