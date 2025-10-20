@@ -481,6 +481,23 @@ class PosApiController extends Controller
             ->orderBy('id')
             ->get();
 
+        // Update total amounts for occupied tables based on actual order data
+        foreach ($tables as $table) {
+            if ($table->open_orders_count > 0) {
+                $calculatedTotal = $table->calculateTotalAmount();
+                if ($table->total_amount != $calculatedTotal) {
+                    $table->total_amount = $calculatedTotal;
+                    $table->save();
+                }
+            } else {
+                // Clear total amount for free tables
+                if ($table->total_amount > 0) {
+                    $table->total_amount = 0;
+                    $table->save();
+                }
+            }
+        }
+
         \Log::info('ListTables: Optimized query', [
             'tables_count' => $tables->count(),
             'tables' => $tables->map(function($table) {
@@ -525,7 +542,23 @@ class PosApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'tables' => $tables,
+            'tables' => $tables->map(function($table) {
+                return [
+                    'id' => $table->id,
+                    'name' => $table->name,
+                    'status' => $table->status,
+                    'current_order_id' => $table->current_order_id,
+                    'total_amount' => (float) $table->total_amount,
+                    'capacity' => $table->capacity,
+                    'shape' => $table->shape,
+                    'type' => $table->type,
+                    'description' => $table->description,
+                    'orders' => $table->orders,
+                    'is_active' => $table->is_active,
+                    'created_at' => $table->created_at,
+                    'updated_at' => $table->updated_at,
+                ];
+            }),
             'timestamp' => now()->toISOString()
         ]);
     }
@@ -652,6 +685,14 @@ class PosApiController extends Controller
                         'qty' => $itemData['qty'],
                         'price' => Item::find($itemData['item_id'])->price ?? 0,
                     ]);
+                }
+                
+                // Update table total amount if this is a dine-in order
+                if ($order->mode === 'DINE_IN' && $order->table_id) {
+                    $table = $order->table;
+                    if ($table) {
+                        $table->updateTotalAmount();
+                    }
                 }
             }
 
@@ -796,6 +837,9 @@ class PosApiController extends Controller
             // Refresh the order with all items
             $order->refresh();
             $order->load(['items.item', 'items.variant', 'items.modifiers.modifier']);
+
+            // Update table total amount
+            $table->updateTotalAmount();
 
             return response()->json([
                 'success' => true,

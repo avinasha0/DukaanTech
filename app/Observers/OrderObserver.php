@@ -22,6 +22,9 @@ class OrderObserver
                     'current_order_id' => $order->id
                 ]);
                 
+                // Update table total amount
+                $table->updateTotalAmount();
+                
                 // Invalidate table cache
                 $this->invalidateTableCache($order->table_id);
             }
@@ -63,6 +66,9 @@ class OrderObserver
 
         // Use the table's syncStatus method for consistent logic
         $table->syncStatus();
+        
+        // Update table total amount
+        $table->updateTotalAmount();
 
         // Invalidate table cache
         $this->invalidateTableCache($table->id);

@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Observers\OrderObserver;
+use App\Observers\OrderItemObserver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register model observers
         Order::observe(OrderObserver::class);
+        OrderItem::observe(OrderItemObserver::class);
 
         // Define permission gates
         Gate::define('manage-users', function ($user) {

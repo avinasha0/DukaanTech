@@ -78,6 +78,11 @@ class Item extends Model
             ->where('is_available', true)
             ->first();
 
-        return $price ? $price->price : 0.0;
+        // If no outlet-specific price found, fall back to base price
+        if (!$price) {
+            return (float) $this->price;
+        }
+
+        return $price->price;
     }
 }

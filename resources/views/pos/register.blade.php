@@ -693,8 +693,8 @@
                                 </div>
                                 
                                 <!-- Total Amount -->
-                                <div x-show="table.status === 'occupied' && table.totalAmount > 0" class="text-xs font-semibold text-gray-900 mb-1">
-                                    <span x-text="'₹' + (table.totalAmount || 0).toFixed(2)"></span>
+                                <div x-show="table.status === 'occupied'" class="text-xs font-semibold text-gray-900 mb-1">
+                                    <span x-text="'₹' + (table.total_amount || 0).toFixed(2)"></span>
                                 </div>
                                 
                                 <!-- Action Buttons -->
@@ -1801,7 +1801,7 @@ function posRegister() {
 
         async toggleTableStatus(table) {
             const newStatus = table.status === 'occupied' ? 'free' : 'occupied';
-            let newTotalAmount = table.totalAmount;
+            let newTotalAmount = table.total_amount;
             let newOrders = table.orders;
             
             if (newStatus === 'free') {
@@ -2069,7 +2069,7 @@ function posRegister() {
                             const hasChanges = !this.selectedTable || 
                                 this.selectedTable.status !== updatedSelectedTable.status ||
                                 this.selectedTable.name !== updatedSelectedTable.name ||
-                                this.selectedTable.totalAmount !== updatedSelectedTable.totalAmount;
+                                this.selectedTable.total_amount !== updatedSelectedTable.total_amount;
                             
                             if (hasChanges) {
                                 this.selectedTable = updatedSelectedTable;
@@ -2459,7 +2459,7 @@ function posRegister() {
                 
                 // Always update local state first to ensure immediate UI update
                 table.status = 'occupied';
-                table.totalAmount = newTotalAmount;
+                table.total_amount = newTotalAmount;
                 table.orders = newOrders;
                 this.lastTableUpdate = Date.now();
                 this.tables = [...this.tables];
@@ -2607,10 +2607,10 @@ function posRegister() {
                         table.orders.push(testOrder);
                         console.log('Table orders after adding:', table.orders);
                         
-                        table.totalAmount = testOrder.total;
+                        table.total_amount = testOrder.total;
                         table.status = 'occupied';
                         
-                        console.log('Table updated - totalAmount:', table.totalAmount, 'status:', table.status);
+                        console.log('Table updated - total_amount:', table.total_amount, 'status:', table.status);
                         
                         // Table data is now managed by database API
                         console.log('Table data updated via database API');
@@ -2644,7 +2644,7 @@ function posRegister() {
                     if (table) {
                         console.log('Table orders before clear:', table.orders);
                         table.orders = [];
-                        table.totalAmount = 0;
+                        table.total_amount = 0;
                         table.status = 'free';
                         
                         console.log('Table orders after clear:', table.orders);
@@ -2997,7 +2997,7 @@ function posRegister() {
                 if (table) {
                     console.log('Table found, changing status to occupied...');
                     table.status = 'occupied';
-                    table.totalAmount = 100; // Test amount
+                    table.total_amount = 100; // Test amount
                     table.orders = [{
                         id: 'test-' + Date.now(),
                         total: 100,

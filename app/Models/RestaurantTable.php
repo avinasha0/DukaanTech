@@ -131,6 +131,32 @@ class RestaurantTable extends Model
     }
 
     /**
+     * Calculate total amount from all open orders for this table
+     */
+    public function calculateTotalAmount(): float
+    {
+        $total = 0;
+        
+        // Get all open orders for this table
+        $openOrders = $this->orders()->where('status', 'OPEN')->get();
+        
+        foreach ($openOrders as $order) {
+            $total += $order->total; // Use the Order model's total attribute
+        }
+        
+        return round($total, 2);
+    }
+
+    /**
+     * Update table total amount based on current open orders
+     */
+    public function updateTotalAmount(): void
+    {
+        $this->total_amount = $this->calculateTotalAmount();
+        $this->save();
+    }
+
+    /**
      * Sync table status based on active orders
      */
     public function syncStatus(): void
