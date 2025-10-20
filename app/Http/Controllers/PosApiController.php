@@ -733,4 +733,136 @@ class PosApiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Add items to an existing dine-in order
+     */
+    public function addItemsToOrder(Request $request)
+    {
+        $tenantId = $this->getTenantId();
+        
+        $request->validate([
+            'table_id' => 'required|exists:restaurant_tables,id',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:items,id',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.variant_id' => 'nullable|exists:item_variants,id',
+            'items.*.modifiers' => 'nullable|array',
+            'items.*.modifiers.*' => 'exists:modifiers,id',
+            'items.*.note' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $table = RestaurantTable::where('tenant_id', $tenantId)
+                ->findOrFail($request->input('table_id'));
+
+            // Get the active order for this table
+            $order = $table->getActiveOrder();
+            
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No active order found for this table'
+                ], 404);
+            }
+
+            if ($order->status !== 'OPEN') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Order is not open for modifications'
+                ], 400);
+            }
+
+            $addedItems = [];
+            $orderService = app(\App\Services\OrderService::class);
+
+            // Add each item to the order
+            foreach ($request->input('items') as $itemData) {
+                $item = \App\Models\Item::find($itemData['item_id']);
+                $variant = isset($itemData['variant_id']) ? \App\Models\ItemVariant::find($itemData['variant_id']) : null;
+                
+                $orderItem = $orderService->addItem(
+                    $order,
+                    $item,
+                    $itemData['qty'],
+                    $variant,
+                    $itemData['modifiers'] ?? [],
+                    $itemData['note'] ?? null
+                );
+
+                $addedItems[] = $orderItem->load('item', 'variant', 'modifiers.modifier');
+            }
+
+            // Refresh the order with all items
+            $order->refresh();
+            $order->load(['items.item', 'items.variant', 'items.modifiers.modifier']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Items added successfully to the order',
+                'order' => $order,
+                'added_items' => $addedItems,
+                'total' => $order->total
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to add items to order', [
+                'table_id' => $request->input('table_id'),
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the current order for a table
+     */
+    public function getTableOrder(Request $request)
+    {
+        $tenantId = $this->getTenantId();
+        $tableId = $request->get('table_id');
+
+        try {
+            $table = RestaurantTable::where('tenant_id', $tenantId)
+                ->findOrFail($tableId);
+
+            $order = $table->getActiveOrder();
+            
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No active order found for this table'
+                ], 404);
+            }
+
+            $order->load(['items.item', 'items.variant', 'items.modifiers.modifier', 'orderType']);
+
+            return response()->json([
+                'success' => true,
+                'order' => $order,
+                'table' => [
+                    'id' => $table->id,
+                    'name' => $table->name,
+                    'status' => $table->status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to get table order', [
+                'table_id' => $tableId,
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

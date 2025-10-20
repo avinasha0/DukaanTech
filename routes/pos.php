@@ -16,6 +16,8 @@ Route::post('/orders/close', [\App\Http\Controllers\PosApiController::class, 'cl
 Route::put('/orders/{orderId}', [\App\Http\Controllers\PosApiController::class, 'updateOrder']);
 Route::get('/tables/orders', [\App\Http\Controllers\PosApiController::class, 'getTableOrders']);
 Route::get('/tables/status', [\App\Http\Controllers\PosApiController::class, 'getTableStatus']);
+Route::get('/tables/order', [\App\Http\Controllers\PosApiController::class, 'getTableOrder']);
+Route::post('/orders/add-items', [\App\Http\Controllers\PosApiController::class, 'addItemsToOrder']);
     Route::get('/dashboard/shift/current', [\App\Http\Controllers\PosApiController::class, 'currentShift']);
     
     Route::post('/dashboard/shift/checkout', [\App\Http\Controllers\Tenant\DashboardController::class, 'checkoutShift']);

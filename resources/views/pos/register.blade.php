@@ -371,7 +371,12 @@
         <!-- Mobile Cart Panel (Hidden on desktop) -->
         <div class="lg:hidden bg-white border-b border-gray-200 p-3 sm:p-4 overflow-hidden max-w-full">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-base sm:text-lg font-semibold text-gray-900">Cart (<span x-text="cartItemCount"></span> items)</h3>
+                <div class="flex items-center gap-2">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900">Cart (<span x-text="cartItemCount"></span> items)</h3>
+                    <div x-show="isAddingItemsToExistingOrder" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                        Adding to Table <span x-text="selectedTable?.name"></span>
+                    </div>
+                </div>
                 <div class="text-base sm:text-lg font-bold text-orange-600" x-text="'₹' + cartTotal"></div>
             </div>
             
@@ -518,7 +523,7 @@
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
-                        <span class="text-xs font-medium hidden sm:block">Create Order</span>
+                        <span class="text-xs font-medium hidden sm:block" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Create Order'"></span>
                     </button>
                     <button @click="createOrder(true, true)" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -617,9 +622,9 @@
                                      table.name === 'T2' ? 'w-40 h-24 rounded-lg' : 
                                      table.name === 'T3' ? 'w-36 h-28 rounded-full' : 
                                      'w-32 h-32 rounded-lg',
-                                     table.status === 'free' ? 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:scale-105' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50 cursor-not-allowed opacity-75'
+                                     table.status === 'free' ? 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:scale-105' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50 cursor-pointer hover:scale-105'
                                  ]"
-                                 @click="table.status === 'free' ? selectTable(table) : null"
+                                 @click="handleTableClick(table)"
                                  @mouseenter="showTooltip = table.id"
                                  @mouseleave="showTooltip = null">
                                 
@@ -693,15 +698,19 @@
                                 </div>
                                 
                                 <!-- Action Buttons -->
-                                <div class="mt-1">
+                                <div class="mt-1 space-y-1">
                                     <button x-show="table.status === 'free'" 
                                             class="w-full px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Available</span>
                                     </button>
-                    <button x-show="table.status === 'occupied'" @click.stop="markTableAsPaidFromCard(table)" 
-                            class="w-full px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
-                        <span>Mark Paid</span>
-                    </button>
+                                    <button x-show="table.status === 'occupied'" @click.stop="addItemsToTable(table)" 
+                                            class="w-full px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                        <span>Add Items</span>
+                                    </button>
+                                    <button x-show="table.status === 'occupied'" @click.stop="markTableAsPaidFromCard(table)" 
+                                            class="w-full px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                        <span>Mark Paid</span>
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -759,6 +768,24 @@
             <div class="flex-1 overflow-y-auto p-3 min-h-0 max-h-[60vh]">
                 <!-- Order Type Tabs -->
                 <div class="mb-3 sticky top-0 bg-white pb-2">
+                    <!-- Add Items Mode Indicator -->
+                    <div x-show="isAddingItemsToExistingOrder" class="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-900">Adding Items to Table <span x-text="selectedTable?.name"></span></p>
+                                    <p class="text-xs text-blue-700">Add items to the existing order and click "Add Items" to update</p>
+                                </div>
+                            </div>
+                            <button @click="cancelAddItemsMode()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="flex space-x-1 bg-gray-100 rounded-lg p-1">
                         <button @click="handleTabChange('dine-in')" 
                                 :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
@@ -970,13 +997,13 @@
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-1">
                         <button @click="createOrder(false, false)" 
                                 :disabled="cart.length === 0"
-                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : (isAddingItemsToExistingOrder ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700')"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
-                            <span class="hidden lg:inline">Order</span>
-                            <span class="lg:hidden">Order</span>
+                            <span class="hidden lg:inline" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Order'"></span>
+                            <span class="lg:hidden" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Order'"></span>
                     </button>
                         <button @click="createOrder(true, false)" 
                                 :disabled="cart.length === 0"
@@ -1189,6 +1216,14 @@ function posRegister() {
         mobileMenuOpen: false,
         showOrderDetails: false,
         selectedOrderDetails: null,
+        
+        // Add items to existing order functionality
+        isAddingItemsToExistingOrder: false,
+        currentTableOrder: null,
+        currentTableOrderItems: [],
+        showTableOptionsModal: false,
+        selectedTableForOptions: null,
+        
         showAllCategories: false,
         
         // Computed
@@ -2141,6 +2176,217 @@ function posRegister() {
                 console.error('Current tables:', this.tables);
             }
         },
+
+        async handleTableClick(table) {
+            try {
+                console.log('=== HANDLE TABLE CLICK START ===');
+                console.log('Table clicked:', table);
+                console.log('Table status:', table.status);
+                
+                if (table.status === 'free') {
+                    // For free tables, select them for new orders
+                    await this.selectTable(table);
+                } else if (table.status === 'occupied') {
+                    // For occupied tables, show options
+                    await this.showTableOptions(table);
+                }
+                
+                console.log('=== HANDLE TABLE CLICK END ===');
+            } catch (error) {
+                console.error('ERROR in handleTableClick:', error);
+                console.error('Error stack:', error.stack);
+            }
+        },
+
+        async showTableOptions(table) {
+            try {
+                console.log('=== SHOW TABLE OPTIONS START ===');
+                console.log('Table:', table);
+                
+                // Get fresh table status to check for active order
+                const tableStatus = await this.getTableStatus(table.id);
+                console.log('Fresh table status:', tableStatus);
+                
+                if (tableStatus.has_active_order) {
+                    // Show modal with options
+                    this.showTableOptionsModal = true;
+                    this.selectedTableForOptions = table;
+                } else {
+                    // No active order, treat as free table
+                    await this.selectTable(table);
+                }
+                
+                console.log('=== SHOW TABLE OPTIONS END ===');
+            } catch (error) {
+                console.error('ERROR in showTableOptions:', error);
+                console.error('Error stack:', error.stack);
+            }
+        },
+
+        async addItemsToTable(table) {
+            try {
+                console.log('=== ADD ITEMS TO TABLE START ===');
+                console.log('Table:', table);
+                
+                // Get fresh table status and order
+                const tableStatus = await this.getTableStatus(table.id);
+                console.log('Fresh table status:', tableStatus);
+                
+                if (!tableStatus.has_active_order) {
+                    alert('No active order found for this table');
+                    return;
+                }
+                
+                // Set the table as selected and switch to add items mode
+                this.selectedTable = table;
+                this.customerInfo.tableNo = table.name;
+                this.isAddingItemsToExistingOrder = true;
+                
+                // Load the current order
+                await this.loadCurrentTableOrder(table.id);
+                
+                // Switch to products view
+                this.showTables = false;
+                this.showProducts = true;
+                
+                console.log('=== ADD ITEMS TO TABLE END ===');
+            } catch (error) {
+                console.error('ERROR in addItemsToTable:', error);
+                console.error('Error stack:', error.stack);
+            }
+        },
+
+        async loadCurrentTableOrder(tableId) {
+            try {
+                console.log('=== LOAD CURRENT TABLE ORDER START ===');
+                console.log('Table ID:', tableId);
+                
+                const response = await fetch(`${this.apiBase}/tables/order?table_id=${tableId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load table order: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Table order data:', data);
+                
+                if (data.success && data.order) {
+                    this.currentTableOrder = data.order;
+                    this.currentTableOrderItems = data.order.items || [];
+                    console.log('Current table order loaded:', this.currentTableOrder);
+                    console.log('Current table order items:', this.currentTableOrderItems);
+                } else {
+                    throw new Error(data.error || 'Failed to load table order');
+                }
+                
+                console.log('=== LOAD CURRENT TABLE ORDER END ===');
+            } catch (error) {
+                console.error('ERROR in loadCurrentTableOrder:', error);
+                console.error('Error stack:', error.stack);
+            }
+        },
+
+        async addItemsToExistingOrder() {
+            try {
+                console.log('=== ADD ITEMS TO EXISTING ORDER START ===');
+                console.log('Selected table:', this.selectedTable);
+                console.log('Cart items:', this.cart);
+                
+                if (!this.selectedTable || !this.cart.length) {
+                    alert('Please select a table and add items to cart');
+                    return;
+                }
+                
+                // Prepare items data for the API
+                const itemsData = this.cart.map(cartItem => ({
+                    item_id: cartItem.id,
+                    qty: cartItem.qty,
+                    variant_id: cartItem.variant_id || null,
+                    modifiers: cartItem.modifiers || [],
+                    note: cartItem.note || null
+                }));
+                
+                console.log('Items data for API:', itemsData);
+                
+                const response = await fetch(`${this.apiBase}/orders/add-items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        table_id: this.selectedTable.id,
+                        items: itemsData
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to add items to order');
+                }
+                
+                const data = await response.json();
+                console.log('Add items response:', data);
+                
+                if (data.success) {
+                    // Clear the cart
+                    this.cart = [];
+                    
+                    // Refresh the current table order
+                    await this.loadCurrentTableOrder(this.selectedTable.id);
+                    
+                    // Refresh tables to update status
+                    await this.refreshTablesFromDatabase();
+                    
+                    // Show success message
+                    this.showNotification('success', 'Items Added Successfully!', `Items have been added to the order for table ${this.selectedTable.name}.`, 'The order has been updated with the new items.');
+                    
+                    // Reset the add items mode
+                    this.isAddingItemsToExistingOrder = false;
+                    this.currentTableOrder = null;
+                    this.currentTableOrderItems = [];
+                    
+                    // Switch back to tables view
+                    this.showProducts = false;
+                    this.showTables = true;
+                } else {
+                    throw new Error(data.error || 'Failed to add items to order');
+                }
+                
+                console.log('=== ADD ITEMS TO EXISTING ORDER END ===');
+            } catch (error) {
+                console.error('ERROR in addItemsToExistingOrder:', error);
+                console.error('Error stack:', error.stack);
+                alert('Error adding items to order: ' + error.message);
+            }
+        },
+
+        cancelAddItemsMode() {
+            try {
+                console.log('=== CANCEL ADD ITEMS MODE START ===');
+                
+                // Reset the add items mode
+                this.isAddingItemsToExistingOrder = false;
+                this.currentTableOrder = null;
+                this.currentTableOrderItems = [];
+                
+                // Clear the cart
+                this.cart = [];
+                
+                // Switch back to tables view
+                this.showProducts = false;
+                this.showTables = true;
+                
+                console.log('=== CANCEL ADD ITEMS MODE END ===');
+            } catch (error) {
+                console.error('ERROR in cancelAddItemsMode:', error);
+                console.error('Error stack:', error.stack);
+            }
+        },
+
 
         updateTableStatus(tableId, status) {
             try {
@@ -3152,6 +3398,7 @@ function posRegister() {
                 console.log('Selected Order Type:', this.selectedOrderType);
                 console.log('Selected Table:', this.selectedTable);
                 console.log('Customer Info:', this.customerInfo);
+                console.log('Is Adding Items to Existing Order:', this.isAddingItemsToExistingOrder);
                 
             if (this.posLocked) {
                 console.log('POS is locked, cannot create orders');
@@ -3161,6 +3408,13 @@ function posRegister() {
             
                 if (this.cart.length === 0) {
                     console.log('Cart is empty, cannot create order');
+                    return;
+                }
+                
+                // Check if we're adding items to an existing order
+                if (this.isAddingItemsToExistingOrder) {
+                    console.log('Adding items to existing order...');
+                    await this.addItemsToExistingOrder();
                     return;
                 }
                 
@@ -5335,6 +5589,7 @@ function getCookie(name) {
             </div>
         </div>
     </div>
+
 
 </body>
 </html>
