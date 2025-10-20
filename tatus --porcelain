@@ -1,0 +1,79 @@
+[1mdiff --git a/resources/css/app.css b/resources/css/app.css[m
+[1mindex b5c61c9..f6bae43 100644[m
+[1m--- a/resources/css/app.css[m
+[1m+++ b/resources/css/app.css[m
+[36m@@ -1,3 +1,8 @@[m
+ @tailwind base;[m
+ @tailwind components;[m
+ @tailwind utilities;[m
+[32m+[m
+[32m+[m[32m/* Alpine.js x-cloak directive */[m
+[32m+[m[32m[x-cloak] {[m
+[32m+[m[32m    display: none !important;[m
+[32m+[m[32m}[m
+[1mdiff --git a/resources/views/auth/login-styled.blade.php b/resources/views/auth/login-styled.blade.php[m
+[1mindex e6ea96a..5b4640f 100644[m
+[1m--- a/resources/views/auth/login-styled.blade.php[m
+[1m+++ b/resources/views/auth/login-styled.blade.php[m
+[36m@@ -6,7 +6,12 @@[m
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">[m
+     <title>Login - Dukaantech POS</title>[m
+     <script src="https://cdn.tailwindcss.com"></script>[m
+[31m-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>[m
+[32m+[m[32m    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>[m
+[32m+[m[32m    <style>[m
+[32m+[m[32m        [x-cloak] {[m
+[32m+[m[32m            display: none !important;[m
+[32m+[m[32m        }[m
+[32m+[m[32m    </style>[m
+ </head>[m
+ <body class="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen">[m
+     {{-- Header Component --}}[m
+[1mdiff --git a/resources/views/components/header.blade.php b/resources/views/components/header.blade.php[m
+[1mindex 053e466..4b0891a 100644[m
+[1m--- a/resources/views/components/header.blade.php[m
+[1m+++ b/resources/views/components/header.blade.php[m
+[36m@@ -1,5 +1,5 @@[m
+ {{-- resources/views/components/header.blade.php --}}[m
+[31m-<header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200" x-data="{ mobileMenuOpen: false }">[m
+[32m+[m[32m<header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200" x-data="{ mobileMenuOpen: false }" x-init="console.log('Header initialized, mobileMenuOpen:', mobileMenuOpen)" @click.away="mobileMenuOpen = false">[m
+   <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">[m
+     <a href="/" class="flex items-center gap-3">[m
+       <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="h-10 w-auto">[m
+[36m@@ -22,7 +22,7 @@[m
+     </div>[m
+ [m
+     {{-- Mobile Menu Button --}}[m
+[31m-    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500">[m
+[32m+[m[32m    <button @click="mobileMenuOpen = !mobileMenuOpen; console.log('Menu toggled, mobileMenuOpen:', mobileMenuOpen)" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500">[m
+       <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">[m
+         <path :class="{'hidden': mobileMenuOpen, 'inline-flex': !mobileMenuOpen}" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />[m
+         <path :class="{'hidden': !mobileMenuOpen, 'inline-flex': mobileMenuOpen}" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />[m
+[36m@@ -38,18 +38,19 @@[m
+        x-transition:leave="transition ease-in duration-75"[m
+        x-transition:leave-start="opacity-100 scale-100"[m
+        x-transition:leave-end="opacity-0 scale-95"[m
+[31m-       class="md:hidden">[m
+[31m-    <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">[m
+[31m-      <a href="/" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Home</a>[m
+[31m-      <a href="/about-us" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">About Us</a>[m
+[31m-      <a href="/pricing" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Pricing</a>[m
+[31m-      <a href="/contact-us" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Contact Us</a>[m
+[32m+[m[32m       class="md:hidden"[m
+[32m+[m[32m       x-cloak>[m
+[32m+[m[32m    <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200" @click="mobileMenuOpen = false">[m
+[32m+[m[32m      <a href="/" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Home</a>[m
+[32m+[m[32m      <a href="/about-us" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">About Us</a>[m
+[32m+[m[32m      <a href="/pricing" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Pricing</a>[m
+[32m+[m[32m      <a href="/contact-us" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Contact Us</a>[m
+       [m
+       {{-- Mobile Auth Buttons --}}[m
+       <div class="pt-4 pb-3 border-t border-gray-200">[m
+         <div class="px-3 space-y-2">[m
+[31m-          <a href="/login" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Login</a>[m
+[31m-          <a href="/register" @click="mobileMenuOpen = false" class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-md hover:shadow-lg transition-all text-center">[m
+[32m+[m[32m          <a href="/login" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Login</a>[m
+[32m+[m[32m          <a href="/register" class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-md hover:shadow-lg transition-all text-center">[m
+             Start Free Trial[m
+           </a>[m
+         </div>[m
