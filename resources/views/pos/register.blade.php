@@ -825,7 +825,14 @@
                             <button @click="selectedDineInTab = 'customer'" 
                                     :class="selectedDineInTab === 'customer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
                                     class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <!-- Show tick mark if customer is selected/saved -->
+                                <svg x-show="customerInfo.customerId || (customerInfo.customerName && customerInfo.customerPhone)" 
+                                     class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <!-- Show user icon if no customer selected -->
+                                <svg x-show="!customerInfo.customerId && (!customerInfo.customerName || !customerInfo.customerPhone)" 
+                                     class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                                 Customer
@@ -843,6 +850,30 @@
                         <!-- Customer Form -->
                         <div x-show="selectedDineInTab === 'customer'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
                             <h4 class="text-sm font-medium text-gray-900 mb-3">Customer Information</h4>
+                            
+                            <!-- Customer Search -->
+                            <div class="mb-3">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Search Existing Customer</label>
+                                <div class="relative">
+                                    <input type="text" 
+                                           x-model="customerSearchQuery" 
+                                           @input="searchCustomers()"
+                                           placeholder="Search by name or phone..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    <div x-show="customerSearchResults.length > 0" 
+                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                                        <template x-for="customer in customerSearchResults" :key="customer.id">
+                                            <div @click="selectCustomer(customer)" 
+                                                 class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                                <div class="font-medium text-sm" x-text="customer.name"></div>
+                                                <div class="text-xs text-gray-500" x-text="customer.phone"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Customer Details Form -->
                             <div class="space-y-3">
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Customer Name</label>
@@ -858,6 +889,20 @@
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Address</label>
                                     <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
                                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                                </div>
+                                
+                                <!-- Customer Actions -->
+                                <div class="flex gap-2 pt-2">
+                                    <button type="button" 
+                                            @click="saveCustomer()"
+                                            class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
+                                        Save Customer
+                                    </button>
+                                    <button type="button" 
+                                            @click="clearCustomerForm()"
+                                            class="flex-1 bg-gray-500 text-white px-3 py-2 rounded-md text-sm hover:bg-gray-600 focus:ring-2 focus:ring-gray-400">
+                                        Clear
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1195,8 +1240,13 @@ function posRegister() {
             address: '',
             deliveryAddress: '',
             deliveryFee: 0,
-            specialInstructions: ''
+            specialInstructions: '',
+            customerId: null
         },
+        // Customer search functionality
+        customerSearchQuery: '',
+        customerSearchResults: [],
+        selectedCustomer: null,
         paymentMethod: '',
         cart: [],
         showPaymentSuccessModal: false,
@@ -3512,11 +3562,13 @@ function posRegister() {
                     // Now update the order with the cart items and customer info
                     orderData.table_id = tableId;
                     orderData.table_no = this.customerInfo.tableNo || '1';
+                    orderData.customer_id = this.customerInfo.customerId;
                     orderData.customer_name = this.customerInfo.customerName;
                     orderData.customer_phone = this.customerInfo.customerPhone;
                     orderData.customer_address = this.customerInfo.address;
                     orderData.mode = 'DINE_IN';
                 } else if (this.customerInfo.orderType === 'delivery') {
+                    orderData.customer_id = this.customerInfo.customerId;
                     orderData.customer_name = this.customerInfo.customerName;
                     orderData.customer_phone = this.customerInfo.customerPhone;
                     orderData.customer_address = this.customerInfo.address;
@@ -3524,6 +3576,7 @@ function posRegister() {
                     orderData.delivery_fee = this.customerInfo.deliveryFee || 0;
                     orderData.mode = 'DELIVERY';
                 } else if (this.customerInfo.orderType === 'pick-up') {
+                    orderData.customer_id = this.customerInfo.customerId;
                     orderData.customer_name = this.customerInfo.customerName;
                     orderData.customer_phone = this.customerInfo.customerPhone;
                     orderData.customer_address = this.customerInfo.address;
@@ -3601,6 +3654,7 @@ function posRegister() {
                             ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                         },
                         body: JSON.stringify({
+                            customer_id: this.customerInfo.customerId,
                             customer_name: this.customerInfo.customerName,
                             customer_phone: this.customerInfo.customerPhone,
                             customer_address: this.customerInfo.address,
@@ -3754,6 +3808,7 @@ function posRegister() {
                 id: 'TEMP-' + Date.now(),
                 order_type: this.selectedOrderType,
                 payment_method: this.paymentMethod,
+                customer_id: this.customerInfo.customerId,
                 customer_name: this.customerInfo.customerName,
                 customer_phone: this.customerInfo.customerPhone,
                 table_no: this.customerInfo.tableNo,
@@ -4138,6 +4193,96 @@ function posRegister() {
             console.log('Product visibility button clicked');
             // Dispatch event to open product visibility modal
             window.dispatchEvent(new CustomEvent('open-product-visibility-modal'));
+        },
+        
+        // Customer management methods
+        async searchCustomers() {
+            if (!this.customerSearchQuery || this.customerSearchQuery.length < 2) {
+                this.customerSearchResults = [];
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api${this.apiBase.replace('/pos/api', '/public')}/customers/search?q=${encodeURIComponent(this.customerSearchQuery)}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.customerSearchResults = data.customers || [];
+                } else {
+                    console.error('Customer search failed:', response.status);
+                    this.customerSearchResults = [];
+                }
+            } catch (error) {
+                console.error('Error searching customers:', error);
+                this.customerSearchResults = [];
+            }
+        },
+        
+        selectCustomer(customer) {
+            this.customerInfo.customerName = customer.name;
+            this.customerInfo.customerPhone = customer.phone;
+            this.customerInfo.address = customer.address || '';
+            this.customerInfo.customerId = customer.id;
+            this.selectedCustomer = customer;
+            
+            // Clear search
+            this.customerSearchQuery = '';
+            this.customerSearchResults = [];
+            
+            this.showNotification('success', 'Customer Selected', `Selected customer: ${customer.name}`);
+        },
+        
+        async saveCustomer() {
+            if (!this.customerInfo.customerName.trim()) {
+                this.showNotification('error', 'Validation Error', 'Customer name is required');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api${this.apiBase.replace('/pos/api', '/public')}/customers/find-or-create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
+                    },
+                    body: JSON.stringify({
+                        name: this.customerInfo.customerName,
+                        phone: this.customerInfo.customerPhone,
+                        address: this.customerInfo.address
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.customerInfo.customerId = data.customer.id;
+                    this.selectedCustomer = data.customer;
+                    
+                    this.showNotification('success', 'Customer Saved', data.message);
+                } else {
+                    const errorData = await response.json();
+                    this.showNotification('error', 'Save Failed', errorData.message || 'Failed to save customer');
+                }
+            } catch (error) {
+                console.error('Error saving customer:', error);
+                this.showNotification('error', 'Error', 'Failed to save customer');
+            }
+        },
+        
+        clearCustomerForm() {
+            this.customerInfo.customerName = '';
+            this.customerInfo.customerPhone = '';
+            this.customerInfo.address = '';
+            this.customerInfo.customerId = null;
+            this.selectedCustomer = null;
+            this.customerSearchQuery = '';
+            this.customerSearchResults = [];
         },
         
         

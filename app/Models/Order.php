@@ -21,6 +21,7 @@ class Order extends Model
 
     protected $fillable = [
         'tenant_id',
+        'customer_id',
         'outlet_id',
         'device_id',
         'order_type_id',
@@ -109,6 +110,11 @@ class Order extends Model
     public function table(): BelongsTo
     {
         return $this->belongsTo(RestaurantTable::class, 'table_id');
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function getTotalAttribute(): float

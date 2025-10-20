@@ -707,6 +707,7 @@ class PosApiController extends Controller
         $tenantId = $this->getTenantId();
         
         $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
             'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'customer_address' => 'nullable|string|max:500',
@@ -725,6 +726,7 @@ class PosApiController extends Controller
 
             // Update order details
             $order->update([
+                'customer_id' => $request->input('customer_id'),
                 'customer_name' => $request->input('customer_name'),
                 'customer_phone' => $request->input('customer_phone'),
                 'customer_address' => $request->input('customer_address'),

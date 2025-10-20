@@ -367,4 +367,44 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
         
         return response()->json($kot, 201);
     });
+
+    // Customer management routes
+    Route::get('/customers/search', function ($tenant, Request $request) {
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (!$account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+        
+        app()->instance('tenant.id', $account->id);
+        app()->instance('tenant.model', $account);
+        app()->instance('tenant', $account);
+        
+        return app(\App\Http\Controllers\CustomerController::class)->search($request);
+    });
+    
+    Route::post('/customers', function ($tenant, Request $request) {
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (!$account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+        
+        app()->instance('tenant.id', $account->id);
+        app()->instance('tenant.model', $account);
+        app()->instance('tenant', $account);
+        
+        return app(\App\Http\Controllers\CustomerController::class)->store($request);
+    });
+    
+    Route::post('/customers/find-or-create', function ($tenant, Request $request) {
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (!$account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+        
+        app()->instance('tenant.id', $account->id);
+        app()->instance('tenant.model', $account);
+        app()->instance('tenant', $account);
+        
+        return app(\App\Http\Controllers\CustomerController::class)->findOrCreate($request);
+    });
 });
