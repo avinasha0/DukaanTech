@@ -564,6 +564,64 @@ class PosApiController extends Controller
     }
 
     /**
+     * Get all occupied tables with their latest orders
+     */
+    public function getOccupiedTables(Request $request)
+    {
+        $tenantId = $this->getTenantId();
+        $outletId = $request->get('outlet_id', 1);
+
+        try {
+            // Get occupied tables with their latest OPEN order
+            $occupiedTables = RestaurantTable::where('tenant_id', $tenantId)
+                ->where('outlet_id', $outletId)
+                ->where('status', 'occupied')
+                ->whereHas('orders', function($query) {
+                    $query->where('status', 'OPEN');
+                })
+                ->with(['orders' => function($query) {
+                    $query->where('status', 'OPEN')
+                          ->latest()
+                          ->limit(1)
+                          ->with(['items', 'items.modifiers']);
+                }])
+                ->get()
+                ->map(function($table) {
+                    return [
+                        'id' => $table->id,
+                        'name' => $table->name,
+                        'status' => $table->status,
+                        'capacity' => $table->capacity,
+                        'latest_order' => $table->orders->first(),
+                        'total_amount' => $table->total_amount,
+                        'created_at' => $table->created_at,
+                        'updated_at' => $table->updated_at,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'occupied_tables' => $occupiedTables,
+                'count' => $occupiedTables->count(),
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error getting occupied tables', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $tenantId,
+                'outlet_id' => $outletId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to get occupied tables',
+                'occupied_tables' => []
+            ], 500);
+        }
+    }
+
+    /**
      * Get orders for a specific table
      */
     public function getTableOrders(Request $request)
@@ -591,7 +649,7 @@ class PosApiController extends Controller
             }
 
             // Get only the latest OPEN order for this table (current active order)
-            $orders = Order::with(['items', 'items.modifiers'])
+            $orders = Order::with(['items.item', 'items.modifiers'])
                 ->where('tenant_id', $tenantId)
                 ->where('table_id', $tableId)
                 ->where('status', 'OPEN')

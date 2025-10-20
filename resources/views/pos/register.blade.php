@@ -703,6 +703,13 @@
                                             class="w-full px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Available</span>
                                     </button>
+                                    <button x-show="table.status === 'occupied'" @click.stop="showTableOrderDetails(table)" 
+                                            class="w-full px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                        </svg>
+                                        <span>Orders</span>
+                                    </button>
                                     <button x-show="table.status === 'occupied'" @click.stop="addItemsToTable(table)" 
                                             class="w-full px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Add Items</span>
@@ -2187,8 +2194,8 @@ function posRegister() {
                     // For free tables, select them for new orders
                     await this.selectTable(table);
                 } else if (table.status === 'occupied') {
-                    // For occupied tables, show options
-                    await this.showTableOptions(table);
+                    // For occupied tables, just show a simple message
+                    console.log(`Table ${table.name} is occupied. Use the action buttons to interact with it.`);
                 }
                 
                 console.log('=== HANDLE TABLE CLICK END ===');
@@ -2208,9 +2215,8 @@ function posRegister() {
                 console.log('Fresh table status:', tableStatus);
                 
                 if (tableStatus.has_active_order) {
-                    // Show modal with options
-                    this.showTableOptionsModal = true;
-                    this.selectedTableForOptions = table;
+                    // Show order details for occupied table
+                    await this.showTableOrderDetails(table);
                 } else {
                     // No active order, treat as free table
                     await this.selectTable(table);
@@ -2220,6 +2226,23 @@ function posRegister() {
             } catch (error) {
                 console.error('ERROR in showTableOptions:', error);
                 console.error('Error stack:', error.stack);
+            }
+        },
+
+        async showTableOrderDetails(table) {
+            try {
+                console.log('Opening table order details modal for table:', table.name);
+                
+                // Dispatch event to open table orders modal
+                window.dispatchEvent(new CustomEvent('open-table-orders-modal', {
+                    detail: { 
+                        tableId: table.id,
+                        tableName: table.name
+                    }
+                }));
+            } catch (error) {
+                console.error('Error opening table order details:', error);
+                alert('Error loading order details: ' + error.message);
             }
         },
 
@@ -4735,6 +4758,109 @@ function ordersModal() {
     }
 }
 
+// Table Orders Modal component
+function tableOrdersModal() {
+    return {
+        isOpen: false,
+        loading: false,
+        order: null,
+        tableName: '',
+        apiBase: '',
+        
+        init() {
+            // Build API base depending on path-based vs subdomain routing
+            const host = window.location.host;
+            const path = window.location.pathname;
+            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
+            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
+            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
+            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            
+            // Listen for open-table-orders-modal event
+            window.addEventListener('open-table-orders-modal', (e) => {
+                const detail = e.detail || {};
+                this.open(detail);
+            });
+        },
+        
+        open(detail) {
+            console.log('Table orders modal opening');
+            this.tableName = detail.tableName || '';
+            this.isOpen = true;
+            this.loadOrderDetails(detail.tableId);
+        },
+        
+        close() {
+            this.isOpen = false;
+            this.order = null;
+            this.tableName = '';
+        },
+        
+        async loadOrderDetails(tableId) {
+            if (!tableId) return;
+            
+            this.loading = true;
+            try {
+                const response = await fetch(`${this.apiBase}/tables/orders?table_id=${tableId}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Table order details loaded:', data);
+                    
+                    if (data.success && data.orders.length > 0) {
+                        this.order = data.orders[0]; // Get the latest order
+                    } else {
+                        this.order = null;
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Error loading table order details:', error);
+                this.order = null;
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        formatOrderTime(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+            
+            if (diffInMinutes < 1) {
+                return 'Just now';
+            } else if (diffInMinutes < 60) {
+                return `${diffInMinutes}m ago`;
+            } else if (diffInMinutes < 1440) { // Less than 24 hours
+                const hours = Math.floor(diffInMinutes / 60);
+                return `${hours}h ago`;
+            } else {
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+        },
+        
+        getItemName(item) {
+            // Try different possible field names for the item name
+            if (item.item && item.item.name) {
+                return item.item.name;
+            } else if (item.name) {
+                return item.name;
+            } else if (item.item_name) {
+                return item.item_name;
+            } else {
+                return 'Unknown Item';
+            }
+        }
+    }
+}
+
 // Product Visibility Modal component
 function productVisibilityModal() {
     return {
@@ -5584,6 +5710,101 @@ function getCookie(name) {
                 </div>
 
                 <div class="flex justify-end gap-2 p-4 border-t">
+                    <button class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" @click="close()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Orders Modal -->
+    <div
+        x-data="tableOrdersModal()"
+        x-on:keydown.escape.window="close()"
+        class="relative z-50"
+    >
+        <!-- Backdrop -->
+        <div x-show="isOpen" x-transition.opacity class="fixed inset-0 bg-black/50 z-40" aria-hidden="true"></div>
+
+        <!-- Panel -->
+        <div x-show="isOpen" x-transition x-trap.noscroll="isOpen" class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 z-[9999]" role="dialog" aria-modal="true">
+            <div class="w-full max-w-sm sm:max-w-2xl rounded-lg bg-white shadow-xl max-h-[70vh] sm:max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between p-2 sm:p-4 border-b">
+                    <h2 class="text-sm sm:text-lg font-semibold" x-text="'Table ' + tableName + ' - Order Details'"></h2>
+                    <button class="p-1 sm:p-2 text-lg" @click="close()" aria-label="Close">✕</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 sm:p-4">
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-4 sm:py-8">
+                        <div class="animate-spin rounded-full h-5 w-5 sm:h-8 sm:w-8 border-b-2 border-purple-600"></div>
+                        <span class="ml-2 text-gray-600 text-xs sm:text-base">Loading order details...</span>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div x-show="!loading && order" class="space-y-4">
+                        <!-- Order Header -->
+                        <div class="bg-gray-50 rounded-lg p-3 sm:p-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 mb-2">Order Information</h3>
+                                    <div class="space-y-1 text-sm">
+                                        <div><span class="font-medium">Order #:</span> <span x-text="order.id"></span></div>
+                                        <div><span class="font-medium">Created:</span> <span x-text="formatOrderTime(order.created_at)"></span></div>
+                                        <div><span class="font-medium">Status:</span> 
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium ml-2 bg-green-100 text-green-800" x-text="order.status || 'OPEN'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 mb-2">Table Information</h3>
+                                    <div class="space-y-1 text-sm">
+                                        <div><span class="font-medium">Table:</span> <span x-text="tableName"></span></div>
+                                        <div><span class="font-medium">Total Amount:</span> 
+                                            <span class="font-bold text-green-600 text-lg" x-text="'₹' + (order.total || 0).toFixed(2)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items List -->
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-3">Order Items</h3>
+                            <div class="space-y-2">
+                                <template x-for="item in order.items" :key="item.id">
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <span class="text-purple-600 font-semibold text-sm" x-text="item.qty"></span>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-semibold text-gray-900" x-text="getItemName(item)"></h4>
+                                                <p class="text-sm text-gray-500" x-text="'₹' + (item.price || 0).toFixed(2) + ' each'"></p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-semibold text-gray-900" x-text="'₹' + ((item.qty || 0) * (item.price || 0)).toFixed(2)"></div>
+                                            <div class="text-xs text-gray-500" x-text="(item.qty || 0) + ' × ₹' + (item.price || 0).toFixed(2)"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Order State -->
+                    <div x-show="!loading && !order" class="text-center py-8">
+                        <div class="text-gray-400 mb-2">
+                            <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-1">No Active Order</h3>
+                        <p class="text-gray-500">This table has no active orders.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 p-2 sm:p-4 border-t">
                     <button class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" @click="close()">Close</button>
                 </div>
             </div>

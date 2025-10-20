@@ -183,6 +183,7 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
     Route::get('/devices', [PosApiController::class, 'devices']);
     Route::get('/outlets', [PosApiController::class, 'outlets']);
     Route::get('/dashboard/shift/current', [PosApiController::class, 'currentShift']);
+    Route::get('/tables/occupied', [PosApiController::class, 'getOccupiedTables']);
     
     Route::get('/orders/current-shift', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
