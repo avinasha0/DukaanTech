@@ -563,6 +563,136 @@
                         <p class="text-xs text-gray-500 mt-1">Range: 1-20 customers</p>
                     </div>
                 </div>
+                
+                <!-- Delivery Sub-tabs -->
+                <div x-show="selectedOrderType === 'delivery'" class="mt-1">
+                    <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5">
+                        <button @click="selectedDeliveryTab = 'customer'" 
+                                :class="selectedDeliveryTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
+                                class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Customer
+                        </button>
+                        <button @click="selectedDeliveryTab = 'items'" 
+                                :class="selectedDeliveryTab === 'items' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
+                                class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                            </svg>
+                            Items
+                        </button>
+                    </div>
+                    
+                    <!-- Delivery Customer Form -->
+                    <div x-show="selectedDeliveryTab === 'customer'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
+                        <h4 class="text-xs font-medium text-gray-900 mb-2">Customer Information</h4>
+                        
+                        <!-- Customer Search -->
+                        <div class="mb-2">
+                            <input type="text" x-model="customerSearch" @input="searchCustomersMobile()" 
+                                   placeholder="Search customers..." 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        
+                        <!-- Customer List -->
+                        <div x-show="filteredCustomers.length > 0" class="max-h-32 overflow-y-auto mb-2">
+                            <template x-for="customer in filteredCustomers" :key="customer.id">
+                                <div @click="selectCustomer(customer)" 
+                                     class="p-1 hover:bg-gray-50 cursor-pointer text-xs border-b border-gray-100">
+                                    <div class="font-medium" x-text="customer.name"></div>
+                                    <div class="text-gray-500" x-text="customer.phone"></div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Customer Details -->
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" x-model="customerInfo.customerName" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="tel" x-model="customerInfo.customerPhone" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Address</label>
+                                <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
+                                          class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Delivery Address</label>
+                                <textarea x-model="customerInfo.deliveryAddress" placeholder="Enter delivery address" rows="2" 
+                                          class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Delivery Fee</label>
+                                <input type="number" x-model="customerInfo.deliveryFee" min="0" step="0.01"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Special Instructions</label>
+                                <textarea x-model="customerInfo.specialInstructions" placeholder="Any special instructions..." rows="2" 
+                                          class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Actions -->
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" 
+                                    @click="saveCustomer()"
+                                    class="flex-1 bg-blue-600 text-white px-2 py-1.5 rounded text-xs hover:bg-blue-700 focus:ring-1 focus:ring-blue-500">
+                                Save
+                            </button>
+                            <button type="button" 
+                                    @click="clearCustomerForm()"
+                                    class="flex-1 bg-gray-500 text-white px-2 py-1.5 rounded text-xs hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Items Tab -->
+                    <div x-show="selectedDeliveryTab === 'items'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
+                        <h4 class="text-xs font-medium text-gray-900 mb-2">Cart Items (<span x-text="cartItemCount"></span>)</h4>
+                        
+                        <div class="max-h-64 overflow-y-auto">
+                            <template x-if="cart.length > 0">
+                                <div class="space-y-2">
+                                    <template x-for="item in cart" :key="item.id">
+                                        <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                            <div class="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
+                                                <div class="font-medium text-gray-900 truncate text-sm flex-1 min-w-0" x-text="item.name"></div>
+                                                <div class="text-xs text-gray-500 flex-shrink-0" x-text="'₹' + item.price"></div>
+                                                <div class="text-xs text-gray-600 font-semibold flex-shrink-0" x-text="'×' + item.qty + ' = ₹' + (item.price * item.qty)"></div>
+                                            </div>
+                                            <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                                                <button @click="updateQuantity(item.id, item.qty - 1)" class="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">-</button>
+                                                <span class="w-5 text-center font-bold text-xs bg-white rounded border min-w-[1.25rem]" x-text="item.qty"></span>
+                                                <button @click="updateQuantity(item.id, item.qty + 1)" class="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">+</button>
+                                                <button @click="removeFromCart(item.id)" class="w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 ml-1 text-xs font-bold transition-colors">×</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            
+                            <template x-if="cart.length === 0">
+                                <div class="text-center text-gray-500 py-8">
+                                    <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                                    </svg>
+                                    <p class="text-sm font-medium">No items in cart</p>
+                                    <p class="text-xs">Add items to get started</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Payment Methods -->
@@ -1045,6 +1175,140 @@
                     </div>
                 </div>
                 
+                <!-- Delivery Sub-tabs -->
+                <div x-show="selectedOrderType === 'delivery'" class="mt-3">
+                    <div class="flex space-x-1 bg-gray-50 rounded-lg p-1">
+                        <button @click="selectedDeliveryTab = 'customer'" 
+                                :class="selectedDeliveryTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
+                                class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Customer
+                        </button>
+                        <button @click="selectedDeliveryTab = 'items'" 
+                                :class="selectedDeliveryTab === 'items' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
+                                class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                            </svg>
+                            Items
+                        </button>
+                    </div>
+                    
+                    <!-- Delivery Customer Form -->
+                    <div x-show="selectedDeliveryTab === 'customer'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Customer Information</h4>
+                        
+                        <!-- Customer Search -->
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Search Existing Customer</label>
+                            <div class="relative">
+                                <input type="text" 
+                                       x-model="customerSearchQuery" 
+                                       @input="searchCustomers()"
+                                       placeholder="Search by name or phone..." 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <div x-show="customerSearchResults.length > 0" 
+                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-32 overflow-y-auto">
+                                    <template x-for="customer in customerSearchResults" :key="customer.id">
+                                        <div @click="selectCustomer(customer)" 
+                                             class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                            <div class="font-medium text-sm" x-text="customer.name"></div>
+                                            <div class="text-sm text-gray-500" x-text="customer.phone"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Details Form -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Customer Name</label>
+                                <input type="text" x-model="customerInfo.customerName" placeholder="Enter customer name" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
+                                <input type="tel" x-model="customerInfo.customerPhone" placeholder="Enter phone number" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Address</label>
+                                <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Delivery Address</label>
+                                <textarea x-model="customerInfo.deliveryAddress" placeholder="Enter delivery address" rows="2" 
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Delivery Fee</label>
+                                <input type="number" x-model="customerInfo.deliveryFee" min="0" step="0.01" placeholder="0.00"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Special Instructions</label>
+                                <textarea x-model="customerInfo.specialInstructions" placeholder="Any special instructions..." rows="2" 
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                            
+                            <!-- Customer Actions -->
+                            <div class="flex gap-2 pt-2">
+                                <button type="button" 
+                                        @click="saveCustomer()"
+                                        class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
+                                    Save Customer
+                                </button>
+                                <button type="button" 
+                                        @click="clearCustomerForm()"
+                                        class="flex-1 bg-gray-500 text-white px-3 py-2 rounded-md text-sm hover:bg-gray-600 focus:ring-2 focus:ring-gray-400">
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Items Tab -->
+                    <div x-show="selectedDeliveryTab === 'items'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Cart Items (<span x-text="cartItemCount"></span>)</h4>
+                        
+                        <div class="max-h-80 overflow-y-auto">
+                            <template x-if="cart.length > 0">
+                                <div class="space-y-2">
+                                    <template x-for="item in cart" :key="item.id">
+                                        <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                            <div class="flex-1 min-w-0 flex items-center gap-2">
+                                                <div class="font-medium text-gray-900 truncate text-sm" x-text="item.name"></div>
+                                                <div class="text-xs text-gray-500" x-text="'₹' + item.price"></div>
+                                                <div class="text-xs text-gray-600 font-semibold" x-text="'×' + item.qty + ' = ₹' + (item.price * item.qty)"></div>
+                                            </div>
+                                            <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                                                <button @click="updateQuantity(item.id, item.qty - 1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">-</button>
+                                                <span class="w-6 text-center font-bold text-xs bg-white rounded border min-w-[1.5rem]" x-text="item.qty"></span>
+                                                <button @click="updateQuantity(item.id, item.qty + 1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">+</button>
+                                                <button @click="removeFromCart(item.id)" class="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 ml-1 text-xs font-bold transition-colors">×</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            
+                            <template x-if="cart.length === 0">
+                                <div class="text-center text-gray-500 py-12">
+                                    <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                                    </svg>
+                                    <p class="text-lg font-medium">No items in cart</p>
+                                    <p class="text-sm">Add items to get started</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="space-y-1 pb-4">
                     <template x-for="item in cart" :key="item.id">
                         <div class="flex items-center justify-between bg-white rounded-lg p-2 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -1310,6 +1574,7 @@ function posRegister() {
         orderTypes: [],
         selectedOrderType: null,
         selectedDineInTab: 'table',
+        selectedDeliveryTab: 'customer',
         customerCount: 1,
         showTables: true,
         tables: [],
@@ -1331,6 +1596,8 @@ function posRegister() {
         // Customer search functionality
         customerSearchQuery: '',
         customerSearchResults: [],
+        customerSearch: '',
+        filteredCustomers: [],
         selectedCustomer: null,
         paymentMethod: '',
         cart: [],
@@ -1876,30 +2143,18 @@ function posRegister() {
         },
         
         handleOrderTypeChange() {
-            // If delivery is selected, automatically open customer details modal
-            if (this.customerInfo.orderType === 'delivery') {
-                // Pre-fill the modal with current customer info
-                const prefillData = {
-                    customerName: this.customerInfo.customerName,
-                    customerPhone: this.customerInfo.customerPhone,
-                    address: this.customerInfo.address,
-                    deliveryAddress: this.customerInfo.deliveryAddress,
-                    deliveryFee: this.customerInfo.deliveryFee
-                };
-                
-                // Open the customer modal
-                window.dispatchEvent(new CustomEvent('open-customer-modal', {
-                    detail: { prefill: prefillData }
-                }));
-            }
+            // No longer automatically open customer modal for delivery
+            // Delivery now uses sub-tabs instead
         },
 
         handleTabChange(orderType) {
             this.selectedOrderType = orderType;
             this.customerInfo.orderType = orderType;
-            // Reset dine-in sub-tab when switching order types
+            // Reset sub-tabs when switching order types
             if (orderType === 'dine-in') {
                 this.selectedDineInTab = 'table';
+            } else if (orderType === 'delivery') {
+                this.selectedDeliveryTab = 'customer';
             }
             this.handleOrderTypeChange();
         },
@@ -4309,6 +4564,35 @@ function posRegister() {
             }
         },
         
+        // Mobile customer search function
+        async searchCustomersMobile() {
+            if (!this.customerSearch || this.customerSearch.length < 2) {
+                this.filteredCustomers = [];
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api${this.apiBase.replace('/pos/api', '/public')}/customers/search?q=${encodeURIComponent(this.customerSearch)}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.filteredCustomers = data.customers || [];
+                } else {
+                    console.error('Customer search failed:', response.status);
+                    this.filteredCustomers = [];
+                }
+            } catch (error) {
+                console.error('Error searching customers:', error);
+                this.filteredCustomers = [];
+            }
+        },
+        
         selectCustomer(customer) {
             this.customerInfo.customerName = customer.name;
             this.customerInfo.customerPhone = customer.phone;
@@ -4406,10 +4690,15 @@ function posRegister() {
             this.customerInfo.customerName = '';
             this.customerInfo.customerPhone = '';
             this.customerInfo.address = '';
+            this.customerInfo.deliveryAddress = '';
+            this.customerInfo.deliveryFee = 0;
+            this.customerInfo.specialInstructions = '';
             this.customerInfo.customerId = null;
             this.selectedCustomer = null;
             this.customerSearchQuery = '';
             this.customerSearchResults = [];
+            this.customerSearch = '';
+            this.filteredCustomers = [];
         },
         
         
