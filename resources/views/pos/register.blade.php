@@ -437,7 +437,7 @@
                 <div x-show="selectedOrderType === 'dine-in'" class="mt-1">
                     <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5">
                         <button @click="selectedDineInTab = 'table'" 
-                                :class="selectedDineInTab === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -445,15 +445,22 @@
                             Table
                         </button>
                         <button @click="selectedDineInTab = 'customer'" 
-                                :class="selectedDineInTab === 'customer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Show tick mark if customer is selected/saved -->
+                            <svg x-show="customerInfo.customerId" 
+                                 class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <!-- Show user icon if no customer selected -->
+                            <svg x-show="!customerInfo.customerId" 
+                                 class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             Customer
                         </button>
                         <button @click="selectedDineInTab = 'count'" 
-                                :class="selectedDineInTab === 'count' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -476,6 +483,84 @@
                                 </option>
                             </template>
                         </select>
+                    </div>
+                    
+                    <!-- Customer Form for Mobile -->
+                    <div x-show="selectedDineInTab === 'customer'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
+                        <h4 class="text-xs font-medium text-gray-900 mb-2">Customer Information</h4>
+                        
+                        <!-- Customer Search -->
+                        <div class="mb-2">
+                            <input type="text" x-model="customerSearch" @input="searchCustomers()" 
+                                   placeholder="Search customers..." 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        
+                        <!-- Customer List -->
+                        <div x-show="filteredCustomers.length > 0" class="max-h-32 overflow-y-auto mb-2">
+                            <template x-for="customer in filteredCustomers" :key="customer.id">
+                                <div @click="selectCustomer(customer)" 
+                                     class="p-1 hover:bg-gray-50 cursor-pointer text-xs border-b border-gray-100">
+                                    <div class="font-medium" x-text="customer.name"></div>
+                                    <div class="text-gray-500" x-text="customer.phone"></div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Customer Details -->
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" x-model="customerInfo.customerName" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="tel" x-model="customerInfo.customerPhone" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Address</label>
+                                <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
+                                          class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Actions for Mobile -->
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" 
+                                    @click="saveCustomer()"
+                                    class="flex-1 bg-blue-600 text-white px-2 py-1.5 rounded text-xs hover:bg-blue-700 focus:ring-1 focus:ring-blue-500">
+                                Save
+                            </button>
+                            <button type="button" 
+                                    @click="clearCustomerForm()"
+                                    class="flex-1 bg-gray-500 text-white px-2 py-1.5 rounded text-xs hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Count Form for Mobile -->
+                    <div x-show="selectedDineInTab === 'count'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
+                        <h4 class="text-xs font-medium text-gray-900 mb-2">Number of Customers</h4>
+                        <div class="flex items-center gap-2">
+                            <button @click="customerCount = Math.max(1, customerCount - 1)" 
+                                    class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                </svg>
+                            </button>
+                            <input type="number" x-model="customerCount" min="1" max="20" 
+                                   class="w-12 px-2 py-1 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            <button @click="customerCount = Math.min(20, customerCount + 1)" 
+                                    class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Range: 1-20 customers</p>
                     </div>
                 </div>
             </div>
@@ -815,7 +900,7 @@
                     <div x-show="selectedOrderType === 'dine-in'" class="mt-3">
                         <div class="flex space-x-1 bg-gray-50 rounded-lg p-1">
                             <button @click="selectedDineInTab = 'table'" 
-                                    :class="selectedDineInTab === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                    :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -823,22 +908,22 @@
                                 Table
                             </button>
                             <button @click="selectedDineInTab = 'customer'" 
-                                    :class="selectedDineInTab === 'customer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                    :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 <!-- Show tick mark if customer is selected/saved -->
-                                <svg x-show="customerInfo.customerId || (customerInfo.customerName && customerInfo.customerPhone)" 
+                                <svg x-show="customerInfo.customerId" 
                                      class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
                                 <!-- Show user icon if no customer selected -->
-                                <svg x-show="!customerInfo.customerId && (!customerInfo.customerName || !customerInfo.customerPhone)" 
+                                <svg x-show="!customerInfo.customerId" 
                                      class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                                 Customer
                             </button>
                             <button @click="selectedDineInTab = 'count'" 
-                                    :class="selectedDineInTab === 'count' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                    :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -848,24 +933,24 @@
                         </div>
                         
                         <!-- Customer Form -->
-                        <div x-show="selectedDineInTab === 'customer'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">Customer Information</h4>
+                        <div x-show="selectedDineInTab === 'customer'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
+                            <h4 class="text-xs font-medium text-gray-900 mb-2">Customer Information</h4>
                             
                             <!-- Customer Search -->
-                            <div class="mb-3">
+                            <div class="mb-2">
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Search Existing Customer</label>
                                 <div class="relative">
                                     <input type="text" 
                                            x-model="customerSearchQuery" 
                                            @input="searchCustomers()"
                                            placeholder="Search by name or phone..." 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
                                     <div x-show="customerSearchResults.length > 0" 
-                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-32 overflow-y-auto">
                                         <template x-for="customer in customerSearchResults" :key="customer.id">
                                             <div @click="selectCustomer(customer)" 
-                                                 class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
-                                                <div class="font-medium text-sm" x-text="customer.name"></div>
+                                                 class="px-2 py-1 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                                <div class="font-medium text-xs" x-text="customer.name"></div>
                                                 <div class="text-xs text-gray-500" x-text="customer.phone"></div>
                                             </div>
                                         </template>
@@ -874,33 +959,33 @@
                             </div>
                             
                             <!-- Customer Details Form -->
-                            <div class="space-y-3">
+                            <div class="space-y-1">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Customer Name</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Customer Name</label>
                                     <input type="text" x-model="customerInfo.customerName" placeholder="Enter customer name" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Phone Number</label>
                                     <input type="tel" x-model="customerInfo.customerPhone" placeholder="Enter phone number" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Address</label>
-                                    <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
-                                              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Address</label>
+                                    <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="1" 
+                                              class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
                                 </div>
                                 
                                 <!-- Customer Actions -->
-                                <div class="flex gap-2 pt-2">
+                                <div class="flex gap-1 pt-1">
                                     <button type="button" 
                                             @click="saveCustomer()"
-                                            class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
+                                            class="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:ring-1 focus:ring-blue-500">
                                         Save Customer
                                     </button>
                                     <button type="button" 
                                             @click="clearCustomerForm()"
-                                            class="flex-1 bg-gray-500 text-white px-3 py-2 rounded-md text-sm hover:bg-gray-600 focus:ring-2 focus:ring-gray-400">
+                                            class="flex-1 bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
                                         Clear
                                     </button>
                                 </div>
@@ -4239,40 +4324,82 @@ function posRegister() {
         },
         
         async saveCustomer() {
+            console.log('=== CUSTOMER SAVE DEBUG START ===');
+            console.log('Customer data to save:', {
+                name: this.customerInfo.customerName,
+                phone: this.customerInfo.customerPhone,
+                address: this.customerInfo.address
+            });
+            
             if (!this.customerInfo.customerName.trim()) {
+                console.log('❌ Validation failed: Customer name is required');
                 this.showNotification('error', 'Validation Error', 'Customer name is required');
                 return;
             }
             
+            const apiUrl = `/api${this.apiBase.replace('/pos/api', '/public')}/customers`;
+            console.log('API URL:', apiUrl);
+            console.log('API Base:', this.apiBase);
+            
             try {
-                const response = await fetch(`/api${this.apiBase.replace('/pos/api', '/public')}/customers/find-or-create`, {
+                const requestBody = {
+                    name: this.customerInfo.customerName,
+                    phone: this.customerInfo.customerPhone,
+                    address: this.customerInfo.address
+                };
+                
+                console.log('Request body:', requestBody);
+                console.log('Making API call...');
+                
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                     },
-                    body: JSON.stringify({
-                        name: this.customerInfo.customerName,
-                        phone: this.customerInfo.customerPhone,
-                        address: this.customerInfo.address
-                    })
+                    body: JSON.stringify(requestBody)
                 });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    this.customerInfo.customerId = data.customer.id;
-                    this.selectedCustomer = data.customer;
+                    console.log('✅ API Response data:', data);
                     
-                    this.showNotification('success', 'Customer Saved', data.message);
+                    // Verify the response contains customer data
+                    if (data.customer && data.customer.id) {
+                        console.log('✅ Customer ID received:', data.customer.id);
+                        console.log('✅ Customer data received:', data.customer);
+                        
+                        // Update local state
+                        this.customerInfo.customerId = data.customer.id;
+                        this.selectedCustomer = data.customer;
+                        
+                        console.log('✅ Local state updated successfully');
+                        console.log('✅ Showing success notification');
+                        this.showNotification('success', 'Customer Saved', data.message || 'Customer saved successfully');
+                    } else {
+                        console.error('❌ Invalid response: Missing customer data');
+                        this.showNotification('error', 'Save Failed', 'Invalid response from server');
+                    }
                 } else {
                     const errorData = await response.json();
-                    this.showNotification('error', 'Save Failed', errorData.message || 'Failed to save customer');
+                    console.error('❌ API Error Response:', errorData);
+                    console.error('❌ Response status:', response.status);
+                    this.showNotification('error', 'Save Failed', errorData.message || `Server error: ${response.status}`);
                 }
             } catch (error) {
-                console.error('Error saving customer:', error);
-                this.showNotification('error', 'Error', 'Failed to save customer');
+                console.error('❌ Network/Request Error:', error);
+                console.error('❌ Error details:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                this.showNotification('error', 'Network Error', `Failed to save customer: ${error.message}`);
             }
+            
+            console.log('=== CUSTOMER SAVE DEBUG END ===');
         },
         
         clearCustomerForm() {

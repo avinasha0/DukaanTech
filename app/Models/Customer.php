@@ -75,16 +75,45 @@ class Customer extends Model
      */
     public static function findOrCreateByPhone($tenantId, $phone, $additionalData = [])
     {
-        return static::firstOrCreate(
-            [
-                'tenant_id' => $tenantId,
-                'phone' => $phone,
-            ],
-            array_merge([
-                'name' => $additionalData['name'] ?? '',
-                'email' => $additionalData['email'] ?? null,
-                'address' => $additionalData['address'] ?? null,
-            ], $additionalData)
-        );
+        // If phone is provided, try to find by phone first
+        if ($phone) {
+            $customer = static::where('tenant_id', $tenantId)
+                ->where('phone', $phone)
+                ->first();
+            
+            if ($customer) {
+                // Update existing customer with new data if provided
+                $customer->update(array_filter($additionalData, function($value) {
+                    return $value !== null && $value !== '';
+                }));
+                return $customer;
+            }
+        }
+        
+        // If no phone or customer not found by phone, try to find by name
+        if (isset($additionalData['name']) && $additionalData['name']) {
+            $customer = static::where('tenant_id', $tenantId)
+                ->where('name', $additionalData['name'])
+                ->first();
+            
+            if ($customer) {
+                // Update existing customer with new data if provided
+                $customer->update(array_filter($additionalData, function($value) {
+                    return $value !== null && $value !== '';
+                }));
+                return $customer;
+            }
+        }
+        
+        // Create new customer
+        return static::create(array_merge([
+            'tenant_id' => $tenantId,
+            'name' => $additionalData['name'] ?? '',
+            'phone' => $phone,
+            'email' => $additionalData['email'] ?? null,
+            'address' => $additionalData['address'] ?? null,
+        ], array_filter($additionalData, function($value) {
+            return $value !== null && $value !== '';
+        })));
     }
 }

@@ -36,15 +36,26 @@ class CustomerController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string|max:1000',
-            'date_of_birth' => 'nullable|date',
-        ]);
+        \Log::info('=== CUSTOMER STORE DEBUG START ===');
+        \Log::info('Request data:', $request->all());
+        \Log::info('Request headers:', $request->headers->all());
+        
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'phone' => 'nullable|string|max:20',
+                'email' => 'nullable|email|max:255',
+                'address' => 'nullable|string|max:1000',
+                'date_of_birth' => 'nullable|date',
+            ]);
+            \Log::info('✅ Validation passed');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ Validation failed:', $e->errors());
+            throw $e;
+        }
 
         $tenantId = app('tenant.id');
+        \Log::info('Tenant ID:', ['tenant_id' => $tenantId]);
 
         // Check if customer with same phone already exists
         if ($request->phone) {
@@ -53,6 +64,7 @@ class CustomerController extends Controller
                 ->first();
 
             if ($existingCustomer) {
+                \Log::info('❌ Customer with phone already exists:', ['customer_id' => $existingCustomer->id]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Customer with this phone number already exists',
@@ -61,20 +73,35 @@ class CustomerController extends Controller
             }
         }
 
-        $customer = Customer::create([
+        $customerData = [
             'tenant_id' => $tenantId,
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
             'address' => $request->address,
             'date_of_birth' => $request->date_of_birth,
+        ];
+        
+        \Log::info('Creating customer with data:', $customerData);
+
+        $customer = Customer::create($customerData);
+        
+        \Log::info('✅ Customer created successfully:', [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'customer_phone' => $customer->phone
         ]);
 
-        return response()->json([
+        $response = [
             'success' => true,
             'customer' => $customer,
             'message' => 'Customer created successfully',
-        ]);
+        ];
+        
+        \Log::info('Response data:', $response);
+        \Log::info('=== CUSTOMER STORE DEBUG END ===');
+
+        return response()->json($response);
     }
 
     /**
