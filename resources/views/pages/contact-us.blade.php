@@ -183,29 +183,11 @@
               <div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Phone Numbers</h3>
                 <div class="space-y-1">
-                  <p class="text-gray-600">Sales: <span class="font-semibold">+91 98765 43210</span></p>
-                  <p class="text-gray-600">Support: <span class="font-semibold">+91 98765 43211</span></p>
-                  <p class="text-gray-600">Emergency: <span class="font-semibold">+91 98765 43212</span></p>
+                  <p class="text-gray-600">Support: <span class="font-semibold">9789956322</span></p>
                 </div>
               </div>
             </div>
 
-            {{-- Email Addresses --}}
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-              </div>
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Email Addresses</h3>
-                <div class="space-y-1">
-                  <p class="text-gray-600">General: <span class="font-semibold">info@dukaantech.com</span></p>
-                  <p class="text-gray-600">Sales: <span class="font-semibold">sales@dukaantech.com</span></p>
-                  <p class="text-gray-600">Support: <span class="font-semibold">support@dukaantech.com</span></p>
-                </div>
-              </div>
-            </div>
 
             {{-- Business Hours --}}
             <div class="flex items-start gap-4">
