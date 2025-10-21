@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Form Email
+    |--------------------------------------------------------------------------
+    |
+    | This is the email address where contact form submissions will be sent.
+    | You can override this in your .env file with MAIL_CONTACT_EMAIL.
+    |
+    */
+
+    'contact_email' => env('MAIL_CONTACT_EMAIL', 'aavi10111@gmail.com'),
+
 ];

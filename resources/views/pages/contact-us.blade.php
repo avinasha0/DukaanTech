@@ -129,7 +129,7 @@
             
             {{-- reCAPTCHA Widget --}}
             <div class="flex justify-center">
-              <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+              <div id="g-recaptcha" class="g-recaptcha"></div>
             </div>
             @error('g-recaptcha-response')
               <p class="mt-1 text-sm text-red-600 text-center">{{ $message }}</p>
@@ -293,10 +293,37 @@
 </div>
 
 {{-- reCAPTCHA Script --}}
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
 
 {{-- Contact Form JavaScript --}}
 <script>
+let recaptchaWidgetId = null;
+
+// reCAPTCHA callback function
+function onRecaptchaLoad() {
+    const siteKey = '{{ config("services.recaptcha.site_key") }}';
+    
+    if (siteKey && siteKey !== 'your_site_key_here') {
+        recaptchaWidgetId = grecaptcha.render('g-recaptcha', {
+            'sitekey': siteKey,
+            'theme': 'light',
+            'callback': function(response) {
+                console.log('reCAPTCHA completed:', response);
+            },
+            'expired-callback': function() {
+                console.log('reCAPTCHA expired');
+            }
+        });
+    } else {
+        console.warn('reCAPTCHA site key not configured properly');
+        // Hide reCAPTCHA if not configured
+        const recaptchaContainer = document.querySelector('.g-recaptcha');
+        if (recaptchaContainer) {
+            recaptchaContainer.style.display = 'none';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('contactForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -304,12 +331,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitLoading = document.getElementById('submitLoading');
 
     form.addEventListener('submit', function(e) {
-        // Check if reCAPTCHA is completed
-        const recaptchaResponse = grecaptcha.getResponse();
-        if (!recaptchaResponse) {
-            e.preventDefault();
-            alert('Please complete the reCAPTCHA verification.');
-            return false;
+        const siteKey = '{{ config("services.recaptcha.site_key") }}';
+        
+        // Only check reCAPTCHA if it's properly configured
+        if (siteKey && siteKey !== 'your_site_key_here' && recaptchaWidgetId !== null) {
+            const recaptchaResponse = grecaptcha.getResponse(recaptchaWidgetId);
+            if (!recaptchaResponse) {
+                e.preventDefault();
+                alert('Please complete the reCAPTCHA verification.');
+                return false;
+            }
         }
 
         // Show loading state
@@ -320,7 +351,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Reset reCAPTCHA on form errors
     @if($errors->any())
-        grecaptcha.reset();
+        if (recaptchaWidgetId !== null) {
+            grecaptcha.reset(recaptchaWidgetId);
+        }
     @endif
 });
 </script>

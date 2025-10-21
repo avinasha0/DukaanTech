@@ -56,49 +56,49 @@
 <body>
     <div class="header">
         <h1>New Contact Form Submission</h1>
-        <p>TalentLit POS System</p>
+        <p>DukaanTech</p>
     </div>
     
     <div class="content">
         <div class="field">
             <span class="field-label">Name:</span>
-            <span class="field-value">{{ $firstName }} {{ $lastName }}</span>
+            <span class="field-value">{{ $firstName ?? '' }} {{ $lastName ?? '' }}</span>
         </div>
         
         <div class="field">
             <span class="field-label">Email:</span>
-            <span class="field-value">{{ $email }}</span>
+            <span class="field-value">{{ $email ?? '' }}</span>
         </div>
         
-        @if($phone)
+        @if(!empty($phone))
         <div class="field">
             <span class="field-label">Phone:</span>
-            <span class="field-value">{{ $phone }}</span>
+            <span class="field-value">{{ $phone ?? '' }}</span>
         </div>
         @endif
         
-        @if($company)
+        @if(!empty($company))
         <div class="field">
             <span class="field-label">Company:</span>
-            <span class="field-value">{{ $company }}</span>
+            <span class="field-value">{{ $company ?? '' }}</span>
         </div>
         @endif
         
         <div class="field">
             <span class="field-label">Subject:</span>
-            <span class="field-value">{{ ucfirst($subject) }}</span>
+            <span class="field-value">{{ ucfirst($subject ?? '') }}</span>
         </div>
         
         <div class="message-box">
             <strong>Message:</strong><br>
-            {{ $message }}
+            {{ $message ?? '' }}
         </div>
         
         <div class="footer">
             <p><strong>Submission Details:</strong></p>
-            <p>IP Address: {{ $ip }}</p>
-            <p>User Agent: {{ $userAgent }}</p>
-            <p>Timestamp: {{ $timestamp }}</p>
+            <p>IP Address: {{ $ip ?? 'Unknown' }}</p>
+            <p>User Agent: {{ $userAgent ?? 'Unknown' }}</p>
+            <p>Timestamp: {{ $timestamp ?? now()->format('Y-m-d H:i:s') }}</p>
         </div>
     </div>
 </body>
