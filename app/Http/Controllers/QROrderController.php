@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderType;
 use App\Models\Outlet;
+use App\Models\RestaurantTable;
 use App\Services\OrderService;
 use App\Services\QRCodeService;
 use Illuminate\Http\Request;
@@ -26,21 +27,44 @@ class QROrderController extends Controller
     public function showMenu(Request $request, string $tenantSlug)
     {
         $account = Account::where('slug', $tenantSlug)->first();
-        
-        if (!$account) {
+
+        if (! $account) {
             return view('qr-order.error', ['message' => 'Restaurant not found']);
         }
 
         $categories = Category::where('tenant_id', $account->id)
-            ->with(['items' => function($query) {
-                $query->where('is_active', true);
+            ->whereHas('items', fn ($q) => $q->where('is_active', true))
+            ->with(['items' => function ($query) {
+                $query->where('is_active', true)->orderBy('name');
             }])
+            ->orderBy('name')
             ->get();
 
-        $outlets = Outlet::where('tenant_id', $account->id)->get();
-        $orderTypes = OrderType::where('tenant_id', $account->id)->get();
+        $outlets = Outlet::where('tenant_id', $account->id)->orderBy('id')->get();
+        $requestedOutletId = $request->query('outlet_id');
+        $defaultOutlet = $requestedOutletId
+            ? ($outlets->firstWhere('id', (int) $requestedOutletId) ?? $outlets->first())
+            : $outlets->first();
 
-        return view('qr-order.menu', compact('account', 'categories', 'outlets', 'orderTypes'));
+        $orderTypes = OrderType::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+        $orderTypes = $this->attachQrModeToOrderTypes($orderTypes);
+
+        $fromTableQr = false;
+        $tableModel = null;
+        $tableNoParam = null;
+
+        return view('qr-order.menu', compact(
+            'account',
+            'categories',
+            'orderTypes',
+            'defaultOutlet',
+            'fromTableQr',
+            'tableModel',
+            'tableNoParam'
+        ));
     }
 
     /**
@@ -49,16 +73,14 @@ class QROrderController extends Controller
     public function showCategory(Request $request, string $tenantSlug, Category $category)
     {
         $account = Account::where('slug', $tenantSlug)->first();
-        
-        if (!$account || $category->tenant_id !== $account->id) {
+
+        if (! $account || $category->tenant_id !== $account->id) {
             return view('qr-order.error', ['message' => 'Category not found']);
         }
 
-        $items = $category->items()->where('is_active', true)->get();
-        $outlets = Outlet::where('tenant_id', $account->id)->get();
-        $orderTypes = OrderType::where('tenant_id', $account->id)->get();
+        $q = $request->query('outlet_id') ? '?outlet_id='.(int) $request->query('outlet_id') : '';
 
-        return view('qr-order.category', compact('account', 'category', 'items', 'outlets', 'orderTypes'));
+        return redirect("/{$tenantSlug}/qr-order/menu{$q}#category-{$category->id}");
     }
 
     /**
@@ -67,15 +89,14 @@ class QROrderController extends Controller
     public function showItem(Request $request, string $tenantSlug, Item $item)
     {
         $account = Account::where('slug', $tenantSlug)->first();
-        
-        if (!$account || $item->tenant_id !== $account->id) {
+
+        if (! $account || $item->tenant_id !== $account->id) {
             return view('qr-order.error', ['message' => 'Item not found']);
         }
 
-        $outlets = Outlet::where('tenant_id', $account->id)->get();
-        $orderTypes = OrderType::where('tenant_id', $account->id)->get();
+        $q = $request->query('outlet_id') ? '?outlet_id='.(int) $request->query('outlet_id') : '';
 
-        return view('qr-order.item', compact('account', 'item', 'outlets', 'orderTypes'));
+        return redirect("/{$tenantSlug}/qr-order/menu{$q}#item-{$item->id}");
     }
 
     /**
@@ -84,21 +105,73 @@ class QROrderController extends Controller
     public function showTable(Request $request, string $tenantSlug, string $tableNo)
     {
         $account = Account::where('slug', $tenantSlug)->first();
-        
-        if (!$account) {
+
+        if (! $account) {
             return view('qr-order.error', ['message' => 'Restaurant not found']);
         }
 
+        $tableModel = RestaurantTable::where('tenant_id', $account->id)
+            ->where(function ($q) use ($tableNo) {
+                $q->where('name', $tableNo);
+                if (ctype_digit((string) $tableNo)) {
+                    $q->orWhere('id', (int) $tableNo);
+                }
+            })
+            ->first();
+
         $categories = Category::where('tenant_id', $account->id)
-            ->with(['items' => function($query) {
-                $query->where('is_active', true);
+            ->whereHas('items', fn ($q) => $q->where('is_active', true))
+            ->with(['items' => function ($query) {
+                $query->where('is_active', true)->orderBy('name');
             }])
+            ->orderBy('name')
             ->get();
 
-        $outlets = Outlet::where('tenant_id', $account->id)->get();
-        $orderTypes = OrderType::where('tenant_id', $account->id)->get();
+        $outlets = Outlet::where('tenant_id', $account->id)->orderBy('id')->get();
+        $defaultOutlet = $tableModel
+            ? ($outlets->firstWhere('id', $tableModel->outlet_id) ?? $outlets->first())
+            : $outlets->first();
 
-        return view('qr-order.table', compact('account', 'categories', 'outlets', 'orderTypes', 'tableNo'));
+        $orderTypes = OrderType::where('tenant_id', $account->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+        $orderTypes = $this->attachQrModeToOrderTypes($orderTypes);
+
+        $fromTableQr = true;
+        $tableNoParam = $tableModel ? (string) $tableModel->name : $tableNo;
+
+        return view('qr-order.menu', compact(
+            'account',
+            'categories',
+            'orderTypes',
+            'defaultOutlet',
+            'fromTableQr',
+            'tableModel',
+            'tableNoParam'
+        ));
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\OrderType>  $orderTypes
+     * @return \Illuminate\Support\Collection<int, \App\Models\OrderType>
+     */
+    protected function attachQrModeToOrderTypes($orderTypes)
+    {
+        return $orderTypes->map(function ($ot) {
+            $slug = strtolower((string) ($ot->slug ?? ''));
+            $name = strtolower((string) ($ot->name ?? ''));
+            $h = $slug.' '.$name;
+            if (str_contains($h, 'deliver')) {
+                $ot->qr_mode = 'DELIVERY';
+            } elseif (str_contains($h, 'take') || str_contains($h, 'pickup') || str_contains($h, 'away') || str_contains($h, 'pick')) {
+                $ot->qr_mode = 'TAKEAWAY';
+            } else {
+                $ot->qr_mode = 'DINE_IN';
+            }
+
+            return $ot;
+        });
     }
 
     /**
@@ -182,7 +255,7 @@ class QROrderController extends Controller
 
         switch ($type) {
             case 'menu':
-                $qrUrl = $this->qrCodeService->generateMenuQR($tenantSlug);
+                $qrUrl = $this->qrCodeService->generateMenuQR($tenantSlug, $account->id);
                 break;
             case 'category':
                 $categoryId = $request->input('category_id');

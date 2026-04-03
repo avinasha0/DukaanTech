@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Item;
 use App\Models\Category;
+use App\Models\Outlet;
 use App\Models\QRCode as QRCodeModel;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
@@ -104,6 +105,10 @@ class QRCodeService
     {
         $baseUrl = $this->getEncodedLinkBaseUrl();
         $url = "{$baseUrl}/{$tenantSlug}/qr-order/menu";
+        $firstOutlet = Outlet::where('tenant_id', $tenantId)->orderBy('id')->first();
+        if ($firstOutlet) {
+            $url .= '?outlet_id='.$firstOutlet->id;
+        }
         
         $qrCode = QrCode::format('svg')
             ->size(300)
