@@ -1038,6 +1038,104 @@ class PosApiController extends Controller
         }
     }
 
+    /**
+     * Confirm a QR/mobile order: assign table (dine-in), tag shift, then allow KOT (state NEW).
+     */
+    public function approveQrOrder(Request $request, $orderId)
+    {
+        $request->validate([
+            'shift_id' => 'required|exists:shifts,id',
+            'table_id' => 'nullable|exists:restaurant_tables,id',
+        ]);
+
+        $tenantId = $this->getTenantId();
+
+        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+        }
+
+        $userId = auth()->check()
+            ? (int) auth()->id()
+            : (int) ($terminalUser?->user_id ?? 0);
+
+        if ($userId === 0) {
+            return response()->json(['error' => 'Authentication required'], 401);
+        }
+
+        $order = Order::where('tenant_id', $tenantId)->findOrFail($orderId);
+
+        if ($order->source !== 'mobile_qr' || ! $order->isPendingQrApproval()) {
+            return response()->json(['error' => 'Order is not awaiting QR approval'], 422);
+        }
+
+        $shift = Shift::withoutGlobalScope('tenant')
+            ->where('id', $request->shift_id)
+            ->where('tenant_id', $tenantId)
+            ->where('outlet_id', $order->outlet_id)
+            ->whereNull('closed_at')
+            ->first();
+
+        if (! $shift) {
+            return response()->json(['error' => 'Invalid or closed shift for this outlet'], 422);
+        }
+
+        if ((int) $shift->opened_by !== $userId) {
+            return response()->json(['error' => 'Only the staff member who opened this shift can confirm QR orders'], 403);
+        }
+
+        if ($order->mode === 'DINE_IN' && ! $request->filled('table_id')) {
+            return response()->json(['error' => 'Assign a table for dine-in orders before confirming'], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $order, $tenantId, $shift) {
+                $meta = $order->meta ?? [];
+                $meta['shift_id'] = $shift->id;
+                $meta['qr_approved_at'] = now()->toIso8601String();
+
+                $updates = [
+                    'state' => 'NEW',
+                    'meta' => $meta,
+                ];
+
+                if ($request->filled('table_id')) {
+                    $table = RestaurantTable::where('tenant_id', $tenantId)
+                        ->where('outlet_id', $order->outlet_id)
+                        ->whereKey($request->table_id)
+                        ->firstOrFail();
+
+                    $conflict = Order::where('tenant_id', $tenantId)
+                        ->where('table_id', $table->id)
+                        ->where('status', Order::STATUS_OPEN)
+                        ->where('id', '!=', $order->id)
+                        ->exists();
+
+                    if ($conflict) {
+                        throw new \RuntimeException('That table already has an open order.');
+                    }
+
+                    $updates['table_id'] = $table->id;
+                    $updates['table_no'] = $table->name;
+
+                    $table->update([
+                        'status' => 'occupied',
+                        'current_order_id' => $order->id,
+                    ]);
+                }
+
+                $order->update($updates);
+            });
+        } catch (\RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'order' => $order->fresh()->load(['items.item', 'table', 'outlet']),
+        ]);
+    }
+
     private function resolveActiveShiftId(int $tenantId, ?int $outletId): ?int
     {
         $query = Shift::where('tenant_id', $tenantId)->whereNull('closed_at');

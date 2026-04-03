@@ -212,17 +212,20 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
             return response()->json(['error' => 'Shift not found'], 404);
         }
 
-        // Last 5 orders created during this shift (newest first)
+        // Orders this shift: pending QR approvals first, then newest (more than 5 so QR queue is visible)
         $orders = \App\Models\Order::where('tenant_id', $account->id)
             ->where('outlet_id', $data['outlet_id'])
             ->whereBetween('created_at', [$shift->created_at, $shift->closed_at ?? now()])
-            ->with(['orderType', 'items.item', 'outlet'])
+            ->with(['orderType', 'items.item', 'outlet', 'table'])
+            ->orderByRaw("CASE WHEN state = 'PENDING_QR_APPROVAL' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(25)
             ->get();
 
         return response()->json($orders);
     });
+
+    Route::post('/orders/{orderId}/approve-qr', [PosApiController::class, 'approveQrOrder']);
     
     Route::post('/orders', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
@@ -539,6 +542,10 @@ Route::group(['prefix' => '{tenant}/api/public', 'middleware' => []], function (
         }
         
         $order = \App\Models\Order::where('tenant_id', $account->id)->findOrFail($orderId);
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            return response()->json(['error' => $reason], 422);
+        }
         
         $data = request()->validate([
             'station' => 'required|string|max:255',
@@ -713,6 +720,10 @@ Route::prefix('{tenant}/api/public')->group(function () {
         }
         
         $order = \App\Models\Order::where('tenant_id', $account->id)->findOrFail($orderId);
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            return response()->json(['error' => $reason], 422);
+        }
         
         $data = request()->validate([
             'station' => 'required|string|max:255',

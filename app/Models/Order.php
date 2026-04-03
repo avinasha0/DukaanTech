@@ -19,6 +19,9 @@ class Order extends Model
     const STATUS_PAID = 'PAID';
     const STATUS_CANCELLED = 'CANCELLED';
 
+    /** QR / mobile order awaiting POS confirmation (table + items) before KOT */
+    public const STATE_PENDING_QR_APPROVAL = 'PENDING_QR_APPROVAL';
+
     protected $fillable = [
         'tenant_id',
         'customer_id',
@@ -172,6 +175,23 @@ class Order extends Model
     public function isActive(): bool
     {
         return in_array($this->status, [self::STATUS_OPEN, self::STATUS_CLOSED]);
+    }
+
+    public function isPendingQrApproval(): bool
+    {
+        return $this->state === self::STATE_PENDING_QR_APPROVAL;
+    }
+
+    /**
+     * @return string|null Error message if kitchen / KOT must not run yet
+     */
+    public function kitchenBlockedReason(): ?string
+    {
+        if ($this->isPendingQrApproval()) {
+            return 'Approve this QR order in POS (assign table if dine-in, then confirm) before sending to kitchen.';
+        }
+
+        return null;
     }
 
     /**

@@ -80,7 +80,7 @@ class OrderController extends Controller
     public function updateState(Request $request, Order $order)
     {
         $data = $request->validate([
-            'state' => 'required|in:NEW,IN_KITCHEN,READY,SERVED,BILLED,CLOSED',
+            'state' => 'required|in:PENDING_QR_APPROVAL,NEW,IN_KITCHEN,READY,SERVED,BILLED,CLOSED',
         ]);
         
         $order = $this->orderService->updateOrderState($order, $data['state']);

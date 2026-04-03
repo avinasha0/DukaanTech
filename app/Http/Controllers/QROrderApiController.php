@@ -57,8 +57,8 @@ class QROrderApiController extends Controller
                     'special_instructions' => $data['special_instructions'] ?? null,
                     'mode' => $data['mode'],
                     'table_no' => $data['table_no'] ?? null,
-                    'state' => 'NEW',
-                    'source' => 'mobile_qr', // Add source indicator
+                    'state' => Order::STATE_PENDING_QR_APPROVAL,
+                    'source' => 'mobile_qr',
                 ]);
 
                 // Add order items

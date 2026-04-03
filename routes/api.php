@@ -223,8 +223,8 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
                 'customer_phone' => $data['customer_phone'] ?? null,
                 'mode' => $data['mode'] ?? 'DINE_IN',
                 'table_no' => $data['table_no'] ?? null,
-                'state' => 'NEW',
-                'source' => 'mobile_qr', // Add source indicator
+                'state' => \App\Models\Order::STATE_PENDING_QR_APPROVAL,
+                'source' => 'mobile_qr',
             ]);
 
             // Add items
@@ -357,6 +357,10 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
         }
         
         $order = \App\Models\Order::where('tenant_id', $account->id)->findOrFail($orderId);
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            return response()->json(['error' => $reason], 422);
+        }
         
         $data = request()->validate([
             'station' => 'required|string|max:255',

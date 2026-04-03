@@ -141,7 +141,8 @@ class QROrderController extends Controller
 
             $data = $validator->validated();
             $data['tenant_id'] = $account->id;
-            $data['state'] = 'NEW';
+            $data['state'] = \App\Models\Order::STATE_PENDING_QR_APPROVAL;
+            $data['source'] = 'mobile_qr';
 
             $order = $this->orderService->create($data);
             

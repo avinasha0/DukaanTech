@@ -5679,9 +5679,21 @@ function orderDetailsModal() {
     return {
         isOpen: false,
         order: null,
+        shiftId: null,
+        tables: [],
+        selectedTableId: '',
+        loadingApprove: false,
+        loadingTables: false,
+        apiBase: '',
         
         init() {
-            // Listen for open-order-details event
+            const host = window.location.host;
+            const path = window.location.pathname;
+            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
+            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
+            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
+            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            
             window.addEventListener('open-order-details', (e) => {
                 const detail = e.detail || {};
                 this.open(detail);
@@ -5690,12 +5702,80 @@ function orderDetailsModal() {
         
         open(detail) {
             this.order = detail.order;
+            this.shiftId = detail.shiftId ?? null;
+            this.selectedTableId = '';
+            this.tables = [];
             this.isOpen = true;
+            if (this.order && this.order.state === 'PENDING_QR_APPROVAL') {
+                this.loadTables();
+            }
         },
         
         close() {
             this.isOpen = false;
             this.order = null;
+            this.shiftId = null;
+        },
+        
+        async loadTables() {
+            if (!this.order?.outlet_id) return;
+            this.loadingTables = true;
+            try {
+                const r = await fetch(`${this.apiBase}/tables?outlet_id=${this.order.outlet_id}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    credentials: 'include',
+                });
+                if (r.ok) {
+                    this.tables = await r.json();
+                }
+            } catch (e) {
+                console.error('loadTables', e);
+            } finally {
+                this.loadingTables = false;
+            }
+        },
+        
+        async confirmQrOrder() {
+            if (!this.shiftId) {
+                alert('Shift not loaded. Open Recent Orders from the register again, then approve.');
+                return;
+            }
+            if (this.order.mode === 'DINE_IN' && !this.selectedTableId) {
+                alert('Select a table for dine-in orders before confirming.');
+                return;
+            }
+            this.loadingApprove = true;
+            const sid = this.shiftId;
+            try {
+                const body = { shift_id: this.shiftId };
+                if (this.selectedTableId) {
+                    body.table_id = parseInt(this.selectedTableId, 10);
+                }
+                const r = await fetch(`${this.apiBase}/orders/${this.order.id}/approve-qr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || '',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(body),
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) {
+                    alert(data.error || 'Could not confirm order');
+                    return;
+                }
+                this.close();
+                window.dispatchEvent(new CustomEvent('open-orders-modal', { detail: { shiftId: sid } }));
+            } finally {
+                this.loadingApprove = false;
+            }
         },
         
         formatDetailedOrderTime(timestamp) {
@@ -5704,10 +5784,15 @@ function orderDetailsModal() {
         
         getOrderStatusColor(status) {
             const colors = {
+                'PENDING_QR_APPROVAL': 'bg-amber-200 text-amber-900',
                 'NEW': 'bg-blue-100 text-blue-800',
+                'IN_KITCHEN': 'bg-orange-100 text-orange-800',
+                'READY': 'bg-green-100 text-green-800',
+                'SERVED': 'bg-teal-100 text-teal-800',
+                'BILLED': 'bg-purple-100 text-purple-800',
+                'CLOSED': 'bg-gray-100 text-gray-800',
                 'CONFIRMED': 'bg-yellow-100 text-yellow-800',
                 'PREPARING': 'bg-orange-100 text-orange-800',
-                'READY': 'bg-green-100 text-green-800',
                 'DELIVERED': 'bg-gray-100 text-gray-800',
                 'CANCELLED': 'bg-red-100 text-red-800'
             };
@@ -5817,10 +5902,15 @@ function ordersModal() {
         
         getOrderStatusColor(status) {
             const colors = {
+                'PENDING_QR_APPROVAL': 'bg-amber-200 text-amber-900',
                 'NEW': 'bg-blue-100 text-blue-800',
+                'IN_KITCHEN': 'bg-orange-100 text-orange-800',
+                'READY': 'bg-green-100 text-green-800',
+                'SERVED': 'bg-teal-100 text-teal-800',
+                'BILLED': 'bg-purple-100 text-purple-800',
+                'CLOSED': 'bg-gray-100 text-gray-800',
                 'CONFIRMED': 'bg-yellow-100 text-yellow-800',
                 'PREPARING': 'bg-orange-100 text-orange-800',
-                'READY': 'bg-green-100 text-green-800',
                 'DELIVERED': 'bg-gray-100 text-gray-800',
                 'CANCELLED': 'bg-red-100 text-red-800'
             };
@@ -5836,9 +5926,8 @@ function ordersModal() {
         },
         
         viewOrderDetails(order) {
-            // Dispatch event to open order details modal
             window.dispatchEvent(new CustomEvent('open-order-details', {
-                detail: { order: order }
+                detail: { order: order, shiftId: this.shiftId }
             }));
         },
         
@@ -6718,6 +6807,32 @@ function getCookie(name) {
                                     <div><span class="font-medium">Type:</span> <span x-text="order.orderType?.name || 'N/A'"></span></div>
                                     <div x-show="order.mode"><span class="font-medium">Mode:</span> <span x-text="order.mode"></span></div>
                                 </div>
+                            </div>
+
+                            <!-- QR order: confirm at POS before KOT -->
+                            <div x-show="order.state === 'PENDING_QR_APPROVAL' && order.source === 'mobile_qr'"
+                                 class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                                <h4 class="font-semibold text-amber-900">Confirm QR order (required before kitchen)</h4>
+                                <p class="text-sm text-amber-900/90">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
+                                <div x-show="order.mode === 'DINE_IN'">
+                                    <label class="block text-sm font-medium text-amber-900 mb-1">Table</label>
+                                    <select x-model="selectedTableId"
+                                            class="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
+                                            :disabled="loadingTables || loadingApprove">
+                                        <option value="">Select table…</option>
+                                        <template x-for="t in tables" :key="t.id">
+                                            <option :value="t.id" x-text="t.name + (t.status && t.status !== 'free' ? ' (' + t.status + ')' : '')"></option>
+                                        </template>
+                                    </select>
+                                    <p x-show="loadingTables" class="text-xs text-amber-800 mt-1">Loading tables…</p>
+                                </div>
+                                <button type="button"
+                                        @click="confirmQrOrder()"
+                                        :disabled="loadingApprove || (order.mode === 'DINE_IN' && !selectedTableId)"
+                                        class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span x-show="!loadingApprove">Confirm &amp; accept order</span>
+                                    <span x-show="loadingApprove">Saving…</span>
+                                </button>
                             </div>
                         </div>
                     </template>

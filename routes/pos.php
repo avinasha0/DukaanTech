@@ -192,6 +192,10 @@ Route::post('/orders/add-items', [\App\Http\Controllers\PosApiController::class,
         }
         
         $order = \App\Models\Order::where('tenant_id', $account->id)->findOrFail($orderId);
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            return response()->json(['error' => $reason], 422);
+        }
         
         // Check if order is in NEW state
         if ($order->state !== 'NEW') {

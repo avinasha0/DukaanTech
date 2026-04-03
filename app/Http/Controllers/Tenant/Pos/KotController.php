@@ -32,6 +32,11 @@ class KotController extends Controller
         ]);
         
         $order->load('items');
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            return response()->json(['error' => $reason], 422);
+        }
+
         $newItems = $order->items()->where('sent_to_kitchen', false)->get();
         if ($newItems->isEmpty()) {
             return response()->json([
