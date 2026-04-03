@@ -415,26 +415,55 @@
             <div class="mb-2">
                 <div class="flex space-x-0.5 bg-gray-100 rounded p-0.5">
                     <button type="button" @click="handleTabChange('dine-in')" 
-                            :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            :class="orderTypesReady && selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Dine In
                     </button>
                     <button type="button" @click="handleTabChange('delivery')" 
-                            :class="selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            :class="orderTypesReady && selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Delivery
                     </button>
                     <button type="button" @click="handleTabChange('pick-up')" 
-                            :class="selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                            :class="orderTypesReady && selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Pickup
                     </button>
                 </div>
+                <div class="flex flex-wrap items-center justify-end gap-1 mt-1.5 pt-1 border-t border-gray-100"
+                     x-show="!orderTypePanelBySlug[selectedOrderType]?.closed">
+                    <button type="button" x-show="!orderTypePanelBySlug[selectedOrderType]?.minimized" @click="minimizeOrderTypePanel()"
+                            class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+                            title="Minimize" aria-label="Minimize order details">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <button type="button" x-show="orderTypePanelBySlug[selectedOrderType]?.minimized" @click="expandOrderTypePanel()"
+                            class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+                            title="Expand" aria-label="Expand order details">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                    </button>
+                    <button type="button" @click="closeOrderTypePanel()"
+                            class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+                            title="Close" aria-label="Close order details">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div x-show="!orderTypePanelBySlug[selectedOrderType]?.closed && orderTypePanelBySlug[selectedOrderType]?.minimized" x-transition
+                     class="mt-1 flex items-center justify-between gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-2 py-1.5 text-[11px]">
+                    <span class="text-gray-700 truncate min-w-0" x-text="orderTypePanelSummary()"></span>
+                    <button type="button" @click="expandOrderTypePanel()"
+                            class="inline-flex items-center justify-center p-1 rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50 shrink-0"
+                            title="Expand" aria-label="Expand order details">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                    </button>
+                </div>
                 
+                <div x-show="!orderTypePanelBySlug[selectedOrderType]?.closed">
+                <div x-show="!orderTypePanelBySlug[selectedOrderType]?.minimized">
                 <!-- Dine In Sub-tabs -->
                 <div x-show="selectedOrderType === 'dine-in'" class="mt-1">
                     <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5">
-                        <button type="button" @click="selectedDineInTab = 'table'" 
+                        <button type="button" @click="selectDineInTab('table')" 
                                 :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +471,7 @@
                             </svg>
                             Table
                         </button>
-                        <button type="button" @click="selectedDineInTab = 'customer'" 
+                        <button type="button" @click="selectDineInTab('customer')" 
                                 :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <!-- Show tick mark if customer is selected/saved -->
@@ -457,7 +486,7 @@
                             </svg>
                             Customer
                         </button>
-                        <button type="button" @click="selectedDineInTab = 'count'" 
+                        <button type="button" @click="selectDineInTab('count')" 
                                 :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -568,7 +597,7 @@
                 <div x-show="selectedOrderType === 'delivery'" class="mt-1">
                     <!-- Customer Form Tabs -->
                     <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5 mb-2">
-                        <button @click="selectedCustomerTab = 'basic'" 
+                        <button @click="selectDeliveryCustomerTab('basic')" 
                                 :class="selectedCustomerTab === 'basic' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -576,7 +605,7 @@
                             </svg>
                             Basic Info
                         </button>
-                        <button @click="selectedCustomerTab = 'delivery'" 
+                        <button @click="selectDeliveryCustomerTab('delivery')" 
                                 :class="selectedCustomerTab === 'delivery' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -675,7 +704,7 @@
                 <!-- Pickup Sub-tabs -->
                 <div x-show="selectedOrderType === 'pick-up'" class="mt-1">
                     <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5 mb-2">
-                        <button @click="selectedPickupTab = 'customer'" 
+                        <button @click="selectPickupTab('customer')" 
                                 :class="selectedPickupTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -735,6 +764,8 @@
                             </button>
                         </div>
                     </div>
+                </div>
+                </div>
                 </div>
             </div>
             
@@ -1056,24 +1087,52 @@
                     <!-- Order Type Tabs -->
                     <div class="flex space-x-1 bg-gray-100 rounded-lg p-1">
                         <button type="button" @click="handleTabChange('dine-in')" 
-                                :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                                :class="orderTypesReady && selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                                 class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Dine In
                         </button>
                         <button type="button" @click="handleTabChange('delivery')" 
-                                :class="selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                                :class="orderTypesReady && selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                                 class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Delivery
                         </button>
                         <button type="button" @click="handleTabChange('pick-up')" 
-                                :class="selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
+                                :class="orderTypesReady && selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                                 class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Pickup
                         </button>
                     </div>
+                    <div class="flex flex-wrap items-center justify-end gap-1 pt-1 border-t border-gray-100 mt-1"
+                         x-show="!orderTypePanelBySlug[selectedOrderType]?.closed">
+                        <span class="text-[10px] uppercase tracking-wide text-gray-500 mr-auto hidden sm:inline">Order details</span>
+                        <button type="button" x-show="!orderTypePanelBySlug[selectedOrderType]?.minimized" @click="minimizeOrderTypePanel()"
+                                class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                title="Minimize" aria-label="Minimize order details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <button type="button" x-show="orderTypePanelBySlug[selectedOrderType]?.minimized" @click="expandOrderTypePanel()"
+                                class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                title="Expand" aria-label="Expand order details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <button type="button" @click="closeOrderTypePanel()"
+                                class="inline-flex items-center justify-center p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                title="Close" aria-label="Close order details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div x-show="!orderTypePanelBySlug[selectedOrderType]?.closed && orderTypePanelBySlug[selectedOrderType]?.minimized" x-transition
+                         class="mt-2 flex items-center justify-between gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-2.5 py-2 text-xs">
+                        <span class="text-gray-700 truncate min-w-0" x-text="orderTypePanelSummary()"></span>
+                        <button type="button" @click="expandOrderTypePanel()"
+                                class="inline-flex items-center justify-center p-1.5 rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50 shrink-0"
+                                title="Expand" aria-label="Expand order details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                    </div>
 
                     <!-- Dine-in: always-visible summary strip + compact table picker -->
-                    <div x-show="selectedOrderType === 'dine-in'" class="space-y-2">
+                    <div x-show="selectedOrderType === 'dine-in' && !orderTypePanelBySlug['dine-in']?.closed && !orderTypePanelBySlug['dine-in']?.minimized" class="space-y-2">
                         <div class="flex flex-wrap items-center gap-2 rounded-lg border border-red-100 bg-gradient-to-r from-red-50 to-orange-50 px-2.5 py-2 text-xs">
                             <span class="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 font-bold shrink-0" x-text="selectedTable ? selectedTable.name : 'Table'"></span>
                             <span class="text-gray-400 hidden sm:inline">|</span>
@@ -1082,18 +1141,18 @@
                             <span class="text-gray-600 truncate min-w-0 flex-1" x-text="customerInfo.customerName ? customerInfo.customerName : 'Walk-in'"></span>
                         </div>
                         <div class="flex space-x-1 bg-gray-50 rounded-lg p-1">
-                            <button type="button" @click="selectedDineInTab = 'table'" 
+                            <button type="button" @click="selectDineInTab('table')" 
                                     :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 Table
                             </button>
-                            <button type="button" @click="selectedDineInTab = 'customer'" 
+                            <button type="button" @click="selectDineInTab('customer')" 
                                     :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 <svg x-show="customerInfo.customerId" class="w-3.5 h-3.5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                 Customer
                             </button>
-                            <button type="button" @click="selectedDineInTab = 'count'" 
+                            <button type="button" @click="selectDineInTab('count')" 
                                     :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                     class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 Count
@@ -1119,6 +1178,8 @@
 
             <!-- ========== B) SCROLLABLE MIDDLE (forms + cart only) ========== -->
             <div class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scroll-smooth px-3 py-2 space-y-3">
+
+                <div class="space-y-3" x-show="!orderTypePanelBySlug[selectedOrderType]?.closed && !orderTypePanelBySlug[selectedOrderType]?.minimized">
 
                 <!-- Dine-in: customer tab form (scrolls here, not in header) -->
                 <div x-show="selectedOrderType === 'dine-in' && selectedDineInTab === 'customer'" class="bg-white rounded-lg p-2 border border-gray-200">
@@ -1194,7 +1255,7 @@
                 <div x-show="selectedOrderType === 'delivery'">
                     <!-- Customer Form Tabs -->
                     <div class="flex space-x-1 bg-gray-50 rounded-lg p-1 mb-3">
-                        <button @click="selectedCustomerTab = 'basic'" 
+                        <button @click="selectDeliveryCustomerTab('basic')" 
                                 :class="selectedCustomerTab === 'basic' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1202,7 +1263,7 @@
                             </svg>
                             Basic Info
                         </button>
-                        <button @click="selectedCustomerTab = 'delivery'" 
+                        <button @click="selectDeliveryCustomerTab('delivery')" 
                                 :class="selectedCustomerTab === 'delivery' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1308,7 +1369,7 @@
                 <div x-show="selectedOrderType === 'pick-up'" class="mt-3">
                     <!-- Customer Form Tabs -->
                     <div class="flex space-x-1 bg-gray-50 rounded-lg p-1 mb-3">
-                        <button @click="selectedPickupTab = 'customer'" 
+                        <button @click="selectPickupTab('customer')" 
                                 :class="selectedPickupTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1372,6 +1433,7 @@
                             </button>
                         </div>
                     </div>
+                </div>
                 </div>
                 
                 <!-- Cart (scrolls independently below header) -->
@@ -1692,6 +1754,8 @@ function posRegister() {
         orderTypes: [],
         /** Set true on first cashier tab pick so late loadOrderTypes() cannot overwrite it (fixes multi-click / tab not sticking). */
         orderTypesHydrated: false,
+        /** False until loadOrderTypes finishes — avoids tab highlight flashing wrong type before API sync. */
+        orderTypesReady: false,
         selectedOrderType: 'dine-in',
         selectedDineInTab: 'table',
         selectedDeliveryTab: 'customer',
@@ -1761,6 +1825,13 @@ function posRegister() {
         selectedTableForOptions: null,
         
         showAllCategories: false,
+
+        /** Per order-type panel state (mobile + desktop cart): dine-in, delivery, pick-up each own closed/minimized. */
+        orderTypePanelBySlug: {
+            'dine-in': { closed: false, minimized: false },
+            'delivery': { closed: false, minimized: false },
+            'pick-up': { closed: false, minimized: false },
+        },
         
         // Computed
         get filteredItems() {
@@ -2093,27 +2164,75 @@ function posRegister() {
             console.log('=== END MAIN POS LOAD ITEMS DEBUG ===');
         },
         
+        /**
+         * Map DB/API slugs to the three POS tab keys so the correct tab highlights after load.
+         * (e.g. takeaway → pick-up, dine_in → dine-in)
+         */
+        normalizeOrderTypeSlug(slug) {
+            if (slug == null || slug === '') {
+                return 'dine-in';
+            }
+            const s = String(slug).trim().toLowerCase().replace(/_/g, '-');
+            if (s === 'takeaway' || s === 'take-away' || s === 'pickup') {
+                return 'pick-up';
+            }
+            if (s === 'dinein') {
+                return 'dine-in';
+            }
+            return s;
+        },
+
+        /** Keep selectedOrderType on a tab the POS UI actually shows and that exists in loaded types. */
+        syncSelectedOrderTypeToAllowed() {
+            const uiSlugs = ['dine-in', 'delivery', 'pick-up'];
+            const loaded = (this.orderTypes || []).map(t => t.slug);
+            const allowed = uiSlugs.filter(s => loaded.includes(s));
+            if (!allowed.length) {
+                this.selectedOrderType = 'dine-in';
+                this.customerInfo.orderType = 'dine-in';
+                return;
+            }
+            if (allowed.includes(this.selectedOrderType)) {
+                this.customerInfo.orderType = this.selectedOrderType;
+                return;
+            }
+            const next = allowed.includes('dine-in') ? 'dine-in' : allowed[0];
+            this.selectedOrderType = next;
+            this.customerInfo.orderType = next;
+        },
+
         async loadOrderTypes() {
             try {
                 const response = await fetch(`${this.apiBase}/order-types`, {
                     headers: {
                         'Accept': 'application/json'
-                    }
+                    },
+                    credentials: 'same-origin',
                 });
-                this.orderTypes = await response.json();
-                // If the cashier already picked an order type while this request was in flight, do not overwrite it.
-                if (this.orderTypesHydrated) {
-                    return;
+                const raw = await response.json();
+                const list = Array.isArray(raw) ? raw : [];
+                this.orderTypes = list.map(t => ({
+                    ...t,
+                    slug: this.normalizeOrderTypeSlug(t.slug),
+                }));
+                // If the cashier already picked a tab while this request was in flight, do not replace that choice here.
+                if (!this.orderTypesHydrated) {
+                    const dineInType = this.orderTypes.find(type => type.slug === 'dine-in');
+                    if (dineInType) {
+                        this.selectedOrderType = 'dine-in';
+                        this.customerInfo.orderType = 'dine-in';
+                    } else if (this.orderTypes.length > 0) {
+                        const first = this.orderTypes[0].slug;
+                        this.selectedOrderType = first;
+                        this.customerInfo.orderType = first;
+                    } else {
+                        this.selectedOrderType = 'dine-in';
+                        this.customerInfo.orderType = 'dine-in';
+                    }
+                    this.orderTypesHydrated = true;
                 }
-                const dineInType = this.orderTypes.find(type => type.slug === 'dine-in');
-                if (dineInType) {
-                    this.selectedOrderType = 'dine-in';
-                    this.customerInfo.orderType = 'dine-in';
-                } else if (this.orderTypes.length > 0) {
-                    this.selectedOrderType = this.orderTypes[0].slug;
-                    this.customerInfo.orderType = this.orderTypes[0].slug;
-                }
-                this.orderTypesHydrated = true;
+                // Always run: fixes early-return races and slugs not in the three tab keys.
+                this.syncSelectedOrderTypeToAllowed();
             } catch (error) {
                 console.error('Error loading order types:', error);
                 if (!this.orderTypesHydrated) {
@@ -2121,6 +2240,9 @@ function posRegister() {
                     this.customerInfo.orderType = 'dine-in';
                     this.orderTypesHydrated = true;
                 }
+                this.syncSelectedOrderTypeToAllowed();
+            } finally {
+                this.orderTypesReady = true;
             }
         },
         
@@ -2286,9 +2408,12 @@ function posRegister() {
 
         handleTabChange(orderType) {
             this.orderTypesHydrated = true;
+            this.orderTypesReady = true;
             const previousOrderType = this.selectedOrderType;
             this.selectedOrderType = orderType;
             this.customerInfo.orderType = orderType;
+            // Re-open detail panel for this type (e.g. after Close, or second tap on same tab)
+            this._patchOrderTypePanel(orderType, { closed: false, minimized: false });
             // Reset sub-tabs only when switching *to* this type from another (avoids wiping Table/Customer/Count on a second Dine In click)
             if (orderType === 'dine-in' && previousOrderType !== 'dine-in') {
                 this.selectedDineInTab = 'table';
@@ -2299,6 +2424,57 @@ function posRegister() {
                 this.selectedPickupTab = 'customer';
             }
             this.handleOrderTypeChange();
+        },
+
+        selectDineInTab(tab) {
+            this.selectedDineInTab = tab;
+            this._patchOrderTypePanel('dine-in', { closed: false, minimized: false });
+        },
+
+        selectDeliveryCustomerTab(tab) {
+            this.selectedCustomerTab = tab;
+            this._patchOrderTypePanel('delivery', { closed: false, minimized: false });
+        },
+
+        selectPickupTab(tab) {
+            this.selectedPickupTab = tab;
+            this._patchOrderTypePanel('pick-up', { closed: false, minimized: false });
+        },
+
+        _patchOrderTypePanel(slug, patch) {
+            const key = slug || this.selectedOrderType;
+            const prev = this.orderTypePanelBySlug[key] || { closed: false, minimized: false };
+            this.orderTypePanelBySlug = { ...this.orderTypePanelBySlug, [key]: { ...prev, ...patch } };
+        },
+
+        minimizeOrderTypePanel(slug) {
+            this._patchOrderTypePanel(slug, { minimized: true });
+        },
+
+        expandOrderTypePanel(slug) {
+            this._patchOrderTypePanel(slug, { closed: false, minimized: false });
+        },
+
+        closeOrderTypePanel(slug) {
+            this._patchOrderTypePanel(slug, { closed: true, minimized: false });
+        },
+
+        orderTypePanelSummary() {
+            const t = this.selectedOrderType;
+            if (t === 'dine-in') {
+                const tbl = this.selectedTable?.name || (this.customerInfo.tableNo ? String(this.customerInfo.tableNo) : '') || 'No table';
+                const name = (this.customerInfo.customerName || '').trim();
+                return `Dine In · ${tbl} · ${this.customerCount} guests${name ? ' · ' + name : ''}`;
+            }
+            if (t === 'delivery') {
+                const n = (this.customerInfo.customerName || '').trim() || '—';
+                return `Delivery · ${n}`;
+            }
+            if (t === 'pick-up') {
+                const n = (this.customerInfo.customerName || '').trim();
+                return n ? `Pickup · ${n}` : 'Pickup · Walk-in';
+            }
+            return '';
         },
 
         async handleTableSelection() {
@@ -3887,7 +4063,7 @@ function posRegister() {
                     body: JSON.stringify({
                         amount: this.cartTotal,
                         discount_code: this.discountCode,
-                        order_type: this.selectedOrderType?.slug || 'dine-in'
+                        order_type: (typeof this.selectedOrderType === 'string' ? this.selectedOrderType : 'dine-in')
                     })
                 });
                 
@@ -3963,7 +4139,10 @@ function posRegister() {
                 // Prepare order data based on order type
                 const orderData = {
                     outlet_id: this.outletId,
-                    order_type_id: this.orderTypes.length > 0 ? this.orderTypes[0].id : null,
+                    order_type_id: (() => {
+                        const t = this.orderTypes.find(x => x.slug === this.selectedOrderType);
+                        return t ? t.id : (this.orderTypes[0]?.id ?? null);
+                    })(),
                     payment_method: isDineInOrder ? (this.paymentMethod || null) : this.paymentMethod,
                     special_instructions: this.customerInfo.specialInstructions,
                     items: this.cart.map(cartItem => ({

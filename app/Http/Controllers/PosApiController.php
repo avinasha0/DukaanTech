@@ -84,7 +84,9 @@ class PosApiController extends Controller
     public function orderTypes()
     {
         $tenantId = $this->getTenantId();
+
         return OrderType::where('tenant_id', $tenantId)
+            ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
     }
