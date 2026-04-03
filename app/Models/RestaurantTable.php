@@ -181,8 +181,13 @@ class RestaurantTable extends Model
         ]);
 
         if ($openOrders->count() > 0) {
-            $this->update(['status' => 'occupied']);
-            \Log::info('Table marked as occupied', ['table_id' => $this->id]);
+            // Keep current_order_id in sync so POS "Mark Paid" can close the right order
+            $active = $this->getActiveOrder();
+            $this->update([
+                'status' => 'occupied',
+                'current_order_id' => $active?->id,
+            ]);
+            \Log::info('Table marked as occupied', ['table_id' => $this->id, 'current_order_id' => $active?->id]);
         } else {
             $this->update([
                 'status' => 'free',

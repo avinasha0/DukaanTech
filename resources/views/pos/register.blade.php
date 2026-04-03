@@ -1523,6 +1523,44 @@
         </div>
     </div>
 
+    <!-- Settle bill (before Mark Paid / close order) -->
+    <div x-show="showSettleBillModal" x-transition.opacity class="fixed inset-0 z-[60] overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="fixed inset-0 bg-gray-900/60" @click="closeSettleBillModal()" aria-hidden="true"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Settle bill</h3>
+                <p class="text-sm text-gray-600 mb-4">Confirm the amount and how the guest paid before marking this table complete.</p>
+                <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Table</span>
+                        <span class="font-medium text-gray-900" x-text="settleBillTable?.name || '—'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm mt-2">
+                        <span class="text-gray-600">Bill total</span>
+                        <span class="font-bold text-green-700 text-base">₹<span x-text="Number(settleBillTable?.total_amount || 0).toFixed(2)"></span></span>
+                    </div>
+                </div>
+                <p class="text-xs font-medium text-gray-700 mb-2">Payment method <span class="text-red-500">*</span></p>
+                <div class="grid grid-cols-3 gap-2 mb-2">
+                    <button type="button" @click="settleBillPayment = 'cash'; settleBillError = ''"
+                            class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
+                            :class="settleBillPayment === 'cash' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">Cash</button>
+                    <button type="button" @click="settleBillPayment = 'card'; settleBillError = ''"
+                            class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
+                            :class="settleBillPayment === 'card' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">Card</button>
+                    <button type="button" @click="settleBillPayment = 'upi'; settleBillError = ''"
+                            class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
+                            :class="settleBillPayment === 'upi' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">UPI</button>
+                </div>
+                <p x-show="settleBillError" class="text-red-600 text-xs mb-3" x-text="settleBillError"></p>
+                <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" @click="closeSettleBillModal()" class="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">Cancel</button>
+                    <button type="button" @click="confirmSettleBill()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Confirm &amp; mark paid</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Payment Success Modal -->
     <div x-show="showPaymentSuccessModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1687,6 +1725,11 @@ function posRegister() {
         cart: [],
         showPaymentSuccessModal: false,
         paymentSuccessTableName: '',
+        /** Mark Paid: confirm total + payment method before closing order */
+        showSettleBillModal: false,
+        settleBillTable: null,
+        settleBillPayment: '',
+        settleBillError: '',
         currentOrder: null,
         shift: @json($activeShift ?? null),
         terminalUser: @json($terminalUser ?? null),
@@ -2422,7 +2465,7 @@ function posRegister() {
             }
         },
 
-        async closeOrder(orderId, status = 'CLOSED') {
+        async closeOrder(orderId, status = 'CLOSED', extra = {}) {
             try {
                 console.log('🚀 CLOSING ORDER START');
                 console.log('Order ID:', orderId);
@@ -2430,7 +2473,7 @@ function posRegister() {
                 console.log('API Base:', this.apiBase);
                 console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
                 
-                const requestBody = { order_id: orderId, status: status };
+                const requestBody = { order_id: orderId, status: status, ...extra };
                 console.log('Request body:', requestBody);
                 
                 const response = await fetch(`${this.apiBase}/orders/close`, {
@@ -3193,84 +3236,93 @@ function posRegister() {
             }
         },
 
-        async markTableAsPaidFromCard(table) {
-            try {
-                console.log('=== MARK TABLE AS PAID FROM CARD START ===');
-                console.log('Table ID:', table.id);
-                console.log('Table Name:', table.name);
-                console.log('Table Status:', table.status);
-                console.log('Table Is Occupied:', table.is_occupied);
-                console.log('Table Orders:', table.orders);
-                console.log('Current Order ID:', table.current_order_id);
-                
-                // Check if table has an active order locally first
-                if (!table.current_order_id) {
-                    console.warn('⚠️ Table has no active order, cannot mark as paid');
-                    alert('No active order found for this table. Please create an order first.');
-                    return;
+        async openSettleBillModal(table) {
+            if (!table) {
+                return;
+            }
+            let row = { ...table };
+            if (!row.current_order_id) {
+                try {
+                    const st = await this.getTableStatus(table.id);
+                    if (st?.current_order_id) {
+                        row.current_order_id = st.current_order_id;
+                    } else if (st?.active_order?.id) {
+                        row.current_order_id = st.active_order.id;
+                    }
+                    if (st && st.total_amount != null && st.total_amount !== '') {
+                        row.total_amount = st.total_amount;
+                    }
+                    const idx = this.tables.findIndex(t => t.id === row.id);
+                    if (idx !== -1 && row.current_order_id) {
+                        this.tables[idx].current_order_id = row.current_order_id;
+                    }
+                } catch (e) {
+                    console.warn('openSettleBillModal: could not resolve active order', e);
                 }
-                
-                console.log('🚀 Attempting to close order:', table.current_order_id);
-                
-                // Close the order using the server API with CLOSED status
-                const closeResult = await this.closeOrder(table.current_order_id, 'CLOSED');
-                
+            }
+            if (!row.current_order_id) {
+                alert('No active order found for this table. Please create an order first.');
+                return;
+            }
+            this.settleBillTable = row;
+            this.settleBillPayment = '';
+            this.settleBillError = '';
+            this.showSettleBillModal = true;
+        },
+
+        closeSettleBillModal() {
+            this.showSettleBillModal = false;
+            this.settleBillTable = null;
+            this.settleBillPayment = '';
+            this.settleBillError = '';
+        },
+
+        applyTableSettledLocally(table) {
+            if (!table) return;
+            const tableIndex = this.tables.findIndex(t => t.id === table.id);
+            if (tableIndex !== -1) {
+                this.tables[tableIndex].status = 'free';
+                this.tables[tableIndex].current_order_id = null;
+                this.tables[tableIndex].total_amount = 0;
+            }
+            if (this.selectedTable && this.selectedTable.id === table.id) {
+                this.selectedTable = null;
+                this.selectedTableOrders = [];
+                this.customerInfo.tableNo = '';
+            }
+            this.displayPaymentSuccessModal(table.name);
+            setTimeout(() => this.refreshTablesFromStorage(), 100);
+        },
+
+        async confirmSettleBill() {
+            if (!this.settleBillPayment) {
+                this.settleBillError = 'Select how the guest paid (Cash, Card, or UPI).';
+                return;
+            }
+            const table = this.settleBillTable;
+            if (!table?.current_order_id) {
+                this.closeSettleBillModal();
+                return;
+            }
+            this.settleBillError = '';
+            try {
+                const closeResult = await this.closeOrder(table.current_order_id, 'PAID', {
+                    payment_method: this.settleBillPayment,
+                });
                 if (closeResult && closeResult.success) {
-                    console.log('✅ Order closed successfully via API');
-                    console.log('✅ Close result:', closeResult);
-                    
-                    // Update table status locally immediately for better UX
-                    const tableIndex = this.tables.findIndex(t => t.id === table.id);
-                    if (tableIndex !== -1) {
-                        this.tables[tableIndex].status = 'free';
-                        this.tables[tableIndex].current_order_id = null;
-                        this.tables[tableIndex].total_amount = 0;
-                        console.log('✅ Table status updated locally');
-                    }
-                    
-                    // Clear selected table if it's the same
-                    if (this.selectedTable && this.selectedTable.id === table.id) {
-                        this.selectedTable = null;
-                        this.selectedTableOrders = [];
-                        this.customerInfo.tableNo = '';
-                        console.log('✅ Selected table cleared and customer info reset');
-                    }
-                
-                    // Show success message immediately
-                    console.log('✅ Table marked as paid successfully');
-                    this.displayPaymentSuccessModal(table.name);
-                    
-                    // Refresh tables in background (non-blocking)
-                    setTimeout(() => {
-                        this.refreshTablesFromStorage();
-                    }, 100);
-                    
+                    this.closeSettleBillModal();
+                    this.applyTableSettledLocally(table);
                 } else {
-                    console.error('❌ Failed to close order via API:', closeResult);
-                    console.error('❌ Close result details:', {
-                        success: closeResult?.success,
-                        error: closeResult?.error,
-                        message: closeResult?.message
-                    });
                     alert('Failed to mark table as paid. Please try again.');
                 }
-                
-                console.log('=== MARK TABLE AS PAID FROM CARD END ===');
-                
             } catch (error) {
-                console.error('❌ ERROR in markTableAsPaidFromCard:', error);
-                console.error('❌ Error message:', error.message);
-                console.error('❌ Error stack:', error.stack);
-                console.error('❌ Table data at error:', {
-                    id: table.id,
-                    name: table.name,
-                    status: table.status,
-                    current_order_id: table.current_order_id,
-                    orders: table.orders
-                });
-                
-                alert('Error marking table as paid: ' + error.message);
+                console.error('confirmSettleBill:', error);
+                alert('Error marking table as paid: ' + (error.message || 'Unknown error'));
             }
+        },
+
+        async markTableAsPaidFromCard(table) {
+            await this.openSettleBillModal(table);
         },
 
         displayPaymentSuccessModal(tableName) {
@@ -3435,67 +3487,10 @@ function posRegister() {
         },
 
         async markTableAsPaid() {
-            try {
-                console.log('=== MARK TABLE AS PAID START ===');
-                console.log('Marking table as paid:', this.selectedTable.name);
-                
-                if (this.selectedTable) {
-                    const table = this.tables.find(t => t.id === this.selectedTable.id);
-                    if (table) {
-                        // Check if table has an active order
-                        if (!table.current_order_id) {
-                            console.warn('⚠️ Table has no active order, cannot mark as paid');
-                            alert('No active order found for this table. Please create an order first.');
-                            return;
-                        }
-                        
-                        console.log('🚀 Attempting to close order:', table.current_order_id);
-                        
-                        // Close the order using the server API with CLOSED status
-                        const closeResult = await this.closeOrder(table.current_order_id, 'CLOSED');
-                        
-                        if (closeResult && closeResult.success) {
-                            console.log('✅ Order closed successfully via API');
-                            console.log('✅ Close result:', closeResult);
-                            
-                            // Update table status locally immediately for better UX
-                            const tableIndex = this.tables.findIndex(t => t.id === table.id);
-                            if (tableIndex !== -1) {
-                                this.tables[tableIndex].status = 'free';
-                                this.tables[tableIndex].current_order_id = null;
-                                this.tables[tableIndex].total_amount = 0;
-                                console.log('✅ Table status updated locally');
-                            }
-                            
-                            // Clear selected table if it's the same
-                            if (this.selectedTable && this.selectedTable.id === table.id) {
-                                this.selectedTable = null;
-                                this.selectedTableOrders = [];
-                                this.customerInfo.tableNo = '';
-                                console.log('✅ Selected table cleared and customer info reset');
-                            }
-                        
-                            // Show success message immediately
-                            console.log('✅ Table marked as paid successfully');
-                            this.displayPaymentSuccessModal(table.name);
-                            
-                            // Refresh tables in background (non-blocking)
-                            setTimeout(() => {
-                                this.refreshTablesFromStorage();
-                            }, 100);
-                            
-                        } else {
-                            console.error('❌ Failed to close order via API');
-                            alert('Failed to mark table as paid. Please try again.');
-                            return;
-                        }
-                    }
-                }
-                
-                console.log('=== MARK TABLE AS PAID END ===');
-            } catch (error) {
-                console.error('Error in markTableAsPaid:', error);
-                console.error('Error stack:', error.stack);
+            if (!this.selectedTable) return;
+            const table = this.tables.find(t => t.id === this.selectedTable.id);
+            if (table) {
+                await this.openSettleBillModal(table);
             }
         },
 

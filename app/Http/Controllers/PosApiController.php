@@ -404,6 +404,7 @@ class PosApiController extends Controller
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'status' => 'sometimes|in:CLOSED,PAID',
+            'payment_method' => 'nullable|string|max:50',
         ]);
 
         $orderId = $request->input('order_id');
@@ -414,7 +415,9 @@ class PosApiController extends Controller
         \Log::info('Tenant ID:', ['tenant_id' => $tenantId]);
 
         try {
-            $result = DB::transaction(function () use ($orderId, $tenantId, $status) {
+            $paymentMethod = $request->input('payment_method');
+
+            $result = DB::transaction(function () use ($orderId, $tenantId, $status, $paymentMethod) {
                 \Log::info('Starting transaction for order close');
                 
                 $order = Order::where('tenant_id', $tenantId)
@@ -439,10 +442,14 @@ class PosApiController extends Controller
                     'current_order_id' => $table->current_order_id
                 ]);
 
-                $order->update([
+                $orderPayload = [
                     'status' => $status,
-                    'state' => 'CLOSED'
-                ]);
+                    'state' => 'CLOSED',
+                ];
+                if ($paymentMethod !== null && $paymentMethod !== '') {
+                    $orderPayload['payment_method'] = $paymentMethod;
+                }
+                $order->update($orderPayload);
                 \Log::info("Order status updated to {$status}, state updated to CLOSED");
 
                 // Use the table's syncStatus method for consistent logic
@@ -510,6 +517,21 @@ class PosApiController extends Controller
             }])
             ->orderBy('id')
             ->get();
+
+        // Backfill current_order_id when table has OPEN orders but pointer was never set (fixes Mark Paid)
+        foreach ($tables as $table) {
+            if ($table->open_orders_count > 0 && ! $table->current_order_id) {
+                $openOrder = Order::where('tenant_id', $tenantId)
+                    ->where('table_id', $table->id)
+                    ->where('status', 'OPEN')
+                    ->latest('id')
+                    ->first();
+                if ($openOrder) {
+                    $table->current_order_id = $openOrder->id;
+                    $table->save();
+                }
+            }
+        }
 
         // Update total amounts for occupied tables based on actual order data
         foreach ($tables as $table) {
@@ -831,6 +853,11 @@ class PosApiController extends Controller
             }
 
             $activeOrder = $table->getActiveOrder();
+
+            if ($activeOrder && ! $table->current_order_id) {
+                $table->current_order_id = $activeOrder->id;
+                $table->save();
+            }
             
             return response()->json([
                 'success' => true,
