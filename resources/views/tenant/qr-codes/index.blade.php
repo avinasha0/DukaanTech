@@ -177,34 +177,65 @@
 
 <script>
     const tenantSlug = '{{ $tenant->slug }}';
-    const baseUrl = window.location.origin; // Get the current domain (192.168.29.111:8000)
+    const baseUrl = window.location.origin;
+
+    function qrPostHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-Requested-With': 'XMLHttpRequest',
+        };
+    }
+
+    async function postGenerateQr(url, body) {
+        const fetchOpts = {
+            method: 'POST',
+            headers: qrPostHeaders(),
+            credentials: 'same-origin',
+        };
+        if (body !== undefined) {
+            fetchOpts.body = JSON.stringify(body);
+        }
+        const response = await fetch(url, fetchOpts);
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error('Unexpected response (' + response.status + '). ' + text.slice(0, 200));
+        }
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || result.message || 'Request failed');
+        }
+        return result;
+    }
+
+    function resolveQrAssetUrl(qrUrl) {
+        if (qrUrl.startsWith('http://') || qrUrl.startsWith('https://')) {
+            return qrUrl;
+        }
+        return qrUrl.startsWith('/') ? qrUrl : '/' + qrUrl;
+    }
+
+    async function loadSvgIntoPreview(qrUrl, imageElementId, wrapperId) {
+        const assetUrl = resolveQrAssetUrl(qrUrl);
+        const svgRes = await fetch(assetUrl, { credentials: 'same-origin' });
+        if (!svgRes.ok) {
+            throw new Error(
+                'Could not load QR preview (HTTP ' + svgRes.status + '). Run: php artisan storage:link'
+            );
+        }
+        const svg = await svgRes.text();
+        document.getElementById(imageElementId).innerHTML = svg;
+        document.getElementById(wrapperId).classList.remove('hidden');
+    }
 
     async function generateMenuQR() {
         try {
-            const response = await fetch(`${baseUrl}/${tenantSlug}/qr-codes/generate-menu`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            });
-
-            const result = await response.json();
-            
+            const result = await postGenerateQr(`${baseUrl}/${tenantSlug}/qr-codes/generate-menu`);
             if (result.qr_url) {
-                fetch(result.qr_url)
-                    .then(response => response.text())
-                    .then(svg => {
-                        document.getElementById('menuQRImage').innerHTML = svg;
-                        document.getElementById('menuQRResult').classList.remove('hidden');
-                    });
-                
-                // Refresh page to show in saved QR codes list
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error: ' + result.error);
+                await loadSvgIntoPreview(result.qr_url, 'menuQRImage', 'menuQRResult');
+                window.location.reload();
             }
         } catch (error) {
             alert('Error generating QR code: ' + error.message);
@@ -213,30 +244,12 @@
 
     async function generateCategoryQR(categoryId) {
         try {
-            const response = await fetch(`${baseUrl}/${tenantSlug}/qr-codes/generate-category/${categoryId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            });
-
-            const result = await response.json();
-            
+            const result = await postGenerateQr(
+                `${baseUrl}/${tenantSlug}/qr-codes/generate-category/${categoryId}`
+            );
             if (result.qr_url) {
-                fetch(result.qr_url)
-                    .then(response => response.text())
-                    .then(svg => {
-                        document.getElementById(`categoryQRImage${categoryId}`).innerHTML = svg;
-                        document.getElementById(`categoryQR${categoryId}`).classList.remove('hidden');
-                    });
-                
-                // Refresh page to show in saved QR codes list
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error: ' + result.error);
+                await loadSvgIntoPreview(result.qr_url, `categoryQRImage${categoryId}`, `categoryQR${categoryId}`);
+                window.location.reload();
             }
         } catch (error) {
             alert('Error generating QR code: ' + error.message);
@@ -245,30 +258,12 @@
 
     async function generateItemQR(itemId) {
         try {
-            const response = await fetch(`${baseUrl}/${tenantSlug}/qr-codes/generate-item/${itemId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            });
-
-            const result = await response.json();
-            
+            const result = await postGenerateQr(
+                `${baseUrl}/${tenantSlug}/qr-codes/generate-item/${itemId}`
+            );
             if (result.qr_url) {
-                fetch(result.qr_url)
-                    .then(response => response.text())
-                    .then(svg => {
-                        document.getElementById(`itemQRImage${itemId}`).innerHTML = svg;
-                        document.getElementById(`itemQR${itemId}`).classList.remove('hidden');
-                    });
-                
-                // Refresh page to show in saved QR codes list
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error: ' + result.error);
+                await loadSvgIntoPreview(result.qr_url, `itemQRImage${itemId}`, `itemQR${itemId}`);
+                window.location.reload();
             }
         } catch (error) {
             alert('Error generating QR code: ' + error.message);
@@ -283,31 +278,13 @@
         }
 
         try {
-            const response = await fetch(`${baseUrl}/${tenantSlug}/qr-codes/generate-table`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                body: JSON.stringify({ table_no: tableNumber })
-            });
-
-            const result = await response.json();
-            
+            const result = await postGenerateQr(
+                `${baseUrl}/${tenantSlug}/qr-codes/generate-table`,
+                { table_no: tableNumber }
+            );
             if (result.qr_url) {
-                fetch(result.qr_url)
-                    .then(response => response.text())
-                    .then(svg => {
-                        document.getElementById('tableQRImage').innerHTML = svg;
-                        document.getElementById('tableQRResult').classList.remove('hidden');
-                    });
-                
-                // Refresh page to show in saved QR codes list
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error: ' + result.error);
+                await loadSvgIntoPreview(result.qr_url, 'tableQRImage', 'tableQRResult');
+                window.location.reload();
             }
         } catch (error) {
             alert('Error generating QR code: ' + error.message);

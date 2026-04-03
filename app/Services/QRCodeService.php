@@ -11,27 +11,38 @@ use Illuminate\Support\Facades\Storage;
 class QRCodeService
 {
     /**
-     * Get the base URL for QR codes
+     * Base URL for links encoded inside QR images (customer scans).
+     * Prefer the current request origin so LAN/mobile access matches how staff opened the app.
      */
-    private function getBaseUrl(): string
+    private function getEncodedLinkBaseUrl(): string
     {
-        // Check if we're in a local development environment
-        if (app()->environment('local')) {
-            // Try to get the actual server IP from environment or use a fallback
-            $serverIp = config('app.qr_base_ip') ?? $_SERVER['SERVER_ADDR'] ?? '192.168.29.111';
-            $port = $_SERVER['SERVER_PORT'] ?? '8000';
-            return "http://{$serverIp}:{$port}";
+        try {
+            if (app()->bound('request')) {
+                $request = request();
+                if ($request && $request->getHost()) {
+                    return rtrim($request->getSchemeAndHttpHost(), '/');
+                }
+            }
+        } catch (\Throwable) {
+            // fall through
         }
-        
-        // For production, use the configured app URL
-        return config('app.url');
+
+        return rtrim((string) config('app.url'), '/');
+    }
+
+    /**
+     * Path for fetching the SVG over HTTP (same-origin; avoids APP_URL mismatch with Storage::url()).
+     */
+    private function publicStorageUrlPath(string $filename): string
+    {
+        return '/storage/' . ltrim($filename, '/');
     }
     /**
      * Generate QR code for a specific item
      */
     public function generateItemQR(Item $item, string $tenantSlug, int $tenantId): string
     {
-        $baseUrl = $this->getBaseUrl();
+        $baseUrl = $this->getEncodedLinkBaseUrl();
         $url = "{$baseUrl}/{$tenantSlug}/qr-order/item/{$item->id}";
         
         $qrCode = QrCode::format('svg')
@@ -53,7 +64,7 @@ class QRCodeService
             'is_active' => true
         ]);
         
-        return Storage::url($filename);
+        return $this->publicStorageUrlPath($filename);
     }
     
     /**
@@ -61,7 +72,7 @@ class QRCodeService
      */
     public function generateCategoryQR(Category $category, string $tenantSlug, int $tenantId): string
     {
-        $baseUrl = $this->getBaseUrl();
+        $baseUrl = $this->getEncodedLinkBaseUrl();
         $url = "{$baseUrl}/{$tenantSlug}/qr-order/category/{$category->id}";
         
         $qrCode = QrCode::format('svg')
@@ -83,7 +94,7 @@ class QRCodeService
             'is_active' => true
         ]);
         
-        return Storage::url($filename);
+        return $this->publicStorageUrlPath($filename);
     }
     
     /**
@@ -91,7 +102,7 @@ class QRCodeService
      */
     public function generateMenuQR(string $tenantSlug, int $tenantId): string
     {
-        $baseUrl = $this->getBaseUrl();
+        $baseUrl = $this->getEncodedLinkBaseUrl();
         $url = "{$baseUrl}/{$tenantSlug}/qr-order/menu";
         
         $qrCode = QrCode::format('svg')
@@ -113,7 +124,7 @@ class QRCodeService
             'is_active' => true
         ]);
         
-        return Storage::url($filename);
+        return $this->publicStorageUrlPath($filename);
     }
     
     /**
@@ -121,7 +132,7 @@ class QRCodeService
      */
     public function generateTableQR(string $tenantSlug, string $tableNo, int $tenantId): string
     {
-        $baseUrl = $this->getBaseUrl();
+        $baseUrl = $this->getEncodedLinkBaseUrl();
         $url = "{$baseUrl}/{$tenantSlug}/qr-order/table/{$tableNo}";
         
         $qrCode = QrCode::format('svg')
@@ -143,6 +154,6 @@ class QRCodeService
             'is_active' => true
         ]);
         
-        return Storage::url($filename);
+        return $this->publicStorageUrlPath($filename);
     }
 }
