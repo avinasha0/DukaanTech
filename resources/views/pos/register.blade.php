@@ -414,17 +414,17 @@
             <!-- Order Type Tabs - Mobile -->
             <div class="mb-2">
                 <div class="flex space-x-0.5 bg-gray-100 rounded p-0.5">
-                    <button @click="handleTabChange('dine-in')" 
+                    <button type="button" @click="handleTabChange('dine-in')" 
                             :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Dine In
                     </button>
-                    <button @click="handleTabChange('delivery')" 
+                    <button type="button" @click="handleTabChange('delivery')" 
                             :class="selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Delivery
                     </button>
-                    <button @click="handleTabChange('pick-up')" 
+                    <button type="button" @click="handleTabChange('pick-up')" 
                             :class="selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
                             class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors">
                         Pickup
@@ -434,7 +434,7 @@
                 <!-- Dine In Sub-tabs -->
                 <div x-show="selectedOrderType === 'dine-in'" class="mt-1">
                     <div class="flex space-x-0.5 bg-gray-50 rounded p-0.5">
-                        <button @click="selectedDineInTab = 'table'" 
+                        <button type="button" @click="selectedDineInTab = 'table'" 
                                 :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +442,7 @@
                             </svg>
                             Table
                         </button>
-                        <button @click="selectedDineInTab = 'customer'" 
+                        <button type="button" @click="selectedDineInTab = 'customer'" 
                                 :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <!-- Show tick mark if customer is selected/saved -->
@@ -457,7 +457,7 @@
                             </svg>
                             Customer
                         </button>
-                        <button @click="selectedDineInTab = 'count'" 
+                        <button type="button" @click="selectedDineInTab = 'count'" 
                                 :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
                                 class="flex-1 py-1 px-1 text-xs font-medium rounded transition-colors flex items-center justify-center gap-0.5">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -469,18 +469,20 @@
                     
                     <!-- Table Dropdown -->
                     <div x-show="selectedDineInTab === 'table'" class="mt-2">
-                        <select x-model="customerInfo.tableNo" @change="handleTableSelection()" 
+                        <select x-model="customerInfo.tableNo"
+                                @change="handleTableSelection()"
                                 class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
                             <option value="">Choose table...</option>
                             <template x-for="table in tables" :key="table.id">
-                                <option :value="table.name" 
+                                <option :value="String(table.name)"
                                         :disabled="table.status === 'occupied'"
-                                        :class="table.status === 'occupied' ? 'text-gray-400' : ''">
-                                    <span x-text="table.name"></span>
-                                    <span x-text="table.status === 'occupied' ? ' (Occupied)' : ' (Available)'"></span>
-                                </option>
+                                        :class="table.status === 'occupied' ? 'text-gray-400' : ''"
+                                        x-text="table.name + (table.status === 'occupied' ? ' (Occupied)' : ' (Available)')"></option>
                             </template>
                         </select>
+                        <p x-show="selectedTable && selectedOrderType === 'dine-in' && selectedDineInTab === 'table'" class="text-xs text-green-700 mt-1" x-cloak>
+                            Table <span x-text="selectedTable.name"></span> selected — add items, then place order.
+                        </p>
                     </div>
                     
                     <!-- Customer Form for Mobile -->
@@ -736,52 +738,55 @@
                 </div>
             </div>
             
-            <!-- Payment Methods -->
-            <div class="mb-3">
+            <!-- Payment Methods (optional for dine-in) -->
+            <div class="mb-3 relative z-10">
+                <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment optional for dine-in — settle later</p>
                 <div class="grid grid-cols-3 gap-1 mb-2">
-                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
-                        <input type="radio" x-model="paymentMethod" value="cash" class="sr-only">
+                    <button type="button" @click="paymentMethod = 'cash'"
+                            class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                            :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                         <div class="flex flex-col items-center gap-0.5">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                             <span class="text-xs font-medium hidden sm:block">Cash</span>
                         </div>
-                    </label>
-                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
-                        <input type="radio" x-model="paymentMethod" value="card" class="sr-only">
+                    </button>
+                    <button type="button" @click="paymentMethod = 'card'"
+                            class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                            :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
                         <div class="flex flex-col items-center gap-0.5">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                             </svg>
                             <span class="text-xs font-medium hidden sm:block">Card</span>
                         </div>
-                    </label>
-                    <label class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
-                        <input type="radio" x-model="paymentMethod" value="upi" class="sr-only">
+                    </button>
+                    <button type="button" @click="paymentMethod = 'upi'"
+                            class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                            :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
                         <div class="flex flex-col items-center gap-0.5">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
                             <span class="text-xs font-medium hidden sm:block">UPI</span>
                         </div>
-                    </label>
+                    </button>
                 </div>
-                <!-- Payment Method Validation Error -->
-                <div x-show="paymentMethod === '' && cart.length > 0" class="text-red-500 text-xs text-center mt-1">
+                <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center mt-1">
                     Please select a payment method
                 </div>
             </div>
             
             <div class="space-y-2">
                 <div class="grid grid-cols-3 gap-1">
-                    <button @click="createOrder()" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder()" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '')" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                         <span class="text-xs font-medium hidden sm:block" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Create Order'"></span>
                     </button>
-                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || paymentMethod === ''" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '')" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
@@ -878,7 +883,9 @@
                                      table.name === 'T2' ? 'rounded-lg' : 
                                      table.name === 'T3' ? 'rounded-full' : 
                                      'rounded-lg',
-                                     table.status === 'free' ? 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:scale-105' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50 cursor-pointer hover:scale-105'
+                                     isDineInTableActive(table)
+                                         ? 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50 cursor-pointer hover:scale-105'
+                                         : 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:scale-105'
                                  ]"
                                  @click="handleTableClick(table)"
                                  @mouseenter="showTooltip = table.id"
@@ -887,7 +894,7 @@
                                 <!-- Table Icon -->
                                 <div class="mb-1 sm:mb-2">
                                     <!-- Round Table Icon (T1) -->
-                                    <svg x-show="table.name === 'T1'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T1'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="isDineInTableActive(table) ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.1"/>
                                         <circle cx="12" cy="12" r="8"/>
                                         <circle cx="12" cy="12" r="2" fill="currentColor"/>
@@ -898,7 +905,7 @@
                                     </svg>
                                     
                                     <!-- Rectangular Table Icon (T2) -->
-                                    <svg x-show="table.name === 'T2'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T2'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="isDineInTableActive(table) ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.1"/>
                                         <rect x="4" y="6" width="16" height="12" rx="2"/>
                                         <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
@@ -909,7 +916,7 @@
                                     </svg>
                                     
                                     <!-- Oval Table Icon (T3) -->
-                                    <svg x-show="table.name === 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name === 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="isDineInTableActive(table) ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <ellipse cx="12" cy="12" rx="10" ry="6" fill="currentColor" fill-opacity="0.1"/>
                                         <ellipse cx="12" cy="12" rx="10" ry="6"/>
                                         <ellipse cx="12" cy="12" rx="3" ry="2" fill="currentColor"/>
@@ -920,7 +927,7 @@
                                     </svg>
                                     
                                     <!-- Default Square Table Icon (T4+) -->
-                                    <svg x-show="table.name !== 'T1' && table.name !== 'T2' && table.name !== 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <svg x-show="table.name !== 'T1' && table.name !== 'T2' && table.name !== 'T3'" class="w-6 h-6 sm:w-8 sm:h-8 mx-auto" :class="isDineInTableActive(table) ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path d="M4 8h16v8H4z" fill="currentColor" fill-opacity="0.1"/>
                                         <path d="M4 8h16v8H4z"/>
                                         <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
@@ -934,13 +941,13 @@
                                 <!-- Table Name -->
                                 <h4 class="text-xs sm:text-sm font-semibold text-gray-900 mb-1" x-text="table.name"></h4>
                                 
-                                <!-- Status Indicator -->
+                                <!-- Status: Occupied = server; In use = dine-in selected, no bill yet; Available = free -->
                                 <div class="flex items-center justify-center gap-1 mb-1">
                                     <div class="w-2 h-2 rounded-full animate-pulse" 
-                                         :class="table.status === 'occupied' ? 'bg-red-500' : 'bg-green-500'"></div>
+                                         :class="isDineInTableActive(table) ? 'bg-red-500' : 'bg-green-500'"></div>
                                     <span class="text-xs font-medium"
-                                          :class="table.status === 'occupied' ? 'text-red-600' : 'text-green-600'"
-                                          x-text="table.status === 'occupied' ? 'Occupied' : 'Available'"></span>
+                                          :class="isDineInTableActive(table) ? 'text-red-600' : 'text-green-600'"
+                                          x-text="table.status === 'occupied' ? 'Occupied' : (isDineInTableActive(table) ? 'In use' : 'Available')"></span>
                                 </div>
                                 
                                 <!-- Capacity Info -->
@@ -948,29 +955,30 @@
                                         <span x-text="table.capacity + ' seats'"></span>
                                 </div>
                                 
-                                <!-- Total Amount -->
-                                <div x-show="table.status === 'occupied'" class="text-xs font-semibold text-gray-900 mb-1">
+                                <!-- Total Amount (show while table has an active session: occupied or dine-in selected) -->
+                                <div x-show="isDineInTableActive(table)" class="text-xs font-semibold text-gray-900 mb-1">
                                     <span x-text="'₹' + (table.total_amount || 0).toFixed(2)"></span>
                                 </div>
                                 
-                                <!-- Action Buttons -->
+                                <!-- Action Buttons: same set when server occupied OR dine-in table selected from sidebar -->
                                 <div class="mt-1 space-y-1 w-full">
-                                    <button x-show="table.status === 'free'" 
+                                    <button x-show="table.status === 'free' && !isDineInTableActive(table)" 
+                                            type="button"
                                             class="w-full px-1 sm:px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Available</span>
                                     </button>
-                                    <button x-show="table.status === 'occupied'" @click.stop="showTableOrderDetails(table)" 
+                                    <button x-show="isDineInTableActive(table)" @click.stop="showTableOrderDetails(table)" 
                                             class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                                         </svg>
                                         <span>Orders</span>
                                     </button>
-                                    <button x-show="table.status === 'occupied'" @click.stop="addItemsToTable(table)" 
+                                    <button x-show="isDineInTableActive(table)" @click.stop="addItemsToTable(table)" 
                                             class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Add Items</span>
                                     </button>
-                                    <button x-show="table.status === 'occupied'" @click.stop="markTableAsPaidFromCard(table)" 
+                                    <button x-show="isDineInTableActive(table)" @click.stop="markTableAsPaidFromCard(table)" 
                                             class="w-full px-1 sm:px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1 hover:shadow-lg hover:scale-105">
                                         <span>Mark Paid</span>
                                     </button>
@@ -1025,199 +1033,165 @@
             </div>
         </div>
 
-        <!-- Right Panel - Cart & Order (Hidden on mobile) -->
-        <div class="hidden lg:flex lg:fixed lg:top-0 lg:right-0 lg:z-30 w-[420px] bg-white border-l border-gray-200 flex-col h-full lg:h-screen min-h-0 shadow-lg">
-            <!-- Cart Items - Main Focus -->
-            <div class="flex-1 overflow-y-auto p-3 min-h-0 max-h-[60vh]">
-                <!-- Order Type Tabs -->
-                <div class="mb-3 sticky top-0 bg-white pb-2">
+        <!-- Right Panel - Cart & Order (Hidden on mobile): fixed header + scrollable body + sticky footer -->
+        <div class="hidden lg:flex lg:fixed lg:top-0 lg:right-0 lg:z-40 w-[420px] max-w-[100vw] bg-white border-l border-gray-200 flex-col lg:h-screen min-h-0 shadow-lg">
+            <!-- ========== A) HEADER (fixed, never scrolls) ========== -->
+            <div class="flex-shrink-0 border-b border-gray-200 bg-white px-3 pt-3 pb-2 space-y-2">
                     <!-- Add Items Mode Indicator -->
-                    <div x-show="isAddingItemsToExistingOrder" class="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div x-show="isAddingItemsToExistingOrder" class="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                 </svg>
-                                <div>
-                                    <p class="text-sm font-medium text-blue-900">Adding Items to Table <span x-text="selectedTable?.name"></span></p>
-                                    <p class="text-xs text-blue-700">Add items to the existing order and click "Add Items" to update</p>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-blue-900 truncate">Adding to <span x-text="selectedTable?.name"></span></p>
+                                    <p class="text-xs text-blue-700">Use Order / Add Items to update</p>
                                 </div>
                             </div>
-                            <button @click="cancelAddItemsMode()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                Cancel
-                            </button>
+                            <button type="button" @click="cancelAddItemsMode()" class="text-blue-600 hover:text-blue-800 text-sm font-medium shrink-0">Cancel</button>
                         </div>
                     </div>
-                    
+
+                    <!-- Order Type Tabs -->
                     <div class="flex space-x-1 bg-gray-100 rounded-lg p-1">
-                        <button @click="handleTabChange('dine-in')" 
+                        <button type="button" @click="handleTabChange('dine-in')" 
                                 :class="selectedOrderType === 'dine-in' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
-                                class="flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors">
+                                class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Dine In
                         </button>
-                        <button @click="handleTabChange('delivery')" 
+                        <button type="button" @click="handleTabChange('delivery')" 
                                 :class="selectedOrderType === 'delivery' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
-                                class="flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors">
+                                class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Delivery
                         </button>
-                        <button @click="handleTabChange('pick-up')" 
+                        <button type="button" @click="handleTabChange('pick-up')" 
                                 :class="selectedOrderType === 'pick-up' ? 'bg-red-600 text-white shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'"
-                                class="flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors">
+                                class="flex-1 py-2 px-2 text-sm font-medium rounded-md transition-colors">
                             Pickup
                         </button>
                     </div>
-                    
-                    <!-- Dine In Sub-tabs -->
-                    <div x-show="selectedOrderType === 'dine-in'" class="mt-3">
+
+                    <!-- Dine-in: always-visible summary strip + compact table picker -->
+                    <div x-show="selectedOrderType === 'dine-in'" class="space-y-2">
+                        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-red-100 bg-gradient-to-r from-red-50 to-orange-50 px-2.5 py-2 text-xs">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 font-bold shrink-0" x-text="selectedTable ? selectedTable.name : 'Table'"></span>
+                            <span class="text-gray-400 hidden sm:inline">|</span>
+                            <span class="text-gray-700 font-medium shrink-0"><span x-text="customerCount"></span> guests</span>
+                            <span class="text-gray-400 hidden sm:inline">|</span>
+                            <span class="text-gray-600 truncate min-w-0 flex-1" x-text="customerInfo.customerName ? customerInfo.customerName : 'Walk-in'"></span>
+                        </div>
                         <div class="flex space-x-1 bg-gray-50 rounded-lg p-1">
-                            <button @click="selectedDineInTab = 'table'" 
+                            <button type="button" @click="selectedDineInTab = 'table'" 
                                     :class="selectedDineInTab === 'table' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
-                                    class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
+                                    class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 Table
                             </button>
-                            <button @click="selectedDineInTab = 'customer'" 
+                            <button type="button" @click="selectedDineInTab = 'customer'" 
                                     :class="selectedDineInTab === 'customer' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
-                                    class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                <!-- Show tick mark if customer is selected/saved -->
-                                <svg x-show="customerInfo.customerId" 
-                                     class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <!-- Show user icon if no customer selected -->
-                                <svg x-show="!customerInfo.customerId" 
-                                     class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                                    class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
+                                <svg x-show="customerInfo.customerId" class="w-3.5 h-3.5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                 Customer
                             </button>
-                            <button @click="selectedDineInTab = 'count'" 
+                            <button type="button" @click="selectedDineInTab = 'count'" 
                                     :class="selectedDineInTab === 'count' ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
-                                    class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
+                                    class="flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1">
                                 Count
                             </button>
                         </div>
-                        
-                        <!-- Customer Form -->
-                        <div x-show="selectedDineInTab === 'customer'" class="mt-2 bg-white rounded-lg p-2 border border-gray-200">
-                            <h4 class="text-xs font-medium text-gray-900 mb-2">Customer Information</h4>
-                            
-                            <!-- Customer Search -->
-                            <div class="mb-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Search Existing Customer</label>
-                                <div class="relative">
-                                    <input type="text" 
-                                           x-model="customerSearchQuery" 
-                                           @input="searchCustomers()"
-                                           placeholder="Search by name or phone..." 
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
-                                    <div x-show="customerSearchResults.length > 0" 
-                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-32 overflow-y-auto">
-                                        <template x-for="customer in customerSearchResults" :key="customer.id">
-                                            <div @click="selectCustomer(customer)" 
-                                                 class="px-2 py-1 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
-                                                <div class="font-medium text-xs" x-text="customer.name"></div>
-                                                <div class="text-xs text-gray-500" x-text="customer.phone"></div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Customer Details Form -->
-                            <div class="space-y-1">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Customer Name</label>
-                                    <input type="text" x-model="customerInfo.customerName" placeholder="Enter customer name" 
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Phone Number</label>
-                                    <input type="tel" x-model="customerInfo.customerPhone" placeholder="Enter phone number" 
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Address</label>
-                                    <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="1" 
-                                              class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
-                                </div>
-                                
-                                <!-- Customer Actions -->
-                                <div class="flex gap-1 pt-1">
-                                    <button type="button" 
-                                            @click="saveCustomer()"
-                                            class="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:ring-1 focus:ring-blue-500">
-                                        Save Customer
-                                    </button>
-                                    <button type="button" 
-                                            @click="clearCustomerForm()"
-                                            class="flex-1 bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
-                                        Clear
-                                    </button>
-                                </div>
-                            </div>
+                        <!-- Table selector stays in header (compact) -->
+                        <div x-show="selectedDineInTab === 'table'">
+                            <label class="block text-[10px] font-semibold uppercase tracking-wide text-gray-500 mb-0.5">Select table</label>
+                            <select x-model="customerInfo.tableNo"
+                                    @change="handleTableSelection()"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <option value="">Choose a table...</option>
+                                <template x-for="table in tables" :key="table.id">
+                                    <option :value="String(table.name)"
+                                            :disabled="table.status === 'occupied'"
+                                            :class="table.status === 'occupied' ? 'text-gray-400' : ''"
+                                            x-text="table.name + (table.status === 'occupied' ? ' (Occupied)' : (table.status === 'free' ? ' (Available)' : ' (Reserved)'))"></option>
+                                </template>
+                            </select>
                         </div>
-                        
-                        <!-- Table Form -->
-                        <div x-show="selectedDineInTab === 'table'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">Table Information</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Select Table</label>
-                                    <select x-model="customerInfo.tableNo" @change="handleTableSelection()" 
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                                        <option value="">Choose a table...</option>
-                                        <template x-for="table in tables" :key="table.id">
-                                            <option :value="table.name" 
-                                                    :disabled="table.status === 'occupied'"
-                                                    :class="table.status === 'occupied' ? 'text-gray-400' : ''">
-                                                <span x-text="table.name"></span>
-                                                <span x-text="table.status === 'occupied' ? ' (Occupied)' : (table.status === 'free' ? ' (Available)' : ' (Reserved)')"></span>
-                                            </option>
-                                        </template>
-                                    </select>
-                                    <p class="text-xs text-gray-500 mt-1">Select from available tables</p>
-                                </div>
-                                
-                            </div>
-                        </div>
-                        
-                        <!-- Count Form -->
-                        <div x-show="selectedDineInTab === 'count'" class="mt-3 bg-white rounded-lg p-3 border border-gray-200">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">Number of Customers</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">No. of Customers</label>
-                                    <div class="flex items-center gap-3">
-                                        <button @click="customerCount = Math.max(1, customerCount - 1)" 
-                                                class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                            </svg>
-                                        </button>
-                                        <input type="number" x-model="customerCount" min="1" max="20" 
-                                               class="w-16 px-3 py-2 border border-gray-300 rounded-md text-sm text-center focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                                        <button @click="customerCount = Math.min(20, customerCount + 1)" 
-                                                class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                            </svg>
-                                        </button>
+                    </div>
+            </div>
+
+            <!-- ========== B) SCROLLABLE MIDDLE (forms + cart only) ========== -->
+            <div class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scroll-smooth px-3 py-2 space-y-3">
+
+                <!-- Dine-in: customer tab form (scrolls here, not in header) -->
+                <div x-show="selectedOrderType === 'dine-in' && selectedDineInTab === 'customer'" class="bg-white rounded-lg p-2 border border-gray-200">
+                    <h4 class="text-xs font-medium text-gray-900 mb-2">Customer Information</h4>
+                    <div class="mb-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Search Existing Customer</label>
+                        <div class="relative">
+                            <input type="text" 
+                                   x-model="customerSearchQuery" 
+                                   @input="searchCustomers()"
+                                   placeholder="Search by name or phone..." 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                            <div x-show="customerSearchResults.length > 0" 
+                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-32 overflow-y-auto">
+                                <template x-for="customer in customerSearchResults" :key="customer.id">
+                                    <div @click="selectCustomer(customer)" 
+                                         class="px-2 py-1 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                        <div class="font-medium text-xs" x-text="customer.name"></div>
+                                        <div class="text-xs text-gray-500" x-text="customer.phone"></div>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Range: 1-20 customers</p>
-                                </div>
+                                </template>
                             </div>
                         </div>
                     </div>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-0.5">Customer Name</label>
+                            <input type="text" x-model="customerInfo.customerName" placeholder="Enter customer name" 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-0.5">Phone Number</label>
+                            <input type="tel" x-model="customerInfo.customerPhone" placeholder="Enter phone number" 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-0.5">Address</label>
+                            <textarea x-model="customerInfo.address" placeholder="Enter customer address" rows="2" 
+                                      class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                        </div>
+                        <div class="flex gap-1 pt-1">
+                            <button type="button" @click="saveCustomer()"
+                                    class="flex-1 bg-blue-600 text-white px-2 py-1.5 rounded text-xs hover:bg-blue-700 focus:ring-1 focus:ring-blue-500">
+                                Save Customer
+                            </button>
+                            <button type="button" @click="clearCustomerForm()"
+                                    class="flex-1 bg-gray-500 text-white px-2 py-1.5 rounded text-xs hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                
+
+                <!-- Dine-in: guest count (scrollable block when Count tab) -->
+                <div x-show="selectedOrderType === 'dine-in' && selectedDineInTab === 'count'" class="bg-white rounded-lg p-3 border border-gray-200">
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">Number of guests</h4>
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="customerCount = Math.max(1, customerCount - 1)" 
+                                class="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                        </button>
+                        <input type="number" x-model="customerCount" min="1" max="20" 
+                               class="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm text-center focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <button type="button" @click="customerCount = Math.min(20, customerCount + 1)" 
+                                class="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Range: 1–20 guests</p>
+                </div>
+
                 <!-- Delivery Sub-tabs -->
-                <div x-show="selectedOrderType === 'delivery'" class="mt-3">
+                <div x-show="selectedOrderType === 'delivery'">
                     <!-- Customer Form Tabs -->
                     <div class="flex space-x-1 bg-gray-50 rounded-lg p-1 mb-3">
                         <button @click="selectedCustomerTab = 'basic'" 
@@ -1400,38 +1374,46 @@
                     </div>
                 </div>
                 
-                <div class="space-y-1 pb-4">
-                    <template x-for="item in cart" :key="item.id">
-                        <div class="flex items-center justify-between bg-white rounded-lg p-2 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="flex-1 min-w-0 flex items-center gap-2">
-                                <div class="font-medium text-gray-900 truncate text-sm" x-text="item.name"></div>
-                                <div class="text-xs text-gray-500" x-text="'₹' + item.price"></div>
-                                <div class="text-xs text-gray-600 font-semibold" x-text="'×' + item.qty + ' = ₹' + (item.price * item.qty)"></div>
-                            </div>
-                            <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                                <button @click="updateQuantity(item.id, item.qty - 1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">-</button>
-                                <span class="w-6 text-center font-bold text-xs bg-white rounded border min-w-[1.5rem]" x-text="item.qty"></span>
-                                <button @click="updateQuantity(item.id, item.qty + 1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">+</button>
-                                <button @click="removeFromCart(item.id)" class="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 ml-1 text-xs font-bold transition-colors">×</button>
-                        </div>
+                <!-- Cart (scrolls independently below header) -->
+                <div class="min-h-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wide">Cart</h4>
+                        <span class="text-xs font-medium text-gray-500 tabular-nums" x-text="cartItemCount + ' items'"></span>
                     </div>
-                </template>
-                </div>
-
-                <template x-if="cart.length === 0">
-                    <div class="text-center text-gray-500 py-8 lg:py-12">
-                        <svg class="w-16 h-16 lg:w-20 lg:h-20 mx-auto mb-3 lg:mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
-                        </svg>
-                        <p class="text-base lg:text-lg font-medium">No items in cart</p>
-                        <p class="text-xs lg:text-sm">Add items to get started</p>
+                    <div class="space-y-1.5">
+                        <template x-for="item in cart" :key="item.id">
+                            <div class="flex items-center justify-between bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
+                                <div class="flex-1 min-w-0 pr-2">
+                                    <div class="font-medium text-gray-900 truncate text-sm" x-text="item.name"></div>
+                                    <div class="text-xs text-gray-600 mt-0.5">
+                                        <span x-text="'₹' + item.price + ' × ' + item.qty"></span>
+                                        <span class="font-semibold text-gray-800" x-text="' = ₹' + (item.price * item.qty)"></span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-0.5 shrink-0">
+                                    <button type="button" @click="updateQuantity(item.id, item.qty - 1)" class="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">−</button>
+                                    <span class="w-7 text-center font-bold text-xs bg-white rounded border py-0.5 min-w-[1.5rem]" x-text="item.qty"></span>
+                                    <button type="button" @click="updateQuantity(item.id, item.qty + 1)" class="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 text-xs font-bold transition-colors">+</button>
+                                    <button type="button" @click="removeFromCart(item.id)" class="w-7 h-7 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 text-xs font-bold transition-colors">×</button>
+                                </div>
                             </div>
                         </template>
                     </div>
+                    <template x-if="cart.length === 0">
+                        <div class="text-center text-gray-500 py-10 px-2 mt-2 border border-dashed border-gray-200 rounded-lg bg-gray-50/80">
+                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                            </svg>
+                            <p class="text-sm font-medium">No items in cart</p>
+                            <p class="text-xs text-gray-400 mt-0.5">Add items from the menu</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <!-- ========== end scrollable middle ========== -->
 
-
-            <!-- Order Summary & Payment -->
-            <div class="border-t border-gray-200 p-2 bg-gray-50 flex-shrink-0">
+            <!-- ========== C) FOOTER (fixed at bottom) ========== -->
+            <div class="border-t border-gray-200 p-2 bg-gray-50 flex-shrink-0 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.06)]">
 
 
                 <!-- Discount Section -->
@@ -1463,23 +1445,30 @@
                     </div>
                 </div>
 
-                <!-- Payment Methods -->
-                <div class="mb-2">
+                <!-- Payment Methods (optional for dine-in — settle at table / Mark Paid) -->
+                <div class="mb-2 relative z-10">
+                    <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment when settling the bill (optional now)</p>
                     <div class="grid grid-cols-3 gap-1 mb-1">
-                        <label class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
-                            <input type="radio" x-model="paymentMethod" value="cash" class="sr-only">
+                        <button type="button"
+                                @click="paymentMethod = 'cash'"
+                                class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                                :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                             <span>Cash</span>
-                        </label>
-                        <label class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
-                            <input type="radio" x-model="paymentMethod" value="card" class="sr-only">
+                        </button>
+                        <button type="button"
+                                @click="paymentMethod = 'card'"
+                                class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                                :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
                             <span>Card</span>
-                        </label>
-                        <label class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors" :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
-                            <input type="radio" x-model="paymentMethod" value="upi" class="sr-only">
+                        </button>
+                        <button type="button"
+                                @click="paymentMethod = 'upi'"
+                                class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                                :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
                             <span>UPI</span>
-                        </label>
+                        </button>
                     </div>
-                    <div x-show="paymentMethod === '' && cart.length > 0" class="text-red-500 text-xs text-center">
+                    <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center">
                         Please select a payment method
                     </div>
                 </div>
@@ -1488,8 +1477,8 @@
                 <div class="mt-2">
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-1">
                         <button @click="createOrder(false, false)" 
-                                :disabled="cart.length === 0"
-                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : (isAddingItemsToExistingOrder ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700')"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -1498,8 +1487,8 @@
                             <span class="lg:hidden" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Order'"></span>
                     </button>
                         <button @click="createOrder(true, false)" 
-                                :disabled="cart.length === 0"
-                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -1508,8 +1497,8 @@
                             <span class="lg:hidden">Print</span>
                         </button>
                         <button @click="createOrder(false, true)" 
-                                :disabled="cart.length === 0"
-                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
@@ -1518,8 +1507,8 @@
                             <span class="lg:hidden">KOT</span>
                         </button>
                         <button @click="createOrder(true, true)" 
-                                :disabled="cart.length === 0"
-                                :class="cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1663,7 +1652,9 @@ function posRegister() {
         categories: [],
         items: [],
         orderTypes: [],
-        selectedOrderType: null,
+        /** Set true on first cashier tab pick so late loadOrderTypes() cannot overwrite it (fixes multi-click / tab not sticking). */
+        orderTypesHydrated: false,
+        selectedOrderType: 'dine-in',
         selectedDineInTab: 'table',
         selectedDeliveryTab: 'customer',
         selectedCustomerTab: 'basic',
@@ -1795,6 +1786,8 @@ function posRegister() {
 
             // Load outlets first to set correct outletId before loading tables
             await this.loadOutlets();
+            // Order types: await so default hydrates before heavy UI; handleTabChange + orderTypesHydrated still guard races if user taps early
+            await this.loadOrderTypes();
             
             // Load tables after outlet is selected
             this.refreshTablesFromStorage(); // Load tables from database
@@ -1802,7 +1795,6 @@ function posRegister() {
             // Load other data in parallel
             this.loadCategories();
             this.loadItems();
-            this.loadOrderTypes();
             this.loadDevices();
             
             // Enable periodic refresh immediately to keep tables in sync
@@ -2066,18 +2058,26 @@ function posRegister() {
                     }
                 });
                 this.orderTypes = await response.json();
-                // Select Dine In by default
+                // If the cashier already picked an order type while this request was in flight, do not overwrite it.
+                if (this.orderTypesHydrated) {
+                    return;
+                }
                 const dineInType = this.orderTypes.find(type => type.slug === 'dine-in');
                 if (dineInType) {
                     this.selectedOrderType = 'dine-in';
                     this.customerInfo.orderType = 'dine-in';
                 } else if (this.orderTypes.length > 0) {
-                    // Fallback to first order type if Dine In not found
                     this.selectedOrderType = this.orderTypes[0].slug;
                     this.customerInfo.orderType = this.orderTypes[0].slug;
                 }
+                this.orderTypesHydrated = true;
             } catch (error) {
                 console.error('Error loading order types:', error);
+                if (!this.orderTypesHydrated) {
+                    this.selectedOrderType = 'dine-in';
+                    this.customerInfo.orderType = 'dine-in';
+                    this.orderTypesHydrated = true;
+                }
             }
         },
         
@@ -2221,6 +2221,7 @@ function posRegister() {
         },
         
         selectOrderType(orderType) {
+            this.orderTypesHydrated = true;
             this.selectedOrderType = orderType;
             // Clear customer info when switching order types
             this.customerInfo = {
@@ -2241,15 +2242,17 @@ function posRegister() {
         },
 
         handleTabChange(orderType) {
+            this.orderTypesHydrated = true;
+            const previousOrderType = this.selectedOrderType;
             this.selectedOrderType = orderType;
             this.customerInfo.orderType = orderType;
-            // Reset sub-tabs when switching order types
-            if (orderType === 'dine-in') {
+            // Reset sub-tabs only when switching *to* this type from another (avoids wiping Table/Customer/Count on a second Dine In click)
+            if (orderType === 'dine-in' && previousOrderType !== 'dine-in') {
                 this.selectedDineInTab = 'table';
-            } else if (orderType === 'delivery') {
+            } else if (orderType === 'delivery' && previousOrderType !== 'delivery') {
                 this.selectedDeliveryTab = 'customer';
                 this.selectedCustomerTab = 'basic';
-            } else if (orderType === 'pick-up') {
+            } else if (orderType === 'pick-up' && previousOrderType !== 'pick-up') {
                 this.selectedPickupTab = 'customer';
             }
             this.handleOrderTypeChange();
@@ -2257,40 +2260,53 @@ function posRegister() {
 
         async handleTableSelection() {
             try {
-                console.log('=== HANDLE TABLE SELECTION START ===');
-                console.log('Selected table number:', this.customerInfo.tableNo);
-                console.log('Available tables:', this.tables);
-                
-                if (this.customerInfo.tableNo) {
-                    // Find the table by name
-                    const table = this.tables.find(t => t.name === this.customerInfo.tableNo);
-                    console.log('Found table:', table);
-                    
-                    if (table) {
-                        // Set the selected table
-                        this.selectedTable = table;
-                        console.log('Table set as selected:', this.selectedTable);
-                        console.log('Selected table ID:', this.selectedTable.id);
-                        console.log('Selected table status:', this.selectedTable.status);
-                        
-                        // Load table orders (but don't change status yet)
-                        await this.loadTableOrders(table.id);
-                    } else {
-                        console.error('Table not found with name:', this.customerInfo.tableNo);
-                        this.selectedTable = null;
-                    }
-                } else {
-                    console.log('No table selected, clearing selectedTable');
+                const raw = this.customerInfo.tableNo;
+                const normalized = raw != null && raw !== '' ? String(raw).trim() : '';
+
+                if (!normalized) {
                     this.selectedTable = null;
+                    return;
                 }
-                
-                console.log('=== HANDLE TABLE SELECTION END ===');
+
+                let table = this.tables.find(t => String(t.name ?? '').trim() === normalized);
+                if (!table && /^\d+$/.test(normalized)) {
+                    table = this.tables.find(t => String(t.id) === normalized);
+                }
+
+                if (!table) {
+                    console.warn('Table not found for dropdown value:', raw, 'tables loaded:', this.tables.length);
+                    this.selectedTable = null;
+                    return;
+                }
+
+                try {
+                    const tableStatus = await this.getTableStatus(table.id);
+                    const idx = this.tables.findIndex(t => t.id === table.id);
+                    if (idx !== -1 && tableStatus) {
+                        this.tables[idx] = { ...this.tables[idx], ...tableStatus };
+                        table = this.tables[idx];
+                        this.tables = [...this.tables];
+                    }
+                } catch (e) {
+                    console.warn('getTableStatus failed; using list row for selection', e);
+                }
+
+                this.selectedTable = table;
+                await this.loadTableOrders(table.id);
             } catch (error) {
                 console.error('ERROR in handleTableSelection:', error);
                 console.error('Error stack:', error.stack);
             }
         },
 
+        /** True when table should show occupied-style actions (server occupied, or dine-in table chosen in sidebar). */
+        isDineInTableActive(table) {
+            if (!table) return false;
+            if (table.status === 'occupied') return true;
+            return this.selectedOrderType === 'dine-in'
+                && this.selectedTable
+                && Number(this.selectedTable.id) === Number(table.id);
+        },
 
         async toggleTableStatus(table) {
             const newStatus = table.status === 'occupied' ? 'free' : 'occupied';
@@ -2737,24 +2753,21 @@ function posRegister() {
                 console.log('=== ADD ITEMS TO TABLE START ===');
                 console.log('Table:', table);
                 
-                // Get fresh table status and order
                 const tableStatus = await this.getTableStatus(table.id);
                 console.log('Fresh table status:', tableStatus);
                 
-                if (!tableStatus.has_active_order) {
-                    alert('No active order found for this table');
-                    return;
-                }
-                
-                // Set the table as selected and switch to add items mode
                 this.selectedTable = table;
                 this.customerInfo.tableNo = table.name;
-                this.isAddingItemsToExistingOrder = true;
                 
-                // Load the current order
-                await this.loadCurrentTableOrder(table.id);
+                if (tableStatus.has_active_order) {
+                    this.isAddingItemsToExistingOrder = true;
+                    await this.loadCurrentTableOrder(table.id);
+                } else {
+                    this.isAddingItemsToExistingOrder = false;
+                    this.currentTableOrder = null;
+                    this.currentTableOrderItems = [];
+                }
                 
-                // Switch to products view
                 this.showTables = false;
                 this.showProducts = true;
                 
@@ -3032,7 +3045,11 @@ function posRegister() {
                     
                 // Fetch orders from API
                 const response = await fetch(`${this.apiBase}/tables/orders?table_id=${tableId}`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
                 });
                 
                 console.log('Response status:', response.status);
@@ -3303,7 +3320,11 @@ function posRegister() {
                 console.log('Table ID:', tableId);
                 
                 const response = await fetch(`${this.apiBase}/tables/status?table_id=${tableId}`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                    },
+                    credentials: 'include'
                 });
                 
                 if (!response.ok) {
@@ -3926,12 +3947,13 @@ function posRegister() {
                     await this.addItemsToExistingOrder();
                     return;
                 }
-                
-            if (!this.paymentMethod) {
+
+                const isDineInOrder = this.customerInfo.orderType === 'dine-in' || this.selectedOrderType === 'dine-in';
+                if (!isDineInOrder && !this.paymentMethod) {
                     console.log('No payment method selected');
-                alert('Please select a payment method');
-                return;
-            }
+                    alert('Please select a payment method');
+                    return;
+                }
             
             // Validate delivery fields if order type is delivery
             if (this.selectedOrderType === 'delivery') {
@@ -3947,7 +3969,7 @@ function posRegister() {
                 const orderData = {
                     outlet_id: this.outletId,
                     order_type_id: this.orderTypes.length > 0 ? this.orderTypes[0].id : null,
-                    payment_method: this.paymentMethod,
+                    payment_method: isDineInOrder ? (this.paymentMethod || null) : this.paymentMethod,
                     special_instructions: this.customerInfo.specialInstructions,
                     items: this.cart.map(cartItem => ({
                         item_id: cartItem.id,
