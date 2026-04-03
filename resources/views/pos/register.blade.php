@@ -153,11 +153,11 @@
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Subtotal</span>
-                                <span class="text-gray-900">₹<span x-text="selectedOrderDetails?.total?.toFixed(2)"></span></span>
+                                <span class="text-gray-900">₹<span x-text="Math.round(selectedOrderDetails?.total || 0).toFixed(0)"></span></span>
                             </div>
                             <div class="flex justify-between text-lg font-semibold">
                                 <span class="text-gray-900">Total</span>
-                                <span class="text-gray-900">₹<span x-text="selectedOrderDetails?.total?.toFixed(2)"></span></span>
+                                <span class="text-gray-900">₹<span x-text="Math.round(selectedOrderDetails?.total || 0).toFixed(0)"></span></span>
                             </div>
                         </div>
                     </div>
@@ -379,7 +379,7 @@
                         Adding to Table <span x-text="selectedTable?.name"></span>
                     </div>
                 </div>
-                <div class="text-base sm:text-lg font-bold text-orange-600" x-text="'₹' + cartTotal"></div>
+                <div class="text-base sm:text-lg font-bold text-orange-600" x-text="'₹' + finalTotal"></div>
             </div>
             
             <!-- Cart Items List -->
@@ -813,7 +813,7 @@
                     <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
                            class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                            placeholder="Cash from customer" autocomplete="off">
-                    <div class="flex justify-between text-[10px] sm:text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + finalTotal.toFixed(2)"></span></div>
+                    <div class="flex justify-between text-[10px] sm:text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + Number(finalTotal).toFixed(0)"></span></div>
                     <div x-show="cashChangeToReturn !== null" class="flex justify-between text-xs font-semibold text-gray-800 pt-1 border-t border-orange-100">
                         <span>Change to return</span>
                         <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
@@ -1003,7 +1003,7 @@
                                 
                                 <!-- Total Amount (show while table has an active session: occupied or dine-in selected) -->
                                 <div x-show="isDineInTableActive(table)" class="text-xs font-semibold text-gray-900 mb-1">
-                                    <span x-text="'₹' + (table.total_amount || 0).toFixed(2)"></span>
+                                    <span x-text="'₹' + Math.round(Number(table.total_amount || 0)).toFixed(0)"></span>
                                 </div>
                                 
                                 <!-- Action Buttons: same set when server occupied OR dine-in table selected from sidebar -->
@@ -1550,7 +1550,7 @@
                         <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
                                class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                                placeholder="Cash from customer" autocomplete="off">
-                        <div class="flex justify-between text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + finalTotal.toFixed(2)"></span></div>
+                        <div class="flex justify-between text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + Number(finalTotal).toFixed(0)"></span></div>
                         <div x-show="cashChangeToReturn !== null" class="flex justify-between text-xs font-semibold text-gray-800 pt-1 border-t border-orange-100">
                             <span>Change to return</span>
                             <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
@@ -1625,7 +1625,7 @@
                     </div>
                     <div class="flex justify-between text-sm mt-2">
                         <span class="text-gray-600">Bill total</span>
-                        <span class="font-bold text-green-700 text-base">₹<span x-text="Number(settleBillTable?.total_amount || 0).toFixed(2)"></span></span>
+                        <span class="font-bold text-green-700 text-base">₹<span x-text="Math.round(Number(settleBillTable?.total_amount || 0)).toFixed(0)"></span></span>
                     </div>
                 </div>
                 <p class="text-xs font-medium text-gray-700 mb-2">Payment method <span class="text-red-500">*</span></p>
@@ -1645,7 +1645,7 @@
                     <input type="number" inputmode="decimal" step="0.01" min="0" x-model="settleCashCollected"
                            class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                            placeholder="Cash from customer" autocomplete="off">
-                    <div class="flex justify-between text-xs text-gray-600"><span>Bill total</span><span class="font-semibold text-gray-900">₹<span x-text="Number(settleBillTable?.total_amount || 0).toFixed(2)"></span></span></div>
+                    <div class="flex justify-between text-xs text-gray-600"><span>Bill total</span><span class="font-semibold text-gray-900">₹<span x-text="Math.round(Number(settleBillTable?.total_amount || 0)).toFixed(0)"></span></span></div>
                     <div x-show="settleBillCashChange !== null" class="flex justify-between text-sm font-semibold text-gray-800 pt-2 border-t border-orange-100">
                         <span>Change to return</span>
                         <span class="text-orange-700" x-text="'₹' + settleBillCashChange.toFixed(2)"></span>
@@ -1916,7 +1916,8 @@ function posRegister() {
         },
         
         get finalTotal() {
-            return Math.round((this.cartTotal - this.discountAmount) * 100) / 100;
+            const raw = Math.round((this.cartTotal - this.discountAmount) * 100) / 100;
+            return Math.round(raw);
         },
         
         get cashChangeToReturn() {
@@ -1935,7 +1936,7 @@ function posRegister() {
             if (!this.terminalPickupQuickDefaults || this.settleBillPayment !== 'cash' || !this.settleBillTable) return null;
             const t = parseFloat(this.settleCashCollected);
             if (this.settleCashCollected === '' || isNaN(t)) return null;
-            const due = Number(this.settleBillTable.total_amount || 0);
+            const due = Math.round(Number(this.settleBillTable.total_amount || 0));
             return Math.max(0, Math.round((t - due) * 100) / 100);
         },
         
@@ -3611,10 +3612,10 @@ function posRegister() {
                 return;
             }
             if (this.terminalPickupQuickDefaults && this.settleBillPayment === 'cash') {
-                const due = Number(table.total_amount || 0);
+                const due = Math.round(Number(table.total_amount || 0));
                 const tender = parseFloat(this.settleCashCollected);
                 if (this.settleCashCollected === '' || isNaN(tender) || tender + 1e-6 < due) {
-                    this.settleBillError = 'Enter cash received (must be at least ₹' + due.toFixed(2) + ').';
+                    this.settleBillError = 'Enter cash received (must be at least ₹' + due.toFixed(0) + ').';
                     return;
                 }
             }
@@ -4696,7 +4697,9 @@ function posRegister() {
                 discount = this.discountAmount || 0;
             }
             
-            const total = subtotal - discount;
+            const rawNet = Math.round((subtotal - discount) * 100) / 100;
+            const total = Math.round(rawNet);
+            const roundOff = Math.round((total - rawNet) * 100) / 100;
             
             // Create receipt HTML
             const receiptHTML = `
@@ -4823,7 +4826,8 @@ function posRegister() {
                             <div><span>Subtotal:</span><span>₹${subtotal.toFixed(2)}</span></div>
                             ${discount > 0 ? `<div class="discount"><span>Discount:</span><span>-₹${discount.toFixed(2)}</span></div>` : ''}
                             <div><span>Tax:</span><span>₹0.00</span></div>
-                            <div><span>Total:</span><span>₹${total.toFixed(2)}</span></div>
+                            ${roundOff !== 0 ? `<div><span>Round off:</span><span>₹${roundOff.toFixed(2)}</span></div>` : ''}
+                            <div><span>Total:</span><span>₹${total.toFixed(0)}</span></div>
                         </div>
                         
                         ${order.special_instructions ? `
@@ -5712,9 +5716,10 @@ function orderDetailsModal() {
         
         calculateOrderTotal(order) {
             if (!order.items || !Array.isArray(order.items)) return 0;
-            return Math.round(order.items.reduce((total, item) => {
+            const raw = Math.round(order.items.reduce((total, item) => {
                 return total + (item.price * item.qty);
             }, 0) * 100) / 100;
+            return Math.round(raw);
         }
     }
 }
@@ -5824,9 +5829,10 @@ function ordersModal() {
         
         calculateOrderTotal(order) {
             if (!order.items || !Array.isArray(order.items)) return 0;
-            return Math.round(order.items.reduce((total, item) => {
+            const raw = Math.round(order.items.reduce((total, item) => {
                 return total + (item.price * item.qty);
             }, 0) * 100) / 100;
+            return Math.round(raw);
         },
         
         viewOrderDetails(order) {
@@ -6540,7 +6546,7 @@ function getCookie(name) {
                                         <div class="text-xs text-gray-500" x-text="order.payment_method?.toUpperCase() || 'CASH'"></div>
                                     </div>
                                     <div class="col-span-1 text-right">
-                                        <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
+                                        <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(0)"></div>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <button type="button"
@@ -6566,7 +6572,7 @@ function getCookie(name) {
                                                       :class="getOrderStatusColor(order.state)"
                                                       x-text="order.state"></span>
                                             </div>
-                                            <div class="text-xs text-green-700 font-semibold mt-1" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
+                                            <div class="text-xs text-green-700 font-semibold mt-1" x-text="'₹' + calculateOrderTotal(order).toFixed(0)"></div>
                                         </div>
                                         <button type="button"
                                                 @click="viewOrderDetails(order)"
@@ -6700,7 +6706,7 @@ function getCookie(name) {
                                 <div class="mt-4 pt-4 border-t border-gray-200">
                                     <div class="flex justify-between items-center">
                                         <span class="text-lg font-semibold text-gray-900">Total Amount:</span>
-                                        <span class="text-xl font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></span>
+                                        <span class="text-xl font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(0)"></span>
                                     </div>
                                 </div>
                             </div>
@@ -6856,7 +6862,7 @@ function getCookie(name) {
                                     <div class="space-y-1 text-sm">
                                         <div><span class="font-medium">Table:</span> <span x-text="tableName"></span></div>
                                         <div><span class="font-medium">Total Amount:</span> 
-                                            <span class="font-bold text-green-600 text-lg" x-text="'₹' + (order.total || 0).toFixed(2)"></span>
+                                            <span class="font-bold text-green-600 text-lg" x-text="'₹' + Math.round(order.total || 0).toFixed(0)"></span>
                                         </div>
                                     </div>
                                 </div>

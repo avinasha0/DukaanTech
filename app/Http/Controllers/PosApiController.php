@@ -541,7 +541,7 @@ class PosApiController extends Controller
         foreach ($tables as $table) {
             if ($table->open_orders_count > 0) {
                 $orders = $openOrdersByTable->get($table->id, collect());
-                $calculatedTotal = round($orders->sum(fn (Order $order) => $order->total), 2);
+                $calculatedTotal = (float) round($orders->sum(fn (Order $order) => $order->total));
                 if ($table->total_amount != $calculatedTotal) {
                     $table->total_amount = $calculatedTotal;
                     $table->save();

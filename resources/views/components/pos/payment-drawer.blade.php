@@ -25,7 +25,7 @@
                     </div>
                     <div class="flex justify-between font-bold text-lg">
                         <span>Total:</span>
-                        <span>₹<span x-text="bill?.net_total?.toFixed(2)"></span></span>
+                        <span>₹<span x-text="Math.round(Number(bill?.net_total || 0)).toFixed(0)"></span></span>
                     </div>
                 </div>
                 
