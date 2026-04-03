@@ -100,8 +100,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-orange-500 to-red-600">
                                 <tr>
-                                    <th class="px-6 py-4 text-left text-sm font-bold text-white">KOT #</th>
-                                    <th class="px-6 py-4 text-left text-sm font-bold text-white">Order #</th>
+                                    <th class="px-6 py-4 text-left text-sm font-bold text-white">Order / KOT #</th>
                                     <th class="px-6 py-4 text-left text-sm font-bold text-white">Station</th>
                                     <th class="px-6 py-4 text-left text-sm font-bold text-white">Time</th>
                                     <th class="px-6 py-4 text-left text-sm font-bold text-white">Items</th>
@@ -113,10 +112,7 @@
                                 <template x-for="ticket in kotTickets" :key="ticket.id">
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-2xl font-bold text-gray-900" x-text="ticket.id"></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-lg font-semibold text-gray-700" x-text="ticket.order_id"></div>
+                                            <div class="text-2xl font-bold text-gray-900" x-text="ticket.order_id"></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800" x-text="ticket.station"></span>
@@ -172,7 +168,7 @@
                                     {{-- Header Row --}}
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="text-2xl font-bold text-gray-900" x-text="'KOT #' + ticket.id"></div>
+                                            <div class="text-2xl font-bold text-gray-900" x-text="'KOT #' + ticket.order_id"></div>
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800" x-text="ticket.station"></span>
                                         </div>
                                         <span :class="ticket.status === 'SENT' ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-green-100 text-green-800 border-green-200'"
@@ -182,7 +178,6 @@
                                     
                                     {{-- Order Info --}}
                                     <div class="text-sm text-gray-600">
-                                        <div>Order #<span x-text="ticket.order_id"></span></div>
                                         <div x-text="formatTime(ticket.created_at)"></div>
                                     </div>
                                     

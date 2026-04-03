@@ -116,8 +116,7 @@ class PrinterService
     public function generateKOTContent(KitchenTicket $kt): string
     {
         // Generate KOT content for thermal printer
-        $content = "KOT #{$kt->id}\n";
-        $content .= "Order #{$kt->order_id}\n";
+        $content = "KOT #{$kt->order_id}\n";
         $content .= "Station: {$kt->station}\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
         $content .= str_repeat('-', 32) . "\n";

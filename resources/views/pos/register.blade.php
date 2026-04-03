@@ -4305,9 +4305,13 @@ function posRegister() {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || '',
                             ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                         },
+                        credentials: 'include',
                         body: JSON.stringify(orderData)
                     });
                     
@@ -4392,30 +4396,56 @@ function posRegister() {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || '',
                                 ...(this.deviceKey ? { 'X-Device-Key': this.deviceKey } : {})
                             },
+                            credentials: 'include',
                             body: JSON.stringify({
                                 station: 'hot-kitchen' // Default station
                             })
                         });
                         
                         if (kotResponse.status >= 200 && kotResponse.status < 300) {
-                            const kot = await kotResponse.json();
+                            const kotCt = kotResponse.headers.get('content-type') || '';
+                            let kot = null;
+                            if (kotCt.includes('application/json')) {
+                                kot = await kotResponse.json();
+                            } else {
+                                const raw = await kotResponse.text();
+                                console.error('KOT non-JSON response', kotResponse.status, raw.slice(0, 500));
+                                throw new Error('KOT response was not JSON (check auth / tenant routing)');
+                            }
+                            const kotDisplayNo = kot.order_id ?? order.id;
                             if (kot && kot.id) {
                                 if (shouldPrint) {
-                                    this.showNotification('success', 'Order Created Successfully!', `Order #${order.id} has been created, KOT #${kot.id} sent to kitchen, and bill printed.`, 'The kitchen will start preparing your order and bill has been printed.');
+                                    this.showNotification('success', 'Order Created Successfully!', `Order #${order.id} has been created, KOT #${kotDisplayNo} sent to kitchen, and bill printed.`, 'The kitchen will start preparing your order and bill has been printed.');
                                 } else {
-                                this.showNotification('success', 'Order Created Successfully!', `Order #${order.id} has been created and KOT #${kot.id} sent to kitchen.`, 'The kitchen will start preparing your order.');
+                                this.showNotification('success', 'Order Created Successfully!', `Order #${order.id} has been created and KOT #${kotDisplayNo} sent to kitchen.`, 'The kitchen will start preparing your order.');
                                 }
                             } else {
                                 this.showNotification('warning', 'Order Created Successfully!', `Order #${order.id} has been created.`, 'Note: KOT response format unexpected.');
                             }
                         } else {
-                            this.showNotification('warning', 'Order Created Successfully!', `Order #${order.id} has been created.`, 'Note: KOT could not be created.');
+                            let detail = `HTTP ${kotResponse.status}`;
+                            try {
+                                const errCt = kotResponse.headers.get('content-type') || '';
+                                if (errCt.includes('application/json')) {
+                                    const errJson = await kotResponse.json();
+                                    detail = errJson.error || errJson.message || JSON.stringify(errJson);
+                                } else {
+                                    const t = await kotResponse.text();
+                                    detail = t.slice(0, 200) || detail;
+                                }
+                            } catch (e) { /* ignore */ }
+                            console.error('KOT request failed', detail);
+                            this.showNotification('warning', 'Order Created Successfully!', `Order #${order.id} has been created.`, `Note: KOT could not be created (${detail}).`);
                         }
                     } catch (kotError) {
                         console.error('Error creating KOT:', kotError);
-                        this.showNotification('warning', 'Order Created Successfully!', `Order #${order.id} has been created.`, 'Note: KOT could not be created.');
+                        this.showNotification('warning', 'Order Created Successfully!', `Order #${order.id} has been created.`, 'Note: KOT could not be created. Check the browser console for details.');
                     }
                 } else {
                     if (shouldPrint) {

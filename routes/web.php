@@ -263,7 +263,7 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
             'delivery_fee' => $data['delivery_fee'] ?? 0,
             'special_instructions' => $data['special_instructions'],
             'mode' => $data['mode'],
-            'state' => 'PENDING',
+            'state' => 'NEW',
         ]);
         
         // Create order items
