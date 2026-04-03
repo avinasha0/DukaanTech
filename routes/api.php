@@ -113,7 +113,11 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
                 ]
             ]);
         }
-        
+
+        app()->instance('tenant.id', $account->id);
+        app()->instance('tenant.model', $account);
+        app()->instance('tenant', $account);
+
         // Calculate summary using ShiftService
         $shiftService = new \App\Services\ShiftService();
         $summary = $shiftService->getShiftSummary($shift);

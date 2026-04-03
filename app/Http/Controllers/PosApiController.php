@@ -8,6 +8,7 @@ use App\Models\OrderType;
 use App\Models\Device;
 use App\Models\Outlet;
 use App\Models\Shift;
+use App\Models\TerminalSession;
 use App\Models\RestaurantTable;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -141,77 +142,24 @@ class PosApiController extends Controller
     }
     
     /**
-     * Get current shift for the tenant.
+     * Get current shift for the tenant (actor's open shift on the requested outlet).
      */
     public function currentShift(Request $request)
     {
         $tenantId = $this->getTenantId();
-        $outletId = $request->get('outlet_id', 1);
-        
-        // Get terminal user from session
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        \Log::info('CurrentShift API called', [
-            'tenant_id' => $tenantId,
-            'outlet_id' => $outletId,
-            'session_token_header' => request()->header('X-Terminal-Session-Token'),
-            'session_token_cookie' => request()->cookie('terminal_session_token'),
-            'session_token_final' => $sessionToken,
-            'token_length' => $sessionToken ? strlen($sessionToken) : 0,
-            'cookies' => request()->cookies->all(),
-            'headers' => request()->headers->all()
-        ]);
-        
-        // If the token looks like a Laravel encrypted cookie, try to decrypt it
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-                \Log::info('Session token decrypted successfully', ['decrypted_length' => strlen($sessionToken)]);
-            } catch (\Exception $e) {
-                \Log::warning('Failed to decrypt session token', ['error' => $e->getMessage()]);
-                // Fall back to header token if cookie decryption fails
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
+        $outletId = (int) $request->get('outlet_id', 1);
+
+        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+            $terminalUser->refresh();
         }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            \Log::info('Session lookup result', [
-                'session_found' => $session ? true : false,
-                'session_id' => $session ? $session->id : null,
-                'terminal_user_found' => $session && $session->terminalUser ? true : false,
-                'terminal_user_id' => $session && $session->terminalUser ? $session->terminalUser->id : null
-            ]);
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        } else {
-            \Log::warning('No session token provided');
-        }
-        
-        // Find any open shift in the tenant (ignore outlet for now)
-        $shift = Shift::where('tenant_id', $tenantId)
-            ->whereNull('closed_at')
-            ->first();
-        
-        \Log::info('Shift lookup result', [
-            'tenant_id' => $tenantId,
-            'outlet_id' => $outletId,
-            'terminal_user_id' => $terminalUser ? $terminalUser->id : null,
-            'terminal_user_user_id' => $terminalUser ? $terminalUser->user_id : null,
-            'shift_found' => $shift ? true : false,
-            'shift_id' => $shift ? $shift->id : null,
-            'all_shifts_count' => Shift::where('tenant_id', $tenantId)->count(),
-            'open_shifts_count' => Shift::where('tenant_id', $tenantId)->whereNull('closed_at')->count()
-        ]);
-            
-        if (!$shift) {
+
+        $userId = auth()->check()
+            ? (int) auth()->id()
+            : (int) ($terminalUser?->user_id ?? 0);
+
+        if ($userId === 0) {
             return response()->json([
                 'shift' => null,
                 'has_shift' => false,
@@ -221,20 +169,65 @@ class PosApiController extends Controller
                     'cash_sales' => 0,
                     'card_sales' => 0,
                     'upi_sales' => 0,
-                    'opening_float' => 0
-                ]
+                    'opening_float' => 0,
+                ],
             ]);
+        }
+
+        $shift = Shift::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->where('outlet_id', $outletId)
+            ->where('opened_by', $userId)
+            ->whereNull('closed_at')
+            ->first();
+
+        $openShiftsAnyOutlet = Shift::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('closed_at')
+            ->get(['id', 'outlet_id', 'opening_float', 'created_at']);
+            
+        if (!$shift) {
+            $payload = [
+                'shift' => null,
+                'has_shift' => false,
+                'summary' => [
+                    'total_sales' => 0,
+                    'total_orders' => 0,
+                    'cash_sales' => 0,
+                    'card_sales' => 0,
+                    'upi_sales' => 0,
+                    'opening_float' => 0,
+                ],
+            ];
+            if (config('app.debug')) {
+                $payload['_debug'] = [
+                    'reason' => 'no_open_shift_for_outlet',
+                    'requested_outlet_id' => $outletId,
+                    'tenant_id' => $tenantId,
+                    'open_shifts' => $openShiftsAnyOutlet->toArray(),
+                ];
+            }
+
+            return response()->json($payload);
         }
         
         // Calculate summary using ShiftService
         $shiftService = new \App\Services\ShiftService();
         $summary = $shiftService->getShiftSummary($shift);
-        
-        return response()->json([
+
+        $payload = [
             'shift' => $shift,
             'has_shift' => true,
-            'summary' => $summary
-        ]);
+            'summary' => $summary,
+        ];
+        if (config('app.debug')) {
+            $payload['_debug'] = array_merge(
+                \App\Services\ShiftService::debugShiftSummaryContext($shift),
+                ['requested_outlet_id' => $outletId, 'tenant_id' => $tenantId]
+            );
+        }
+
+        return response()->json($payload);
     }
     
     /**

@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\TerminalLoginLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\TerminalLoginLog;
+use Illuminate\Http\Request;
 
 class TerminalSession extends Model
 {
@@ -149,5 +150,33 @@ class TerminalSession extends Model
             'orphaned_sessions' => $orphaned,
             'total_cleaned' => $expired + $old + $orphaned
         ];
+    }
+
+    /**
+     * Resolve the terminal user for the current HTTP request (cookie or X-Terminal-Session-Token).
+     */
+    public static function terminalUserFromHttpRequest(Request $request): ?TerminalUser
+    {
+        $sessionToken = $request->header('X-Terminal-Session-Token') ?? $request->cookie('terminal_session_token');
+
+        if ($sessionToken && strlen((string) $sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Throwable $e) {
+                $sessionToken = $request->header('X-Terminal-Session-Token') ?? $request->cookie('terminal_session_token');
+            }
+        }
+
+        if (! $sessionToken) {
+            return null;
+        }
+
+        $session = static::query()
+            ->where('session_token', $sessionToken)
+            ->where('expires_at', '>', now())
+            ->with('terminalUser')
+            ->first();
+
+        return ($session && $session->terminalUser) ? $session->terminalUser : null;
     }
 }

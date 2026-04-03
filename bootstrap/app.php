@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'pos.access' => \App\Http\Middleware\EnsureWebOrTerminal::class,
+            'web.or.terminal' => \App\Http\Middleware\RedirectUnlessWebOrTerminal::class,
             'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
             'ensure.shift.open' => \App\Http\Middleware\EnsureShiftOpen::class,
             'manager.pin' => \App\Http\Middleware\ManagerPinGuard::class,

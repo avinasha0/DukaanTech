@@ -22,54 +22,7 @@ Route::post('/orders/add-items', [\App\Http\Controllers\PosApiController::class,
     
     Route::post('/dashboard/shift/checkout', [\App\Http\Controllers\Tenant\DashboardController::class, 'checkoutShift']);
     
-    Route::post('/shifts/open', function ($tenant) {
-        $account = app('tenant');
-        
-        $data = request()->validate([
-            'outlet_id' => 'required|exists:outlets,id',
-            'opening_float' => 'nullable|numeric|min:0',
-        ]);
-        
-        // Check for regular web authentication
-        $user = auth()->user();
-        if (!$user) {
-            return response()->json(['error' => 'Authentication required. Please login.'], 401);
-        }
-        
-        // Find or create terminal user for web user
-        $terminalUser = \App\Models\TerminalUser::where('user_id', $user->id)->first();
-        if (!$terminalUser) {
-            $terminalUser = \App\Models\TerminalUser::create([
-                'tenant_id' => $account->id,
-                'terminal_id' => 'WEB_' . $user->id,
-                'name' => $user->name,
-                'pin' => '0000',
-                'role' => 'cashier',
-                'is_active' => true,
-                'user_id' => $user->id,
-            ]);
-        }
-        
-        
-        $existingShift = \App\Models\Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $user->id)
-            ->where('outlet_id', $data['outlet_id'])
-            ->whereNull('closed_at')
-            ->first();
-            
-        if ($existingShift) {
-            return response()->json(['error' => 'You already have an open shift for this outlet'], 400);
-        }
-        
-        $shift = \App\Models\Shift::create([
-            'tenant_id' => $account->id,
-            'outlet_id' => $data['outlet_id'],
-            'opening_float' => $data['opening_float'] ?? 0,
-            'opened_by' => $user->id,
-        ]);
-        
-        return response()->json($shift, 201);
-    });
+    Route::post('/shifts/open', [\App\Http\Controllers\Tenant\DashboardController::class, 'openPosShift']);
     
     Route::post('/shifts/close', [\App\Http\Controllers\Tenant\DashboardController::class, 'checkoutShift']);
     

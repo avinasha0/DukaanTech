@@ -106,44 +106,24 @@ class DashboardController extends Controller
     public function getCurrentShift()
     {
         $tenantId = app('tenant.id');
-        
-        // Get the first outlet for this tenant (assuming single outlet for now)
-        $outlet = \App\Models\Outlet::where('tenant_id', $tenantId)->first();
-        
-        if (!$outlet) {
-            return response()->json(['error' => 'No outlet found'], 404);
+
+        $terminalUser = $this->terminalUserFromRequest();
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
         }
-        
-        // Check if this is a terminal user request
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
-        }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
+
+        $userId = $this->actingUserIdFromRequest();
+        $shift = null;
+
+        if ($userId) {
+            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+                ->where('opened_by', $userId)
+                ->whereNull('closed_at')
+                ->orderByDesc('id')
                 ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
         }
-        
-        // Find any open shift in the outlet
-        $shift = \App\Models\Shift::where('tenant_id', $tenantId)
-            ->where('outlet_id', $outlet->id)
-            ->whereNull('closed_at')
-            ->first();
-        
-        if (!$shift) {
+
+        if (! $shift) {
             return response()->json([
                 'shift' => null,
                 'has_shift' => false,
@@ -176,45 +156,50 @@ class DashboardController extends Controller
         
         $data = $request->validate([
             'actual_cash' => 'required|numeric|min:0',
+            'outlet_id' => 'nullable|exists:outlets,id',
+            'shift_id' => 'nullable|integer|exists:shifts,id',
+            'include_summary' => 'nullable|boolean',
         ]);
         
         $tenantId = app('tenant.id');
-        
-        // Get the first outlet for this tenant (assuming single outlet for now)
-        $outlet = \App\Models\Outlet::where('tenant_id', $tenantId)->first();
-        
-        if (!$outlet) {
-            return response()->json(['error' => 'No outlet found'], 404);
+        if ($tenantId === null || $tenantId === '') {
+            return response()->json(['error' => 'Tenant context missing'], 500);
         }
-        
-        // Check if this is a terminal user request
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                $sessionToken = request()->header('X-Terminal-Session-Token');
+
+        // When closing by shift_id, the shift record already pins outlet + tenant — skip outlet pre-check
+        // (Outlet is TenantScoped; an extra scoped exists() query can incorrectly fail for valid outlets.)
+        if (empty($data['shift_id']) && ! empty($data['outlet_id'])) {
+            $outletOk = \App\Models\Outlet::withoutGlobalScopes()
+                ->where('id', $data['outlet_id'])
+                ->where('tenant_id', $tenantId)
+                ->exists();
+            if (! $outletOk) {
+                return response()->json(['error' => 'Invalid outlet'], 422);
             }
         }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
+
+        if (! empty($data['shift_id'])) {
+            $shiftTenantOk = \App\Models\Shift::withoutGlobalScopes()
+                ->where('id', $data['shift_id'])
+                ->where('tenant_id', $tenantId)
+                ->exists();
+            if (! $shiftTenantOk) {
+                return response()->json(['error' => 'Invalid shift'], 422);
             }
         }
-        
-        // Find any open shift in the outlet
-        $shift = \App\Models\Shift::where('tenant_id', $tenantId)
-            ->where('outlet_id', $outlet->id)
-            ->whereNull('closed_at')
-            ->first();
+
+        $terminalUser = $this->terminalUserFromRequest();
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+        }
+
+        $userId = $this->actingUserIdFromRequest();
+        $shift = $this->findOpenShiftForCheckout(
+            $tenantId,
+            $userId,
+            isset($data['outlet_id']) ? (int) $data['outlet_id'] : null,
+            isset($data['shift_id']) ? (int) $data['shift_id'] : null
+        );
         
         if (!$shift) {
             return response()->json(['error' => 'No open shift found'], 404);
@@ -225,87 +210,106 @@ class DashboardController extends Controller
         }
         
         $shift = $this->shiftService->closeShift($shift, $data['actual_cash']);
-        $summary = $this->shiftService->getShiftSummary($shift);
-        
-        return response()->json([
-            'shift' => $shift,
-            'summary' => $summary,
-            'message' => 'Shift closed successfully'
+
+        $payload = [
+            'shift' => $shift->fresh(),
+            'message' => 'Shift closed successfully',
+        ];
+
+        if ($request->boolean('include_summary')) {
+            $payload['summary'] = $this->shiftService->getShiftSummary($shift);
+        }
+
+        return response()->json($payload);
+    }
+
+    /**
+     * Open shift from the POS UI / API (web user or terminal session).
+     */
+    public function openPosShift(Request $request)
+    {
+        $data = $request->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+            'opening_float' => 'nullable|numeric|min:0',
         ]);
+
+        $tenantId = app('tenant.id');
+
+        $terminalUser = $this->terminalUserFromRequest();
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+        }
+
+        $actingUserId = $this->actingUserIdFromRequest();
+        if (! $actingUserId) {
+            return response()->json(['error' => 'Authentication required.'], 401);
+        }
+
+        $outletOk = \App\Models\Outlet::withoutGlobalScopes()
+            ->where('id', $data['outlet_id'])
+            ->where('tenant_id', $tenantId)
+            ->exists();
+        if (! $outletOk) {
+            return response()->json(['error' => 'Invalid outlet'], 422);
+        }
+
+        $existingShift = \App\Models\Shift::where('tenant_id', $tenantId)
+            ->where('opened_by', $actingUserId)
+            ->where('outlet_id', $data['outlet_id'])
+            ->whereNull('closed_at')
+            ->first();
+
+        if ($existingShift) {
+            return response()->json(['error' => 'You already have an open shift for this outlet'], 400);
+        }
+
+        $shift = $this->shiftService->openShift(
+            (int) $data['outlet_id'],
+            (float) ($data['opening_float'] ?? 0),
+            $actingUserId
+        );
+
+        return response()->json($shift, 201);
     }
 
     public function openShift(Request $request)
     {
         \Log::info('Dashboard openShift called', [
             'request_data' => $request->all(),
-            'headers' => request()->headers->all()
+            'headers' => request()->headers->all(),
         ]);
-        
+
         $data = $request->validate([
             'outlet_id' => 'required|exists:outlets,id',
             'opening_float' => 'nullable|numeric|min:0',
         ]);
-        
+
         $tenantId = app('tenant.id');
-        
-        // Get terminal user from session
-        $terminalUser = null;
-        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
-        
-        if ($sessionToken && strlen($sessionToken) > 100) {
-            try {
-                $sessionToken = decrypt($sessionToken);
-            } catch (\Exception $e) {
-                $sessionToken = request()->header('X-Terminal-Session-Token');
-            }
-        }
-        
-        if ($sessionToken) {
-            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-            }
-        }
-        
-        if (!$terminalUser) {
+
+        $terminalUser = $this->terminalUserFromRequest();
+
+        if (! $terminalUser) {
             return response()->json(['error' => 'Terminal session not found. Please login again.'], 401);
         }
-        
-        // Ensure TerminalUser has a linked User record
-        if (!$terminalUser->user_id) {
-            $user = \App\Models\User::where('email', $terminalUser->terminal_id . '@terminal.local')->first();
-            
-            if (!$user) {
-                $user = \App\Models\User::create([
-                    'tenant_id' => $tenantId,
-                    'name' => $terminalUser->name,
-                    'email' => $terminalUser->terminal_id . '@terminal.local',
-                    'password' => bcrypt('terminal_password'),
-                    'role' => 'terminal_user',
-                    'is_active' => true,
-                ]);
-            }
-            
-            $terminalUser->update(['user_id' => $user->id]);
-        }
-        
-        // Check if there's already an open shift for this user
+
+        $terminalUser->ensureLinkedShadowUser();
+
         $existingShift = \App\Models\Shift::where('tenant_id', $tenantId)
             ->where('opened_by', $terminalUser->user_id)
             ->where('outlet_id', $data['outlet_id'])
             ->whereNull('closed_at')
             ->first();
-            
+
         if ($existingShift) {
             return response()->json(['error' => 'You already have an open shift for this outlet'], 400);
         }
-        
-        $shift = $this->shiftService->openShift($data['outlet_id'], $data['opening_float'] ?? 0);
-        
+
+        $shift = $this->shiftService->openShift(
+            (int) $data['outlet_id'],
+            (float) ($data['opening_float'] ?? 0),
+            (int) $terminalUser->user_id
+        );
+
         return response()->json($shift, 201);
     }
 
@@ -331,6 +335,53 @@ class DashboardController extends Controller
             });
         
         return response()->json($customers);
+    }
+
+    private function terminalUserFromRequest(): ?\App\Models\TerminalUser
+    {
+        return \App\Models\TerminalSession::terminalUserFromHttpRequest(request());
+    }
+
+    private function actingUserIdFromRequest(): ?int
+    {
+        if (auth()->check()) {
+            return (int) auth()->id();
+        }
+
+        $terminalUser = $this->terminalUserFromRequest();
+
+        return ($terminalUser && $terminalUser->user_id) ? (int) $terminalUser->user_id : null;
+    }
+
+    /**
+     * Resolve the shift to close: explicit shift_id (must belong to actor), or actor's open shift (optional outlet filter).
+     */
+    private function findOpenShiftForCheckout(int $tenantId, ?int $userId, ?int $outletId, ?int $shiftId = null): ?\App\Models\Shift
+    {
+        if ($shiftId) {
+            $shift = \App\Models\Shift::where('tenant_id', $tenantId)
+                ->where('id', $shiftId)
+                ->whereNull('closed_at')
+                ->first();
+            if (! $shift || $userId === null || (int) $shift->opened_by !== $userId) {
+                return null;
+            }
+
+            return $shift;
+        }
+
+        if ($userId === null) {
+            return null;
+        }
+
+        $q = \App\Models\Shift::where('tenant_id', $tenantId)
+            ->where('opened_by', $userId)
+            ->whereNull('closed_at');
+        if ($outletId) {
+            $q->where('outlet_id', $outletId);
+        }
+
+        return $q->orderByDesc('id')->first();
     }
 
 }

@@ -141,4 +141,34 @@ class TerminalUser extends Model
             ->where('expires_at', '<=', now())
             ->delete();
     }
+
+    /**
+     * Ensure this terminal profile is linked to a User row (for shift ownership and checkout).
+     */
+    public function ensureLinkedShadowUser(): int
+    {
+        if ($this->user_id) {
+            return (int) $this->user_id;
+        }
+
+        $email = $this->terminal_id . '@terminal.local';
+
+        $user = User::query()
+            ->where('tenant_id', $this->tenant_id)
+            ->where('email', $email)
+            ->first();
+
+        if (! $user) {
+            $user = User::create([
+                'tenant_id' => $this->tenant_id,
+                'name' => $this->name,
+                'email' => $email,
+                'password' => bcrypt('terminal_password'),
+            ]);
+        }
+
+        $this->update(['user_id' => $user->id]);
+
+        return (int) $user->id;
+    }
 }

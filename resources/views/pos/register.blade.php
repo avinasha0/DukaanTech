@@ -2322,6 +2322,12 @@ function posRegister() {
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Shift data received:', data);
+                    console.groupCollapsed('[POS shift] checkShift');
+                    console.log('outletId', this.outletId, 'has_shift', data.has_shift);
+                    console.log('summary', data.summary);
+                    console.log('_debug', data._debug ?? '(none — enable APP_DEBUG in .env)');
+                    console.log('full', JSON.stringify(data, null, 2));
+                    console.groupEnd();
                     this.shift = data.shift;
                     this.posLocked = !data.has_shift; // Lock based on has_shift flag
                     
@@ -2358,7 +2364,15 @@ function posRegister() {
                 if (response.ok) {
                     const data = await response.json();
                     this.shiftSummary = data.summary;
-                    console.log('Shift summary loaded during initialization:', this.shiftSummary);
+                    console.groupCollapsed('[POS shift] loadShiftSummary');
+                    console.log('outletId', this.outletId, 'shiftId', this.shift?.id);
+                    console.log('summary', data.summary);
+                    console.log('_debug', data._debug ?? '(none — enable APP_DEBUG in .env)');
+                    console.log('full', JSON.stringify(data, null, 2));
+                    console.groupEnd();
+                } else {
+                    const text = await response.text();
+                    console.warn('loadShiftSummary failed', response.status, text.slice(0, 500));
                 }
             } catch (error) {
                 console.error('Error loading shift summary:', error);
@@ -4866,7 +4880,9 @@ function posRegister() {
                     },
                     credentials: 'include',
                     body: JSON.stringify({
-                        actual_cash: parseFloat(this.actualCash)
+                        actual_cash: parseFloat(this.actualCash),
+                        shift_id: this.shift.id,
+                        outlet_id: this.shift.outlet_id,
                     })
                 });
                 
@@ -5111,6 +5127,7 @@ function checkoutModal() {
         shiftSummary: null,
         loading: false,
         shiftInfo: null,
+        shiftObject: null,
         apiBase: null,
         
         init() {
@@ -5125,19 +5142,20 @@ function checkoutModal() {
         async open(event) {
             console.log('=== OPENING CHECKOUT MODAL ===');
             console.log('API Base:', this.apiBase);
-            
-            // Get outlet ID from the event or default to 1
-            const outletId = event?.detail?.outletId || 1;
-            console.log('Using outlet ID:', outletId);
+
+            const rawOutlet = event?.detail?.outletId;
+            const outletId = rawOutlet != null && rawOutlet !== '' ? Number(rawOutlet) : null;
+            const resolvedOutletId = Number.isFinite(outletId) && outletId > 0 ? outletId : 1;
+            console.log('Using outlet ID:', resolvedOutletId, '(from dispatch detail:', event?.detail, ')');
             
             // Check if there's an active shift by calling the API
             try {
                 console.log('=== CHECKOUT MODAL SHIFT CHECK ===');
                 console.log('API Base:', this.apiBase);
-                console.log('Outlet ID:', outletId);
+                console.log('Outlet ID:', resolvedOutletId);
                 console.log('Session token:', localStorage.getItem('terminal_session_token'));
                 
-                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${outletId}&t=${Date.now()}`, {
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${resolvedOutletId}&t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
@@ -5150,6 +5168,12 @@ function checkoutModal() {
                 if (shiftResponse.ok) {
                     const shiftData = await shiftResponse.json();
                     console.log('Checkout modal shift data:', shiftData);
+                    console.groupCollapsed('[POS shift] checkoutModal (first fetch)');
+                    console.log('outletId', resolvedOutletId, 'has_shift', shiftData.has_shift);
+                    console.log('summary', shiftData.summary);
+                    console.log('_debug', shiftData._debug ?? '(none — enable APP_DEBUG in .env)');
+                    console.log('full', JSON.stringify(shiftData, null, 2));
+                    console.groupEnd();
                     console.log('Has shift:', shiftData.has_shift);
                     console.log('Shift object:', shiftData.shift);
                     
@@ -5182,8 +5206,8 @@ function checkoutModal() {
             
             // Get current shift and calculate summary directly
             try {
-                // First get current shift
-                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?t=${Date.now()}`, {
+                // Must pass outlet_id — backend defaults to 1; wrong outlet = wrong/no shift and ₹0 summary
+                const shiftResponse = await fetch(`${this.apiBase}/dashboard/shift/current?outlet_id=${resolvedOutletId}&t=${Date.now()}`, {
                     headers: {
                         'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                     },
@@ -5192,7 +5216,13 @@ function checkoutModal() {
                 if (shiftResponse.ok) {
                     const shiftData = await shiftResponse.json();
                     console.log('Shift data received:', shiftData);
-                    
+                    console.groupCollapsed('[POS shift] checkoutModal (summary fetch)');
+                    console.log('outletId', resolvedOutletId);
+                    console.log('summary', shiftData.summary);
+                    console.log('_debug', shiftData._debug ?? '(none — enable APP_DEBUG in .env)');
+                    console.log('full', JSON.stringify(shiftData, null, 2));
+                    console.groupEnd();
+
                     if (shiftData.shift && shiftData.shift.id) {
                         // Use the summary data from the API response instead of recalculating
                         this.shiftSummary = shiftData.summary || {
@@ -5211,7 +5241,7 @@ function checkoutModal() {
                         console.log('Setting shiftObject:', shiftData.shift);
                         this.shiftObject = shiftData.shift;
                         
-                        console.log('Using API summary:', this.shiftSummary);
+                        console.log('[POS shift] modal shiftSummary (Alpine)', this.shiftSummary);
                         console.log('Shift info:', this.shiftInfo);
                     } else {
                         // No shift available
@@ -5254,6 +5284,7 @@ function checkoutModal() {
             this.actualCash = 0;
             this.shiftSummary = null;
             this.shiftInfo = null;
+            this.shiftObject = null;
             this.loading = false;
         },
         
@@ -5298,7 +5329,7 @@ function checkoutModal() {
                 // Get session token from cookie or localStorage
                 const sessionToken = this.getCookie('terminal_session_token') || localStorage.getItem('terminal_session_token');
                 
-                const response = await fetch(`/{{ $tenant->slug }}/terminal/logout`, {
+                const response = await fetch(`/{{ $tenant->slug }}/terminal/api/logout`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -5380,7 +5411,9 @@ function checkoutModal() {
                     },
                     credentials: 'include',
                     body: JSON.stringify({
-                        actual_cash: parseFloat(this.actualCash)
+                        actual_cash: parseFloat(this.actualCash),
+                        shift_id: this.shiftObject.id,
+                        outlet_id: this.shiftObject.outlet_id,
                     })
                 });
                 
@@ -6140,7 +6173,7 @@ function getCookie(name) {
     <div
         x-data="checkoutModal()"
         x-init="init()"
-        x-on:open-checkout.window="open()"
+        x-on:open-checkout.window="open($event)"
         x-on:keydown.escape.window="close()"
         class="relative z-50"
     >

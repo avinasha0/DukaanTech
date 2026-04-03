@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Account;
 use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\TerminalSession;
@@ -17,59 +16,62 @@ class PosRegisterController extends Controller
      */
     public function index(Request $request, $tenant)
     {
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        // Get the first available outlet for this tenant, or default to 1
-        $outlet = Outlet::where('tenant_id', $account->id)
-            ->where('is_active', true)
-            ->first();
-        
-        $outletId = $outlet ? $outlet->id : 1;
-        
-        // Check for active shift server-side
-        $activeShift = Shift::where('tenant_id', $account->id)
-            ->where('outlet_id', $outletId)
-            ->whereNull('closed_at')
-            ->first();
-        
-        // Check if user is authenticated via terminal or regular auth
-        $terminalUser = null;
-        $isTerminalAuth = false;
-        $isRegularAuth = false;
-        
-        // Check for regular web authentication first
-        if (auth()->check()) {
-            $isRegularAuth = true;
-        }
-        
-        // Check for terminal session
-        $sessionToken = $request->cookie('terminal_session_token');
-        if ($sessionToken) {
-            $session = TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser) {
-                $terminalUser = $session->terminalUser;
-                $isTerminalAuth = true;
-            }
-        }
-        
-        // If no authentication found, redirect to terminal login
-        if (!$isTerminalAuth && !$isRegularAuth) {
+        $account = app('tenant');
+
+        $isRegularAuth = auth()->check();
+        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+        $isTerminalAuth = $terminalUser !== null;
+
+        if (! $isRegularAuth && ! $isTerminalAuth) {
             return redirect()->route('terminal.login', ['tenant' => $tenant])
                 ->with('error', 'Please login to access the POS terminal');
         }
-        
+
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+            $terminalUser->refresh();
+        }
+
+        if (auth()->check() && ! $terminalUser) {
+            $webUser = auth()->user();
+            $terminalUser = TerminalUser::firstOrCreate(
+                [
+                    'tenant_id' => $account->id,
+                    'user_id' => $webUser->id,
+                ],
+                [
+                    'terminal_id' => 'WEB_' . $webUser->id,
+                    'name' => $webUser->name,
+                    'pin' => '0000',
+                    'role' => 'cashier',
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        $actingUserId = auth()->check()
+            ? (int) auth()->id()
+            : (int) $terminalUser->user_id;
+
+        $userOpenShift = Shift::where('tenant_id', $account->id)
+            ->where('opened_by', $actingUserId)
+            ->whereNull('closed_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $userOpenShift) {
+            return redirect()->route('tenant.pos.shift-open', ['tenant' => $tenant])
+                ->with('info', 'Please open a shift to access the POS terminal');
+        }
+
         return view('pos.register', [
             'tenant' => $account,
-            'activeShift' => $activeShift,
-            'outletId' => $outletId,
+            'activeShift' => $userOpenShift,
+            'outletId' => $userOpenShift->outlet_id,
             'kotEnabled' => $account->kot_enabled,
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => $isTerminalAuth,
-            'isRegularAuth' => $isRegularAuth
+            'isRegularAuth' => $isRegularAuth,
         ]);
     }
 
@@ -79,59 +81,42 @@ class PosRegisterController extends Controller
      */
     public function terminalOnly(Request $request, $tenant)
     {
-        
-        
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        // Get the first available outlet for this tenant, or default to 1
-        $outlet = Outlet::where('tenant_id', $account->id)
-            ->where('is_active', true)
-            ->first();
-        
-        $outletId = $outlet ? $outlet->id : 1;
-        
-        // Check for active shift server-side
-        $activeShift = Shift::where('tenant_id', $account->id)
-            ->where('outlet_id', $outletId)
-            ->whereNull('closed_at')
-            ->first();
-        
-        // Check for terminal session
-        $sessionToken = $request->cookie('terminal_session_token');
-        $terminalUser = null;
-        $isTerminalAuth = false;
-        
-        if ($sessionToken) {
-            $session = TerminalSession::where('session_token', $sessionToken)
-                ->where('expires_at', '>', now())
-                ->with('terminalUser')
-                ->first();
-            
-            if ($session && $session->terminalUser && $session->isValid()) {
-                $terminalUser = $session->terminalUser;
-                $isTerminalAuth = true;
-            }
-        }
-        
-        // If no terminal authentication found, redirect to terminal login
-        if (!$isTerminalAuth) {
+        $account = app('tenant');
+
+        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+
+        if (! $terminalUser) {
             return redirect()->route('terminal.login', ['tenant' => $tenant])
                 ->with('error', 'Please login with terminal credentials to access the POS terminal');
         }
-        
-        // If no active shift found, redirect to shift opening page
-        if (!$activeShift) {
+
+        $terminalUser->ensureLinkedShadowUser();
+        $terminalUser->refresh();
+
+        $actingUserId = auth()->check()
+            ? (int) auth()->id()
+            : (int) $terminalUser->user_id;
+
+        $userOpenShift = $actingUserId > 0
+            ? Shift::where('tenant_id', $account->id)
+                ->where('opened_by', $actingUserId)
+                ->whereNull('closed_at')
+                ->orderByDesc('id')
+                ->first()
+            : null;
+
+        if (! $userOpenShift) {
             return redirect()->route('tenant.pos.shift-open', ['tenant' => $tenant])
                 ->with('info', 'Please open a shift to access the POS terminal');
         }
-        
+
         return view('pos.register', [
             'tenant' => $account,
-            'activeShift' => $activeShift,
-            'outletId' => $outletId,
+            'activeShift' => $userOpenShift,
+            'outletId' => $userOpenShift->outlet_id,
             'kotEnabled' => $account->kot_enabled,
             'terminalUser' => $terminalUser,
-            'isTerminalAuth' => $isTerminalAuth,
+            'isTerminalAuth' => true,
             'isRegularAuth' => false // Always false for terminal-only access
         ]);
     }
@@ -176,39 +161,49 @@ class PosRegisterController extends Controller
      */
     public function shiftOpen(Request $request, $tenant)
     {
-        $account = app('tenant'); // Get tenant from middleware context
-        
-        // Get the current authenticated user
-        $user = auth()->user();
-        if (!$user) {
-            return redirect()->route('login')
-                ->with('error', 'Please login to access the POS terminal');
-        }
-        
-        // Find or create terminal user for web user
-        $terminalUser = TerminalUser::where('user_id', $user->id)->first();
-        if (!$terminalUser) {
-            $terminalUser = TerminalUser::create([
-                'tenant_id' => $account->id,
-                'terminal_id' => 'WEB_' . $user->id,
-                'name' => $user->name,
-                'pin' => '0000',
-                'role' => 'cashier',
-                'is_active' => true,
-                'user_id' => $user->id,
-            ]);
+        $account = app('tenant');
+
+        $webUser = auth()->user();
+        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+
+        if (! $webUser && ! $terminalUser) {
+            return redirect()->route('terminal.login', ['tenant' => $tenant])
+                ->with('error', 'Please sign in to open a shift.');
         }
 
-        // Get available outlets
+        if ($terminalUser) {
+            $terminalUser->ensureLinkedShadowUser();
+            $terminalUser->refresh();
+        }
+
+        if ($webUser && ! $terminalUser) {
+            $terminalUser = TerminalUser::firstOrCreate(
+                [
+                    'tenant_id' => $account->id,
+                    'user_id' => $webUser->id,
+                ],
+                [
+                    'terminal_id' => 'WEB_' . $webUser->id,
+                    'name' => $webUser->name,
+                    'pin' => '0000',
+                    'role' => 'cashier',
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        $actingUserId = auth()->check()
+            ? (int) auth()->id()
+            : (int) $terminalUser->user_id;
+
+        $existingShift = Shift::where('tenant_id', $account->id)
+            ->where('opened_by', $actingUserId)
+            ->whereNull('closed_at')
+            ->first();
+
         $outlets = Outlet::where('tenant_id', $account->id)
             ->where('is_active', true)
             ->get();
-
-        // Check if there's already an open shift
-        $existingShift = Shift::where('tenant_id', $account->id)
-            ->where('opened_by', $user->id)
-            ->whereNull('closed_at')
-            ->first();
 
         return view('pos.shift-open', [
             'tenant' => $account,

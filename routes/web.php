@@ -182,7 +182,7 @@ Route::get('/{tenant}/pos/terminal/authenticated', [PosRegisterController::class
 
 Route::get('/{tenant}/pos/shift-open', [PosRegisterController::class, 'shiftOpen'])
     ->name('tenant.pos.shift-open')
-    ->middleware(['web', 'auth', 'resolve.tenant']);
+    ->middleware(['web', 'resolve.tenant', 'web.or.terminal']);
 
 // POS API endpoints for register functionality
 Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']], function () {
@@ -406,7 +406,11 @@ Route::group(['prefix' => '{tenant}/api/public', 'middleware' => []], function (
                 ]
             ]);
         }
-        
+
+        app()->instance('tenant.id', $account->id);
+        app()->instance('tenant.model', $account);
+        app()->instance('tenant', $account);
+
         // Calculate summary using ShiftService
         $shiftService = new \App\Services\ShiftService();
         $summary = $shiftService->getShiftSummary($shift);

@@ -136,7 +136,7 @@
                     </div>
 
                     <!-- Error Message -->
-                    <div x-show="error" class="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"></div>
+                    <div x-show="error" x-text="error" class="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"></div>
 
                     <!-- Success Popup -->
                     <div x-show="showSuccessPopup" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform scale-100" x-transition:leave-end="opacity-0 transform scale-95" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -207,6 +207,7 @@
                 loading: false,
                 error: '',
                 existingShift: @json($existingShift ? true : false),
+                existingShiftMeta: @json($existingShift ? ['id' => $existingShift->id, 'outlet_id' => $existingShift->outlet_id] : null),
                 formData: {
                     outlet_id: '',
                     opening_float: 0
@@ -219,18 +220,7 @@
                 init() {
                     this.updateTime();
                     setInterval(() => this.updateTime(), 1000);
-                    
-                    // Check if we have required session data
-                    const sessionToken = localStorage.getItem('terminal_session_token');
-                    const terminalUser = localStorage.getItem('terminal_user');
-                    
-                    if (!sessionToken || !terminalUser) {
-                        alert('Session expired. Please login again.');
-                        window.location.href = `/{{ $tenant->slug }}/terminal/login`;
-                        return;
-                    }
-                    
-                    // Auto-select first outlet if only one is available
+
                     const outlets = @json($outlets);
                     if (outlets.length === 1) {
                         this.formData.outlet_id = outlets[0].id;
@@ -370,7 +360,11 @@
                             },
                             credentials: 'include',
                             body: JSON.stringify({
-                                actual_cash: 0 // Default value for closing
+                                actual_cash: 0,
+                                ...(this.existingShiftMeta ? {
+                                    outlet_id: this.existingShiftMeta.outlet_id,
+                                    shift_id: this.existingShiftMeta.id
+                                } : {})
                             })
                         });
 
@@ -394,40 +388,89 @@
                     }
                 },
 
-                logout() {
+                async logout() {
+                    this.error = '';
+                    this.loading = true;
                     this.showSuccessPopup = true;
-                    this.successMessage = 'Shift closed successfully!';
-                    this.loadingMessage = 'Logging out...';
-                    
-                    // Auto logout after showing the popup
-                    setTimeout(() => {
-                        this.logoutWithoutClosingShift();
-                    }, 2000);
+                    this.successMessage = this.existingShiftMeta
+                        ? 'Closing your open shift...'
+                        : 'Logging out...';
+                    this.loadingMessage = 'Please wait...';
+
+                    try {
+                        if (this.existingShiftMeta) {
+                            const closeResponse = await fetch(`/{{ $tenant->slug }}/pos/api/shifts/close`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json',
+                                    'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
+                                },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                    actual_cash: 0,
+                                    outlet_id: this.existingShiftMeta.outlet_id,
+                                    shift_id: this.existingShiftMeta.id
+                                })
+                            });
+                            if (!closeResponse.ok) {
+                                const closeData = await closeResponse.json().catch(() => ({}));
+                                this.showSuccessPopup = false;
+                                this.error = closeData.error || 'Could not close your open shift. Use Continue or Close & Open New.';
+                                this.loading = false;
+                                return;
+                            }
+                            this.successMessage = 'Shift closed. Logging out...';
+                        }
+
+                        await this.clearTerminalAndWebSession();
+                    } catch (error) {
+                        this.showSuccessPopup = false;
+                        this.error = 'Network error. Please try again.';
+                    } finally {
+                        this.loading = false;
+                    }
                 },
 
                 async logoutWithoutClosingShift() {
+                    await this.clearTerminalAndWebSession();
+                },
+
+                async clearTerminalAndWebSession() {
+                    const sessionToken = localStorage.getItem('terminal_session_token');
                     try {
-                        // Call the logout endpoint to properly clean up the session
-                        const sessionToken = localStorage.getItem('terminal_session_token');
-                        const response = await fetch(`/{{ $tenant->slug }}/terminal/logout`, {
+                        await fetch(`/{{ $tenant->slug }}/terminal/api/logout`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
                                 'X-Terminal-Session-Token': sessionToken || ''
                             },
                             credentials: 'include'
                         });
                     } catch (error) {
-                        // Continue with logout even if API call fails
+                        // continue
                     }
-                    
-                    // Clear session data and logout without trying to close shift
+                    try {
+                        await fetch('/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                            },
+                            credentials: 'include'
+                        });
+                    } catch (error) {
+                        // continue
+                    }
+
                     localStorage.removeItem('terminal_user');
                     localStorage.removeItem('terminal_session_token');
                     localStorage.removeItem('pos_shift_data');
-                    
-                    // Redirect to login
+
                     window.location.href = `/{{ $tenant->slug }}/terminal/login`;
                 },
 
@@ -441,30 +484,34 @@
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token')
+                                'Accept': 'application/json',
+                                'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || ''
                             },
                             credentials: 'include',
                             body: JSON.stringify({
-                                actual_cash: 0 // Default value for closing
+                                actual_cash: 0,
+                                ...(this.existingShiftMeta ? {
+                                    outlet_id: this.existingShiftMeta.outlet_id,
+                                    shift_id: this.existingShiftMeta.id
+                                } : {})
                             })
                         });
 
-                        if (response.ok) {
-                            // Shift closed successfully
-                        } else {
-                            // Failed to close shift, but proceeding with logout
+                        if (!response.ok) {
+                            const err = await response.json().catch(() => ({}));
+                            this.error = err.error || 'Failed to close shift';
+                            this.loading = false;
+                            return;
                         }
                     } catch (error) {
-                        // Error closing shift, but proceeding with logout
+                        this.error = 'Network error. Please try again.';
+                        this.loading = false;
+                        return;
                     } finally {
-                        // Clear session data regardless of shift close result
-                        localStorage.removeItem('terminal_user');
-                        localStorage.removeItem('terminal_session_token');
-                        localStorage.removeItem('pos_shift_data');
-                        
-                        // Redirect to login
-                        window.location.href = `/{{ $tenant->slug }}/terminal/login`;
+                        this.loading = false;
                     }
+
+                    await this.clearTerminalAndWebSession();
                 }
             }
         }

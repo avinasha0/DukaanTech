@@ -9,8 +9,10 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-// Allow POS JSON routes when either a web user or a valid terminal session is present.
-class EnsureWebOrTerminal
+/**
+ * For browser pages: allow Laravel web auth or a valid terminal session; otherwise redirect to terminal login.
+ */
+class RedirectUnlessWebOrTerminal
 {
     public function handle(Request $request, Closure $next): Response
     {
@@ -22,9 +24,10 @@ class EnsureWebOrTerminal
             return $next($request);
         }
 
-        return response()->json([
-            'error' => 'Authentication required',
-            'message' => 'Please log in to the POS (web user or terminal login).',
-        ], 401);
+        $tenantSlug = $request->route('tenant');
+
+        return redirect()
+            ->route('terminal.login', ['tenant' => $tenantSlug])
+            ->with('error', 'Please sign in with your terminal PIN to continue.');
     }
 }

@@ -9,33 +9,23 @@ trait TenantScoped
     protected static function bootTenantScoped()
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            \Log::info('TenantScoped global scope applied', [
-                'tenant_id_bound' => app()->bound('tenant.id'),
-                'tenant_id_value' => app()->bound('tenant.id') ? app('tenant.id') : 'NOT_BOUND'
-            ]);
-            
-            if (app()->bound('tenant.id')) {
-                $query->where('tenant_id', app('tenant.id'));
-            } else {
-                \Log::warning('TenantScoped: tenant.id not bound, skipping global scope');
+            // tenant.id is always "bound" via AppServiceProvider singleton (default null).
+            // Only filter when a real tenant id is set — otherwise WHERE tenant_id = NULL matches nothing.
+            $tenantId = app()->bound('tenant.id') ? app('tenant.id') : null;
+
+            if ($tenantId !== null && $tenantId !== '') {
+                $query->where('tenant_id', $tenantId);
             }
         });
 
         static::creating(function ($model) {
-            \Log::info('TenantScoped creating event', [
-                'model_class' => get_class($model),
-                'tenant_id_bound' => app()->bound('tenant.id'),
-                'tenant_id_value' => app()->bound('tenant.id') ? app('tenant.id') : 'NOT_BOUND',
-                'current_tenant_id' => $model->tenant_id ?? 'NOT_SET'
-            ]);
-            
-            if (app()->bound('tenant.id')) {
-                $model->tenant_id ??= app('tenant.id');
-                \Log::info('TenantScoped: tenant_id set', ['tenant_id' => $model->tenant_id]);
-            } else {
-                \Log::error('TenantScoped: tenant.id not bound during model creation', [
+            $tenantId = app()->bound('tenant.id') ? app('tenant.id') : null;
+            if ($tenantId !== null && $tenantId !== '' && $model->tenant_id === null) {
+                $model->tenant_id = $tenantId;
+            } elseif ($model->tenant_id === null) {
+                \Log::error('TenantScoped: no tenant id during model creation', [
                     'model_class' => get_class($model),
-                    'model_data' => $model->getAttributes()
+                    'model_data' => $model->getAttributes(),
                 ]);
             }
         });
