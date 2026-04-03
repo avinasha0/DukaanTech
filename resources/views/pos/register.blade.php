@@ -5718,10 +5718,14 @@ function orderDetailsModal() {
         },
         
         async loadTables() {
-            if (!this.order?.outlet_id) return;
+            const outletId = this.order?.outlet_id ?? this.order?.outlet?.id;
+            if (!outletId) {
+                console.warn('QR approve: missing outlet on order');
+                return;
+            }
             this.loadingTables = true;
             try {
-                const r = await fetch(`${this.apiBase}/tables?outlet_id=${this.order.outlet_id}`, {
+                const r = await fetch(`${this.apiBase}/tables?outlet_id=${outletId}`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
@@ -5731,21 +5735,49 @@ function orderDetailsModal() {
                 if (r.ok) {
                     const data = await r.json();
                     this.tables = Array.isArray(data) ? data : (data.data || data.tables || []);
+                } else {
+                    this.tables = [];
                 }
+                this.selectedTableId = '';
+                // Alpine x-for on <option> is unreliable; fill <select> with plain DOM
+                this.populateQrTableSelectOptionsWithRetry();
             } catch (e) {
                 console.error('loadTables', e);
+                this.tables = [];
             } finally {
                 this.loadingTables = false;
             }
         },
 
-        /** Label for QR approve dropdown (API uses `name`; avoid undefined if DOM breaks) */
+        /** Label for QR approve dropdown */
         qrTableOptionLabel(t) {
             if (!t || typeof t !== 'object') return '';
             const n = t.name ?? t.table_name ?? t.label;
             const base = (n != null && String(n).trim() !== '') ? String(n).trim() : ('Table #' + (t.id ?? '?'));
             const st = t.status;
             return base + (st && st !== 'free' ? ' (' + st + ')' : '');
+        },
+
+        /** Build <option> nodes — must not use Alpine x-for on <option> (renders blank in many browsers) */
+        populateQrTableSelectOptionsWithRetry(attempt = 0) {
+            const sel = document.getElementById('qr-table-select-approve');
+            if (!sel) {
+                if (attempt < 25) {
+                    setTimeout(() => this.populateQrTableSelectOptionsWithRetry(attempt + 1), 40);
+                }
+                return;
+            }
+            while (sel.options.length > 1) {
+                sel.remove(1);
+            }
+            const list = Array.isArray(this.tables) ? this.tables : [];
+            list.forEach((t) => {
+                if (!t || t.id == null) return;
+                const opt = document.createElement('option');
+                opt.value = String(t.id);
+                opt.textContent = this.qrTableOptionLabel(t);
+                sel.appendChild(opt);
+            });
         },
         
         async confirmQrOrder() {
@@ -6826,17 +6858,14 @@ function getCookie(name) {
                                 <p class="text-sm text-amber-900/90">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
                                 <div x-show="order.mode === 'DINE_IN'">
                                     <label class="block text-sm font-medium text-amber-900 mb-1">Table</label>
-                                    {{-- <template> inside <select> is invalid HTML; use x-for on <option> --}}
-                                    <select x-model="selectedTableId"
+                                    <select id="qr-table-select-approve"
+                                            x-model="selectedTableId"
                                             class="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
                                             :disabled="loadingTables || loadingApprove">
                                         <option value="">Select table…</option>
-                                        <option x-for="t in tables"
-                                                :key="'qr-tbl-' + t.id"
-                                                :value="String(t.id)"
-                                                x-text="qrTableOptionLabel(t)"></option>
                                     </select>
                                     <p x-show="loadingTables" class="text-xs text-amber-800 mt-1">Loading tables…</p>
+                                    <p x-show="!loadingTables && tables.length === 0" class="text-xs text-amber-800 mt-1">No tables for this outlet. Add tables in admin.</p>
                                 </div>
                                 <button type="button"
                                         @click="confirmQrOrder()"
