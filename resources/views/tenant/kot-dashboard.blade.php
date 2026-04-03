@@ -5,11 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>KOT Dashboard - {{ $tenant->name }} - Dukaantech POS</title>
+    <script>
+        window.__KOT_DEBUG_UI = @json($kotDebugUi ?? false);
+        // KOT page URL = .../{tenant}/kot — reuse path so XHR works in a subfolder (e.g. /pos/public/... on XAMPP).
+        window.__KOT_BASE = window.location.pathname.replace(/\/*$/, '');
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-dm { font-family: 'DM Sans', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen">
@@ -35,7 +41,13 @@
         <div class="mx-auto max-w-7xl px-4">
             {{-- KOT Dashboard --}}
             <div x-data="kotDashboard()" x-init="loadKotTickets()" class="space-y-6">
-                
+                <div x-show="kotDebugEnabled" class="mb-4 rounded-lg border border-amber-400 bg-gray-950 p-3 text-xs text-amber-100 font-mono max-h-56 overflow-y-auto space-y-1" x-cloak>
+                    <div class="font-bold text-amber-300">KOT debug log (?kot_debug=1) — also printed to browser console</div>
+                    <template x-for="(line, idx) in debugLines" :key="idx">
+                        <div class="whitespace-pre-wrap break-all" x-text="line"></div>
+                    </template>
+                </div>
+
                 {{-- KOT Disabled Message --}}
                 <div x-show="!kotEnabled" class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
                     <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -225,6 +237,13 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <script>
+        /** @param {string} rel e.g. "status-public", "38/mark-ready" */
+        function kotApiPath(rel) {
+            const base = (window.__KOT_BASE || '').replace(/\/*$/, '');
+            const r = String(rel).replace(/^\//, '');
+            return base + '/' + r;
+        }
+
         function kotToggle() {
             return {
                 kotEnabled: false,
@@ -232,7 +251,7 @@
                 
                 async loadKotStatus() {
                     try {
-                        const response = await fetch(`/{{ $tenant->slug }}/kot/status`, {
+                        const response = await fetch(kotApiPath('status'), {
                             headers: {
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -251,7 +270,7 @@
                 async toggleKot() {
                     try {
                         this.loading = true;
-                        const response = await fetch(`/{{ $tenant->slug }}/kot/toggle-public`, {
+                        const response = await fetch(kotApiPath('toggle-public'), {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -300,12 +319,22 @@
                 kotTickets: [],
                 loading: false,
                 kotEnabled: false,
+                kotDebugEnabled: window.__KOT_DEBUG_UI === true,
+                debugLines: [],
                 expandedTickets: [],
                 autoRefresh: true,
                 refreshInterval: null,
                 filters: {
                     station: '',
                     status: 'SENT'  // Default to show only SENT status
+                },
+
+                pushDebug(obj) {
+                    const line = typeof obj === 'string' ? obj : JSON.stringify(obj);
+                    console.info('[KOT]', obj);
+                    if (!this.kotDebugEnabled) return;
+                    this.debugLines.unshift(new Date().toISOString() + ' ' + line);
+                    if (this.debugLines.length > 40) this.debugLines.pop();
                 },
                 
                 init() {
@@ -350,7 +379,7 @@
                         this.loading = true;
                         
                         // First load KOT status
-                        const statusResponse = await fetch(`/{{ $tenant->slug }}/kot/status-public`, {
+                        const statusResponse = await fetch(kotApiPath('status-public'), {
                             headers: {
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -367,20 +396,37 @@
                             const params = new URLSearchParams();
                             if (this.filters.station) params.append('station', this.filters.station);
                             if (this.filters.status) params.append('status', this.filters.status);
-                            
-                            const response = await fetch(`/{{ $tenant->slug }}/api/kot?${params}`, {
+                            const url = kotApiPath(`tickets-public?${params}`);
+                            this.pushDebug({ event: 'tickets_public_fetch', url });
+                            const response = await fetch(url, {
+                                credentials: 'include',
                                 headers: {
                                     'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                                 }
                             });
-                            
-                            if (response.ok) {
-                                this.kotTickets = await response.json();
+                            const ct = response.headers.get('content-type') || '';
+                            if (response.ok && ct.includes('application/json')) {
+                                const payload = await response.json();
+                                if (Array.isArray(payload)) {
+                                    this.kotTickets = payload;
+                                    this.pushDebug({ event: 'tickets_public_ok', count: payload.length });
+                                } else {
+                                    this.pushDebug({ event: 'tickets_public_bad_shape', payload });
+                                    this.kotTickets = [];
+                                }
+                            } else {
+                                const preview = ct.includes('application/json')
+                                    ? JSON.stringify(await response.json())
+                                    : (await response.text()).slice(0, 500);
+                                this.pushDebug({ event: 'tickets_public_failed', status: response.status, preview });
+                                console.error('[KOT] tickets-public failed', response.status, preview);
                             }
                         }
                     } catch (error) {
                         console.error('Error loading KOT tickets:', error);
+                        this.pushDebug({ event: 'tickets_public_exception', error: String(error) });
                     } finally {
                         this.loading = false;
                     }
@@ -396,16 +442,41 @@
                             button.innerHTML = '<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
                         }
                         
-                        const response = await fetch(`/{{ $tenant->slug }}/kot/${ticketId}/ready`, {
-                            method: 'PUT',
+                        const markUrl = kotApiPath(`${ticketId}/mark-ready`);
+                        this.pushDebug({ event: 'mark_ready_fetch', url: markUrl, ticketId });
+                        const response = await fetch(markUrl, {
+                            method: 'POST',
+                            credentials: 'include',
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            }
+                            },
+                            body: JSON.stringify({ _tick: Date.now() }),
                         });
                         
-                        const data = await response.json();
+                        let data = {};
+                        try {
+                            const ct = response.headers.get('content-type') || '';
+                            if (ct.includes('application/json')) {
+                                data = await response.json();
+                                this.pushDebug({ event: 'mark_ready_response', status: response.status, data });
+                            } else {
+                                const text = await response.text();
+                                this.pushDebug({ event: 'mark_ready_non_json', status: response.status, preview: text.slice(0, 600) });
+                                console.error('[KOT] mark-ready non-JSON', response.status, text.slice(0, 500));
+                                this.showNotification(`Failed (${response.status}): not JSON — check console [KOT]. Possible redirect or HTML error page.`, 'error');
+                                this.playSound('error');
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('KOT mark-ready parse error', e);
+                            this.pushDebug({ event: 'mark_ready_parse_error', error: String(e) });
+                            this.showNotification('Could not read server response. Please try again.', 'error');
+                            this.playSound('error');
+                            return;
+                        }
                         
                         if (response.ok) {
                             this.showNotification(data.message, 'success');
@@ -421,11 +492,13 @@
                             // Refresh the list
                             await this.loadKotTickets();
                         } else {
-                            this.showNotification(data.error || 'Failed to mark KOT as ready', 'error');
+                            const detail = [data.error, data.code ? '(' + data.code + ')' : '', data.debug || ''].filter(Boolean).join(' ');
+                            this.showNotification(detail || 'Failed to mark KOT as ready', 'error');
                             this.playSound('error');
                         }
                     } catch (error) {
                         console.error('Error marking KOT as ready:', error);
+                        this.pushDebug({ event: 'mark_ready_network', error: String(error) });
                         this.showNotification('Network error. Please try again.', 'error');
                         this.playSound('error');
                     } finally {

@@ -141,13 +141,22 @@ Route::get('/{tenant}/kot/status-public', function ($tenant) {
     ]);
 })->withoutMiddleware(['web']);
 
+Route::get('/{tenant}/kot/tickets-public', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'indexPublic'])
+    ->name('tenant.kot.tickets-public');
+Route::post('/{tenant}/kot/{kitchenTicketId}/mark-ready', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'markReadyPublic'])
+    ->whereNumber('kitchenTicketId')
+    ->name('tenant.kot.mark-ready-public');
+
 Route::get('/{tenant}/kot', function ($tenant) {
     $account = \App\Models\Account::where('slug', $tenant)->first();
     if (!$account) {
         abort(404, 'Tenant not found');
     }
     
-    return view('tenant.kot-dashboard', ['tenant' => $account]);
+    return view('tenant.kot-dashboard', [
+        'tenant' => $account,
+        'kotDebugUi' => request()->boolean('kot_debug'),
+    ]);
 })->name('tenant.kot.public')->withoutMiddleware(['resolve.tenant']);
 
 // Terminal Authentication Routes

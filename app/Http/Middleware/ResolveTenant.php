@@ -158,7 +158,15 @@ class ResolveTenant
                     
                     return $next($request);
                 } else {
-                    // Paid user accessing path-based URL, redirect to subdomain
+                    // Paid tenants default to subdomain, but kitchen/POS/terminal are often opened path-based
+                    // (e.g. http://localhost/{slug}/kot) — do not redirect those XHR/API calls to HTML dashboard.
+                    if ($this->pathAllowsPaidTenantPathAccess($request)) {
+                        $this->setTenantContext($tenant);
+                        $this->maybeBindDeviceFromHeader($request);
+
+                        return $next($request);
+                    }
+
                     \Log::info('Paid user accessing path-based URL, redirecting', [
                         'tenant_slug' => $tenant->slug,
                         'tenant_plan' => $tenant->plan
@@ -248,6 +256,20 @@ class ResolveTenant
         }
     }
     
+    /**
+     * Paths under /{tenant}/kot, /{tenant}/pos, /{tenant}/terminal must work on path-based URLs
+     * for all plans (kitchen screen, tablets, XHR) without redirecting to the subdomain dashboard.
+     */
+    private function pathAllowsPaidTenantPathAccess(Request $request): bool
+    {
+        $segments = explode('/', trim($request->getPathInfo(), '/'));
+        if (count($segments) < 2) {
+            return false;
+        }
+
+        return in_array($segments[1], ['kot', 'pos', 'terminal'], true);
+    }
+
     /**
      * Extract subdomain from host
      */
