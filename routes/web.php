@@ -212,13 +212,13 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
             return response()->json(['error' => 'Shift not found'], 404);
         }
 
-        // Get last 10 orders created during this shift
+        // Last 5 orders created during this shift (newest first)
         $orders = \App\Models\Order::where('tenant_id', $account->id)
             ->where('outlet_id', $data['outlet_id'])
             ->whereBetween('created_at', [$shift->created_at, $shift->closed_at ?? now()])
             ->with(['orderType', 'items.item', 'outlet'])
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         return response()->json($orders);

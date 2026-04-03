@@ -6425,53 +6425,68 @@ function getCookie(name) {
                             <div class="col-span-1 text-center">Actions</div>
                         </div>
                         
-                        <!-- Orders Rows -->
+                        <!-- Orders Rows (up to 5 most recent this shift) -->
                         <div x-show="orders.length > 0">
-                            <!-- Desktop Layout -->
-                            <div class="hidden lg:grid border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors grid-cols-12 gap-4 items-center text-sm">
-                                <div class="col-span-2 font-semibold text-gray-900">
-                                    #<span x-text="orders[0]?.id"></span>
-                                </div>
-                                <div class="col-span-2 text-gray-600">
-                                    <span x-text="formatOrderTime(orders[0]?.created_at)"></span>
-                                </div>
-                                <div class="col-span-2">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" 
-                                          :class="getOrderStatusColor(orders[0]?.state)" 
-                                          x-text="orders[0]?.state"></span>
-                                </div>
-                                <div class="col-span-2 text-gray-600">
-                                    <div x-show="orders[0]?.customer_name" class="font-medium" x-text="orders[0]?.customer_name"></div>
-                                    <div x-show="orders[0]?.table_no" class="text-xs" x-text="'Table: ' + orders[0]?.table_no"></div>
-                                    <div x-show="!orders[0]?.customer_name && !orders[0]?.table_no" class="text-gray-400">Walk-in</div>
-                                </div>
-                                <div class="col-span-2 text-gray-600">
-                                    <div x-text="(orders[0]?.items?.length || 0) + ' items'"></div>
-                                    <div class="text-xs text-gray-500" x-text="orders[0]?.payment_method?.toUpperCase() || 'CASH'"></div>
-                                </div>
-                                <div class="col-span-1 text-right">
-                                    <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(orders[0]).toFixed(2)"></div>
-                                </div>
-                                <div class="col-span-1 text-center">
-                                    <button @click="viewOrderDetails(orders[0])" 
-                                            class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
-                                        View
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Mobile Layout -->
-                            <div class="block lg:hidden border border-gray-200 rounded-lg p-3 bg-white mb-2 shadow-sm">
-                                <div class="flex justify-between items-center">
-                                    <div class="text-sm font-bold text-gray-900">
-                                        Order #<span x-text="orders[0]?.id"></span>
+                            <template x-for="order in orders" :key="order.id">
+                                <!-- Desktop Layout -->
+                                <div class="hidden lg:grid border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors grid-cols-12 gap-4 items-center text-sm mb-2">
+                                    <div class="col-span-2 font-semibold text-gray-900">
+                                        #<span x-text="order.id"></span>
                                     </div>
-                                    <button @click="viewOrderDetails(orders[0])" 
-                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium underline">
-                                        View Details
-                                    </button>
+                                    <div class="col-span-2 text-gray-600">
+                                        <span x-text="formatOrderTime(order.created_at)"></span>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                              :class="getOrderStatusColor(order.state)"
+                                              x-text="order.state"></span>
+                                    </div>
+                                    <div class="col-span-2 text-gray-600">
+                                        <div x-show="order.customer_name" class="font-medium" x-text="order.customer_name"></div>
+                                        <div x-show="order.table_no" class="text-xs" x-text="'Table: ' + order.table_no"></div>
+                                        <div x-show="!order.customer_name && !order.table_no" class="text-gray-400">Walk-in</div>
+                                    </div>
+                                    <div class="col-span-2 text-gray-600">
+                                        <div x-text="(order.items?.length || 0) + ' items'"></div>
+                                        <div class="text-xs text-gray-500" x-text="order.payment_method?.toUpperCase() || 'CASH'"></div>
+                                    </div>
+                                    <div class="col-span-1 text-right">
+                                        <div class="font-bold text-green-600" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <button type="button"
+                                                @click="viewOrderDetails(order)"
+                                                class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
+                                            View
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
+
+                            <template x-for="order in orders" :key="'m-' + order.id">
+                                <!-- Mobile Layout -->
+                                <div class="block lg:hidden border border-gray-200 rounded-lg p-3 bg-white mb-2 shadow-sm">
+                                    <div class="flex justify-between items-start gap-2">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-sm font-bold text-gray-900">
+                                                Order #<span x-text="order.id"></span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1" x-text="formatOrderTime(order.created_at)"></div>
+                                            <div class="mt-1">
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium inline-block"
+                                                      :class="getOrderStatusColor(order.state)"
+                                                      x-text="order.state"></span>
+                                            </div>
+                                            <div class="text-xs text-green-700 font-semibold mt-1" x-text="'₹' + calculateOrderTotal(order).toFixed(2)"></div>
+                                        </div>
+                                        <button type="button"
+                                                @click="viewOrderDetails(order)"
+                                                class="shrink-0 text-blue-600 hover:text-blue-800 text-sm font-medium underline">
+                                            View
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- No Orders State -->
