@@ -777,7 +777,7 @@
             <div class="mb-3 relative z-10">
                 <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment optional for dine-in — settle later</p>
                 <div class="grid grid-cols-3 gap-1 mb-2">
-                    <button type="button" @click="paymentMethod = 'cash'"
+                    <button type="button" @click="selectPaymentMethod('cash')"
                             class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
                             :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                         <div class="flex flex-col items-center gap-0.5">
@@ -787,7 +787,7 @@
                             <span class="text-xs font-medium hidden sm:block">Cash</span>
                         </div>
                     </button>
-                    <button type="button" @click="paymentMethod = 'card'"
+                    <button type="button" @click="selectPaymentMethod('card')"
                             class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
                             :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
                         <div class="flex flex-col items-center gap-0.5">
@@ -797,7 +797,7 @@
                             <span class="text-xs font-medium hidden sm:block">Card</span>
                         </div>
                     </button>
-                    <button type="button" @click="paymentMethod = 'upi'"
+                    <button type="button" @click="selectPaymentMethod('upi')"
                             class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
                             :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
                         <div class="flex flex-col items-center gap-0.5">
@@ -808,6 +808,17 @@
                         </div>
                     </button>
                 </div>
+                <div x-show="terminalPickupQuickDefaults && paymentMethod === 'cash' && cart.length > 0" class="mt-2 rounded-lg border border-orange-200 bg-orange-50/90 p-2 space-y-1.5">
+                    <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                    <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
+                           class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                           placeholder="Cash from customer" autocomplete="off">
+                    <div class="flex justify-between text-[10px] sm:text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + finalTotal.toFixed(2)"></span></div>
+                    <div x-show="cashChangeToReturn !== null" class="flex justify-between text-xs font-semibold text-gray-800 pt-1 border-t border-orange-100">
+                        <span>Change to return</span>
+                        <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
+                    </div>
+                </div>
                 <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center mt-1">
                     Please select a payment method
                 </div>
@@ -815,13 +826,13 @@
             
             <div class="space-y-2">
                 <div class="grid grid-cols-3 gap-1">
-                    <button @click="createOrder()" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '')" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder()" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '') || terminalCashBlocked" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                         <span class="text-xs font-medium hidden sm:block" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Create Order'"></span>
                     </button>
-                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '')" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '') || terminalCashBlocked" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
@@ -1516,23 +1527,34 @@
                     <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment when settling the bill (optional now)</p>
                     <div class="grid grid-cols-3 gap-1 mb-1">
                         <button type="button"
-                                @click="paymentMethod = 'cash'"
+                                @click="selectPaymentMethod('cash')"
                                 class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                                 :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                             <span>Cash</span>
                         </button>
                         <button type="button"
-                                @click="paymentMethod = 'card'"
+                                @click="selectPaymentMethod('card')"
                                 class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                                 :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
                             <span>Card</span>
                         </button>
                         <button type="button"
-                                @click="paymentMethod = 'upi'"
+                                @click="selectPaymentMethod('upi')"
                                 class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                                 :class="{'bg-orange-100 border-orange-500': paymentMethod === 'upi'}">
                             <span>UPI</span>
                         </button>
+                    </div>
+                    <div x-show="terminalPickupQuickDefaults && paymentMethod === 'cash' && cart.length > 0" class="mb-2 rounded-lg border border-orange-200 bg-orange-50/90 p-2 space-y-1.5">
+                        <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                        <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
+                               class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                               placeholder="Cash from customer" autocomplete="off">
+                        <div class="flex justify-between text-xs text-gray-600"><span>Order total</span><span class="font-semibold text-gray-900" x-text="'₹' + finalTotal.toFixed(2)"></span></div>
+                        <div x-show="cashChangeToReturn !== null" class="flex justify-between text-xs font-semibold text-gray-800 pt-1 border-t border-orange-100">
+                            <span>Change to return</span>
+                            <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
+                        </div>
                     </div>
                     <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center">
                         Please select a payment method
@@ -1543,8 +1565,8 @@
                 <div class="mt-2">
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-1">
                         <button @click="createOrder(false, false)" 
-                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
-                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -1553,8 +1575,8 @@
                             <span class="lg:hidden" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Order'"></span>
                     </button>
                         <button @click="createOrder(true, false)" 
-                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
-                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)) ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -1563,8 +1585,8 @@
                             <span class="lg:hidden">Print</span>
                         </button>
                         <button @click="createOrder(false, true)" 
-                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
-                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)) ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
@@ -1573,8 +1595,8 @@
                             <span class="lg:hidden">KOT</span>
                         </button>
                         <button @click="createOrder(true, true)" 
-                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')"
-                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '')) ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
+                                :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)"
+                                :class="(cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)) ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
                                 class="text-white font-medium py-2 px-2 rounded text-xs transition-colors">
                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1608,15 +1630,26 @@
                 </div>
                 <p class="text-xs font-medium text-gray-700 mb-2">Payment method <span class="text-red-500">*</span></p>
                 <div class="grid grid-cols-3 gap-2 mb-2">
-                    <button type="button" @click="settleBillPayment = 'cash'; settleBillError = ''"
+                    <button type="button" @click="setSettlePaymentMethod('cash')"
                             class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
                             :class="settleBillPayment === 'cash' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">Cash</button>
-                    <button type="button" @click="settleBillPayment = 'card'; settleBillError = ''"
+                    <button type="button" @click="setSettlePaymentMethod('card')"
                             class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
                             :class="settleBillPayment === 'card' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">Card</button>
-                    <button type="button" @click="settleBillPayment = 'upi'; settleBillError = ''"
+                    <button type="button" @click="setSettlePaymentMethod('upi')"
                             class="py-2 px-2 rounded-lg border text-xs font-medium transition-colors"
                             :class="settleBillPayment === 'upi' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">UPI</button>
+                </div>
+                <div x-show="terminalPickupQuickDefaults && settleBillPayment === 'cash'" class="rounded-lg border border-orange-200 bg-orange-50/90 p-3 mb-3 space-y-2">
+                    <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                    <input type="number" inputmode="decimal" step="0.01" min="0" x-model="settleCashCollected"
+                           class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                           placeholder="Cash from customer" autocomplete="off">
+                    <div class="flex justify-between text-xs text-gray-600"><span>Bill total</span><span class="font-semibold text-gray-900">₹<span x-text="Number(settleBillTable?.total_amount || 0).toFixed(2)"></span></span></div>
+                    <div x-show="settleBillCashChange !== null" class="flex justify-between text-sm font-semibold text-gray-800 pt-2 border-t border-orange-100">
+                        <span>Change to return</span>
+                        <span class="text-orange-700" x-text="'₹' + settleBillCashChange.toFixed(2)"></span>
+                    </div>
                 </div>
                 <p x-show="settleBillError" class="text-red-600 text-xs mb-3" x-text="settleBillError"></p>
                 <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
@@ -1800,6 +1833,9 @@ function posRegister() {
         settleBillTable: null,
         settleBillPayment: '',
         settleBillError: '',
+        /** Terminal /pos/terminal: cash tendered vs change due */
+        cashCollectedInput: '',
+        settleCashCollected: '',
         currentOrder: null,
         shift: @json($activeShift ?? null),
         terminalUser: @json($terminalUser ?? null),
@@ -1881,6 +1917,26 @@ function posRegister() {
         
         get finalTotal() {
             return Math.round((this.cartTotal - this.discountAmount) * 100) / 100;
+        },
+        
+        get cashChangeToReturn() {
+            if (!this.terminalPickupQuickDefaults || this.paymentMethod !== 'cash') return null;
+            const t = parseFloat(this.cashCollectedInput);
+            if (this.cashCollectedInput === '' || isNaN(t)) return null;
+            return Math.max(0, Math.round((t - this.finalTotal) * 100) / 100);
+        },
+        get terminalCashBlocked() {
+            if (!this.terminalPickupQuickDefaults || this.paymentMethod !== 'cash') return false;
+            const t = parseFloat(this.cashCollectedInput);
+            if (this.cashCollectedInput === '' || isNaN(t)) return true;
+            return t + 1e-6 < this.finalTotal;
+        },
+        get settleBillCashChange() {
+            if (!this.terminalPickupQuickDefaults || this.settleBillPayment !== 'cash' || !this.settleBillTable) return null;
+            const t = parseFloat(this.settleCashCollected);
+            if (this.settleCashCollected === '' || isNaN(t)) return null;
+            const due = Number(this.settleBillTable.total_amount || 0);
+            return Math.max(0, Math.round((t - due) * 100) / 100);
         },
         
         // Methods
@@ -3515,6 +3571,7 @@ function posRegister() {
             this.settleBillTable = row;
             this.settleBillPayment = '';
             this.settleBillError = '';
+            this.settleCashCollected = '';
             this.showSettleBillModal = true;
         },
 
@@ -3523,6 +3580,7 @@ function posRegister() {
             this.settleBillTable = null;
             this.settleBillPayment = '';
             this.settleBillError = '';
+            this.settleCashCollected = '';
         },
 
         applyTableSettledLocally(table) {
@@ -3551,6 +3609,14 @@ function posRegister() {
             if (!table?.current_order_id) {
                 this.closeSettleBillModal();
                 return;
+            }
+            if (this.terminalPickupQuickDefaults && this.settleBillPayment === 'cash') {
+                const due = Number(table.total_amount || 0);
+                const tender = parseFloat(this.settleCashCollected);
+                if (this.settleCashCollected === '' || isNaN(tender) || tender + 1e-6 < due) {
+                    this.settleBillError = 'Enter cash received (must be at least ₹' + due.toFixed(2) + ').';
+                    return;
+                }
             }
             this.settleBillError = '';
             try {
@@ -4162,6 +4228,20 @@ function posRegister() {
             this.discountCode = '';
         },
         
+        selectPaymentMethod(method) {
+            this.paymentMethod = method;
+            if (method !== 'cash') {
+                this.cashCollectedInput = '';
+            }
+        },
+        setSettlePaymentMethod(method) {
+            this.settleBillPayment = method;
+            this.settleBillError = '';
+            if (method !== 'cash') {
+                this.settleCashCollected = '';
+            }
+        },
+        
         async createOrder(shouldPrint = false, shouldCreateKot = false) {
             try {
                 console.log('=== CREATE ORDER START ===');
@@ -4199,6 +4279,13 @@ function posRegister() {
                     console.log('No payment method selected');
                     alert('Please select a payment method');
                     return;
+                }
+                if (this.terminalPickupQuickDefaults && this.paymentMethod === 'cash') {
+                    const tender = parseFloat(this.cashCollectedInput);
+                    if (this.cashCollectedInput === '' || isNaN(tender) || tender + 1e-6 < this.finalTotal) {
+                        alert('Enter cash received. It must be at least the order total (₹' + this.finalTotal + ').');
+                        return;
+                    }
                 }
             
             // Validate delivery fields if order type is delivery
@@ -4498,6 +4585,7 @@ function posRegister() {
                 // Clear cart after table update
                 this.cart = [];
                 this.paymentMethod = '';
+                this.cashCollectedInput = '';
                 
                 // Clear customer details (keep order type in sync with selected tab — was hardcoded dine-in and broke pickup-after-pickup)
                 const nextOrderType = this.selectedOrderType || 'dine-in';
@@ -4921,6 +5009,7 @@ function posRegister() {
             this.posLocked = true;
             this.cart = []; // Clear cart
             this.paymentMethod = ''; // Clear payment method
+            this.cashCollectedInput = '';
             this.customerInfo = {
                 tableNo: '',
                 customerName: '',
