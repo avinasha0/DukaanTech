@@ -10,6 +10,7 @@ use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\RestaurantTable;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -535,16 +536,24 @@ class PosApiController extends Controller
             }
         }
 
-        // Update total amounts for occupied tables based on actual order data
+        // Update total amounts for occupied tables (one query for all open orders + lines)
+        $tableIds = $tables->pluck('id');
+        $openOrdersByTable = Order::where('tenant_id', $tenantId)
+            ->where('status', Order::STATUS_OPEN)
+            ->whereIn('table_id', $tableIds)
+            ->with('items.modifiers')
+            ->get()
+            ->groupBy(fn (Order $o) => (int) $o->table_id);
+
         foreach ($tables as $table) {
             if ($table->open_orders_count > 0) {
-                $calculatedTotal = $table->calculateTotalAmount();
+                $orders = $openOrdersByTable->get($table->id, collect());
+                $calculatedTotal = round($orders->sum(fn (Order $order) => $order->total), 2);
                 if ($table->total_amount != $calculatedTotal) {
                     $table->total_amount = $calculatedTotal;
                     $table->save();
                 }
             } else {
-                // Clear total amount for free tables
                 if ($table->total_amount > 0) {
                     $table->total_amount = 0;
                     $table->save();
@@ -607,7 +616,8 @@ class PosApiController extends Controller
                     'shape' => $table->shape,
                     'type' => $table->type,
                     'description' => $table->description,
-                    'orders' => $table->orders,
+                    // Omit orders here — loading all orders per table made list refresh very slow; total_amount is authoritative.
+                    'orders' => [],
                     'is_active' => $table->is_active,
                     'created_at' => $table->created_at,
                     'updated_at' => $table->updated_at,
@@ -936,36 +946,42 @@ class PosApiController extends Controller
             $addedItems = [];
             $orderService = app(\App\Services\OrderService::class);
 
-            // Add each item to the order
-            foreach ($request->input('items') as $itemData) {
-                $item = \App\Models\Item::find($itemData['item_id']);
-                $variant = isset($itemData['variant_id']) ? \App\Models\ItemVariant::find($itemData['variant_id']) : null;
-                
-                $orderItem = $orderService->addItem(
-                    $order,
-                    $item,
-                    $itemData['qty'],
-                    $variant,
-                    $itemData['modifiers'] ?? [],
-                    $itemData['note'] ?? null
-                );
+            // Batch add: avoid OrderItemObserver calling updateTotalAmount() once per line (very slow).
+            OrderItem::withoutEvents(function () use ($request, $order, $orderService, &$addedItems) {
+                foreach ($request->input('items') as $itemData) {
+                    $item = \App\Models\Item::find($itemData['item_id']);
+                    $variant = isset($itemData['variant_id']) ? \App\Models\ItemVariant::find($itemData['variant_id']) : null;
 
-                $addedItems[] = $orderItem->load('item', 'variant', 'modifiers.modifier');
-            }
+                    $orderItem = $orderService->addItem(
+                        $order,
+                        $item,
+                        $itemData['qty'],
+                        $variant,
+                        $itemData['modifiers'] ?? [],
+                        $itemData['note'] ?? null
+                    );
+
+                    $addedItems[] = $orderItem->load('item', 'variant', 'modifiers.modifier');
+                }
+            });
 
             // Refresh the order with all items
             $order->refresh();
             $order->load(['items.item', 'items.variant', 'items.modifiers.modifier']);
 
-            // Update table total amount
             $table->updateTotalAmount();
+            $table->refresh();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Items added successfully to the order',
                 'order' => $order,
                 'added_items' => $addedItems,
-                'total' => $order->total
+                'total' => $order->total,
+                'table' => [
+                    'id' => $table->id,
+                    'total_amount' => (float) $table->total_amount,
+                ],
             ]);
 
         } catch (\Exception $e) {

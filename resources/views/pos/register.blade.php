@@ -2536,8 +2536,10 @@ function posRegister() {
                 newTotalAmount = 0;
                 newOrders = [];
             } else {
-                // Recalculate total when table is occupied again
-                newTotalAmount = table.orders ? table.orders.reduce((sum, order) => sum + (order.total || 0), 0) : 0;
+                // Prefer summing local order stubs; list API omits orders (uses total_amount only).
+                newTotalAmount = table.orders && table.orders.length
+                    ? table.orders.reduce((sum, order) => sum + (order.total || 0), 0)
+                    : (Number(table.total_amount) || 0);
             }
             
             // Update in database
@@ -3075,12 +3077,22 @@ function posRegister() {
                 if (data.success) {
                     // Clear the cart
                     this.cart = [];
+
+                    // Instant table card amount — do not wait for full tables list
+                    if (data.table && this.selectedTable && Number(data.table.id) === Number(this.selectedTable.id)) {
+                        this.selectedTable.total_amount = Number(data.table.total_amount);
+                        const idx = this.tables.findIndex(t => Number(t.id) === Number(data.table.id));
+                        if (idx !== -1) {
+                            this.tables[idx] = { ...this.tables[idx], total_amount: this.selectedTable.total_amount };
+                            this.tables = [...this.tables];
+                        }
+                    }
                     
                     // Refresh the current table order
                     await this.loadCurrentTableOrder(this.selectedTable.id);
                     
-                    // Refresh tables to update status
-                    await this.refreshTablesFromDatabase();
+                    // Force refresh so totals are not skipped (lastTableUpdate throttling) and list stays in sync
+                    await this.refreshTablesFromDatabase(true);
                     
                     // Show success message
                     this.showNotification('success', 'Items Added Successfully!', `Items have been added to the order for table ${this.selectedTable.name}.`, 'The order has been updated with the new items.');

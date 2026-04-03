@@ -135,16 +135,12 @@ class RestaurantTable extends Model
      */
     public function calculateTotalAmount(): float
     {
-        $total = 0;
-        
-        // Get all open orders for this table
-        $openOrders = $this->orders()->where('status', 'OPEN')->get();
-        
-        foreach ($openOrders as $order) {
-            $total += $order->total; // Use the Order model's total attribute
-        }
-        
-        return round($total, 2);
+        $openOrders = $this->orders()
+            ->where('status', Order::STATUS_OPEN)
+            ->with('items.modifiers')
+            ->get();
+
+        return round($openOrders->sum(fn (Order $order) => $order->total), 2);
     }
 
     /**
