@@ -79,6 +79,10 @@
     </style>
 </head>
 <body class="bg-gray-100">
+@php
+    $terminalPickupQuickDefaults = ($isTerminalAuth ?? false)
+        || request()->routeIs('tenant.pos.terminal', 'tenant.pos.terminal.authenticated');
+@endphp
 <div x-data="posRegister()" x-init="init()" class="min-h-screen bg-gray-100">
     <!-- Order Details Modal -->
     <div x-show="showOrderDetails" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
@@ -1756,7 +1760,9 @@ function posRegister() {
         orderTypesHydrated: false,
         /** False until loadOrderTypes finishes — avoids tab highlight flashing wrong type before API sync. */
         orderTypesReady: false,
-        selectedOrderType: 'dine-in',
+        /** Terminal /pos/terminal: default Pickup + minimized panel; also set from URL in init(). */
+        terminalPickupQuickDefaults: @json($terminalPickupQuickDefaults),
+        selectedOrderType: @json($terminalPickupQuickDefaults ? 'pick-up' : 'dine-in'),
         selectedDineInTab: 'table',
         selectedDeliveryTab: 'customer',
         selectedCustomerTab: 'basic',
@@ -1769,7 +1775,7 @@ function posRegister() {
         tableOrders: {},
         showTooltip: null,
         customerInfo: {
-            orderType: 'dine-in',
+            orderType: @json($terminalPickupQuickDefaults ? 'pick-up' : 'dine-in'),
             tableNo: '',
             customerName: '',
             customerPhone: '',
@@ -1830,7 +1836,7 @@ function posRegister() {
         orderTypePanelBySlug: {
             'dine-in': { closed: false, minimized: false },
             'delivery': { closed: false, minimized: false },
-            'pick-up': { closed: false, minimized: false },
+            'pick-up': { closed: false, minimized: @json((bool) $terminalPickupQuickDefaults) },
         },
         
         // Computed
@@ -1886,6 +1892,9 @@ function posRegister() {
             const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
             const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
             this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            // Match server-side route flag so defaults work even if session flags differ
+            this.terminalPickupQuickDefaults = Boolean(this.terminalPickupQuickDefaults)
+                || /\/pos\/terminal(\/|$)/.test(path);
             
             console.log('API Base URL constructed:', this.apiBase);
             console.log('Host:', host);
@@ -2187,18 +2196,34 @@ function posRegister() {
             const uiSlugs = ['dine-in', 'delivery', 'pick-up'];
             const loaded = (this.orderTypes || []).map(t => t.slug);
             const allowed = uiSlugs.filter(s => loaded.includes(s));
+            const terminalQuick = this.terminalPickupQuickDefaults;
+
             if (!allowed.length) {
-                this.selectedOrderType = 'dine-in';
-                this.customerInfo.orderType = 'dine-in';
+                if (terminalQuick) {
+                    this.selectedOrderType = 'pick-up';
+                    this.customerInfo.orderType = 'pick-up';
+                    this._patchOrderTypePanel('pick-up', { minimized: true, closed: false });
+                } else {
+                    this.selectedOrderType = 'dine-in';
+                    this.customerInfo.orderType = 'dine-in';
+                }
                 return;
             }
             if (allowed.includes(this.selectedOrderType)) {
                 this.customerInfo.orderType = this.selectedOrderType;
                 return;
             }
-            const next = allowed.includes('dine-in') ? 'dine-in' : allowed[0];
+            let next;
+            if (terminalQuick && allowed.includes('pick-up')) {
+                next = 'pick-up';
+            } else {
+                next = allowed.includes('dine-in') ? 'dine-in' : allowed[0];
+            }
             this.selectedOrderType = next;
             this.customerInfo.orderType = next;
+            if (terminalQuick && next === 'pick-up') {
+                this._patchOrderTypePanel('pick-up', { minimized: true, closed: false });
+            }
         },
 
         async loadOrderTypes() {
@@ -2209,6 +2234,9 @@ function posRegister() {
                     },
                     credentials: 'same-origin',
                 });
+                if (!response.ok) {
+                    throw new Error(`order-types HTTP ${response.status}`);
+                }
                 const raw = await response.json();
                 const list = Array.isArray(raw) ? raw : [];
                 this.orderTypes = list.map(t => ({
@@ -2217,17 +2245,29 @@ function posRegister() {
                 }));
                 // If the cashier already picked a tab while this request was in flight, do not replace that choice here.
                 if (!this.orderTypesHydrated) {
-                    const dineInType = this.orderTypes.find(type => type.slug === 'dine-in');
-                    if (dineInType) {
-                        this.selectedOrderType = 'dine-in';
-                        this.customerInfo.orderType = 'dine-in';
-                    } else if (this.orderTypes.length > 0) {
-                        const first = this.orderTypes[0].slug;
-                        this.selectedOrderType = first;
-                        this.customerInfo.orderType = first;
-                    } else {
-                        this.selectedOrderType = 'dine-in';
-                        this.customerInfo.orderType = 'dine-in';
+                    let hydrated = false;
+                    if (this.terminalPickupQuickDefaults) {
+                        const pickUpType = this.orderTypes.find(type => type.slug === 'pick-up');
+                        if (pickUpType) {
+                            this.selectedOrderType = 'pick-up';
+                            this.customerInfo.orderType = 'pick-up';
+                            this._patchOrderTypePanel('pick-up', { minimized: true, closed: false });
+                            hydrated = true;
+                        }
+                    }
+                    if (!hydrated) {
+                        const dineInType = this.orderTypes.find(type => type.slug === 'dine-in');
+                        if (dineInType) {
+                            this.selectedOrderType = 'dine-in';
+                            this.customerInfo.orderType = 'dine-in';
+                        } else if (this.orderTypes.length > 0) {
+                            const first = this.orderTypes[0].slug;
+                            this.selectedOrderType = first;
+                            this.customerInfo.orderType = first;
+                        } else {
+                            this.selectedOrderType = 'dine-in';
+                            this.customerInfo.orderType = 'dine-in';
+                        }
                     }
                     this.orderTypesHydrated = true;
                 }
@@ -2236,8 +2276,14 @@ function posRegister() {
             } catch (error) {
                 console.error('Error loading order types:', error);
                 if (!this.orderTypesHydrated) {
-                    this.selectedOrderType = 'dine-in';
-                    this.customerInfo.orderType = 'dine-in';
+                    if (this.terminalPickupQuickDefaults) {
+                        this.selectedOrderType = 'pick-up';
+                        this.customerInfo.orderType = 'pick-up';
+                        this._patchOrderTypePanel('pick-up', { minimized: true, closed: false });
+                    } else {
+                        this.selectedOrderType = 'dine-in';
+                        this.customerInfo.orderType = 'dine-in';
+                    }
                     this.orderTypesHydrated = true;
                 }
                 this.syncSelectedOrderTypeToAllowed();
@@ -4131,6 +4177,9 @@ function posRegister() {
                     return;
                 }
 
+                // Active tab is source of truth (customerInfo.orderType was resetting to dine-in after checkout)
+                this.customerInfo.orderType = this.selectedOrderType;
+
                 const isDineInOrder = this.customerInfo.orderType === 'dine-in' || this.selectedOrderType === 'dine-in';
                 if (!isDineInOrder && !this.paymentMethod) {
                     console.log('No payment method selected');
@@ -4406,16 +4455,18 @@ function posRegister() {
                 this.cart = [];
                 this.paymentMethod = '';
                 
-                // Clear customer details
+                // Clear customer details (keep order type in sync with selected tab — was hardcoded dine-in and broke pickup-after-pickup)
+                const nextOrderType = this.selectedOrderType || 'dine-in';
                 this.customerInfo = {
-                    orderType: 'dine-in',
+                    orderType: nextOrderType,
                     tableNo: '',
                     customerName: '',
                     customerPhone: '',
                     address: '',
                     deliveryAddress: '',
                     deliveryFee: 0,
-                    specialInstructions: ''
+                    specialInstructions: '',
+                    customerId: null
                 };
                 this.showCustomerDetails = false;
                 
@@ -4439,15 +4490,17 @@ function posRegister() {
         },
         
         clearCustomerDetails() {
+            const ot = this.selectedOrderType || 'dine-in';
             this.customerInfo = {
-                orderType: 'dine-in',
+                orderType: ot,
                 tableNo: '',
                 customerName: '',
                 customerPhone: '',
                 address: '',
                 deliveryAddress: '',
                 deliveryFee: 0,
-                specialInstructions: ''
+                specialInstructions: '',
+                customerId: null
             };
             this.showCustomerDetails = false;
         },
