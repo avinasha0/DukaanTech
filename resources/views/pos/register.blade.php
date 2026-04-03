@@ -213,7 +213,7 @@
     </div>
 
     <!-- Top Header: single left-aligned strip (logo + context + actions) -->
-    <header class="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 max-w-full">
+    <header class="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 max-w-full w-full lg:w-[calc(100%-420px)] lg:max-w-[calc(100%-420px)]">
         <div class="flex flex-wrap items-center justify-start gap-x-2 gap-y-1.5 sm:gap-x-3 sm:gap-y-2 w-full min-w-0">
             <!-- Brand -->
             <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
@@ -365,7 +365,7 @@
 
 
     <!-- Main POS Layout -->
-    <div class="flex flex-col lg:flex-row min-h-[calc(100vh-70px)] sm:min-h-[calc(100vh-80px)] lg:h-[calc(100vh-70px)] lg:overflow-hidden">
+    <div class="flex flex-col lg:flex-row min-h-[calc(100vh-70px)] sm:min-h-[calc(100vh-80px)] lg:h-[calc(100vh-70px)] lg:overflow-hidden lg:pr-[420px]">
         <!-- Mobile Cart Panel (Hidden on desktop) -->
         <div class="lg:hidden bg-white border-b border-gray-200 p-3 sm:p-4 overflow-hidden max-w-full">
             <div class="flex items-center justify-between mb-3">
@@ -1026,7 +1026,7 @@
         </div>
 
         <!-- Right Panel - Cart & Order (Hidden on mobile) -->
-        <div class="hidden lg:flex w-[420px] bg-white border-l border-gray-200 flex-col h-full min-h-0">
+        <div class="hidden lg:flex lg:fixed lg:top-0 lg:right-0 lg:z-30 w-[420px] bg-white border-l border-gray-200 flex-col h-full lg:h-screen min-h-0 shadow-lg">
             <!-- Cart Items - Main Focus -->
             <div class="flex-1 overflow-y-auto p-3 min-h-0 max-h-[60vh]">
                 <!-- Order Type Tabs -->
