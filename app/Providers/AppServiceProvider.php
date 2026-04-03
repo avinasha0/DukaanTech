@@ -16,7 +16,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Provide safe defaults so app('tenant*') never throws when
+        // a request is outside tenant-resolved routes/middleware.
+        $this->app->singleton('tenant', fn () => null);
+        $this->app->singleton('tenant.id', fn () => null);
+        $this->app->singleton('tenant.model', fn () => null);
     }
 
     /**

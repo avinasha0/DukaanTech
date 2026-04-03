@@ -410,7 +410,11 @@ Route::group(['prefix' => '{tenant}/api/public', 'middleware' => []], function (
     });
     
     Route::get('/kot/status', function ($tenant) {
-        $account = app('tenant'); // Get tenant from middleware context
+        // This public group does not guarantee tenant middleware context.
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (!$account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
         $outletId = request('outlet_id', 1);
         $status = request('status', 'SENT');
         $kots = \App\Models\KitchenTicket::where('tenant_id', $account->id)

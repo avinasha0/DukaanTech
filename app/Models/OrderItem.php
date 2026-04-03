@@ -22,6 +22,7 @@ class OrderItem extends Model
         'tax_rate',
         'discount',
         'note',
+        'sent_to_kitchen',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class OrderItem extends Model
         'price' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'discount' => 'decimal:2',
+        'sent_to_kitchen' => 'boolean',
     ];
 
     public function tenant(): BelongsTo

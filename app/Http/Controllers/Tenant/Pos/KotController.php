@@ -28,10 +28,16 @@ class KotController extends Controller
             'device_id' => 'nullable|exists:devices,id',
         ]);
         
-        if ($order->state !== 'NEW') {
-            return response()->json(['error' => 'Order must be in NEW state to fire KOT'], 400);
+        $order->load('items');
+        $newItems = $order->items()->where('sent_to_kitchen', false)->get();
+        if ($newItems->isEmpty()) {
+            return response()->json([
+                'message' => 'No new items to send to kitchen',
+                'order_id' => $order->id,
+                'lines_count' => 0
+            ], 200);
         }
-        
+
         // Create kitchen ticket
         $kitchenTicket = KitchenTicket::create([
             'tenant_id' => app('tenant.id'),
@@ -42,20 +48,27 @@ class KotController extends Controller
             'status' => 'SENT',
         ]);
         
-        // Create kitchen lines for each order item
-        foreach ($order->items as $orderItem) {
+        // Create kitchen lines only for newly added items
+        foreach ($newItems as $orderItem) {
             $kitchenTicket->lines()->create([
                 'tenant_id' => app('tenant.id'),
                 'order_item_id' => $orderItem->id,
                 'qty' => $orderItem->qty,
             ]);
         }
+
+        // Mark these items as sent to kitchen to avoid duplicate KOT lines
+        $order->items()
+            ->whereIn('id', $newItems->pluck('id')->all())
+            ->update(['sent_to_kitchen' => true]);
         
         // Print KOT
         $this->printerService->printKOT($kitchenTicket);
         
-        // Update order state
-        $order->update(['state' => 'IN_KITCHEN']);
+        // Update order state once at least one KOT has been fired
+        if ($order->state === 'NEW') {
+            $order->update(['state' => 'IN_KITCHEN']);
+        }
         
         return response()->json([
             'id' => $kitchenTicket->id,

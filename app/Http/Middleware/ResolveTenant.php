@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Account;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -168,6 +169,25 @@ class ResolveTenant
             }
         }
         
+        // If route explicitly requires a tenant slug but lookup failed, handle gracefully.
+        $routeTenant = $request->route('tenant');
+        if (!empty($routeTenant)) {
+            // For authenticated web requests, redirect wrong slug to user's tenant slug.
+            if (!$request->expectsJson() && !str_contains($request->getPathInfo(), '/api/')) {
+                $userTenant = Auth::user()?->tenant;
+                if ($userTenant && $userTenant->slug !== $routeTenant) {
+                    $segments = explode('/', trim($request->getPathInfo(), '/'));
+                    if (!empty($segments)) {
+                        $segments[0] = $userTenant->slug;
+                        $newPath = '/' . implode('/', $segments);
+                        return redirect()->to($request->getSchemeAndHttpHost() . $newPath, 302);
+                    }
+                }
+            }
+
+            abort(404, 'Tenant not found');
+        }
+
         // No tenant found, continue normally
         \Log::info('No tenant found, continuing without tenant context');
         $this->maybeBindDeviceFromHeader($request);

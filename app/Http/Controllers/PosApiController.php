@@ -12,6 +12,7 @@ use App\Models\RestaurantTable;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PosApiController extends Controller
 {
@@ -301,10 +302,17 @@ class PosApiController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($tableId);
 
-                // Prevent multiple open orders for the same table
-                $hasOpenOrder = $table->orders()->where('status', 'OPEN')->exists();
-                if ($hasOpenOrder) {
-                    throw new \Exception('Table already has an open order. Please close the current order before placing a new one.');
+                // Reuse existing running order for this table (single active order rule)
+                $existingOrder = $table->orders()
+                    ->where('status', 'OPEN')
+                    ->latest('id')
+                    ->first();
+                if ($existingOrder) {
+                    $table->update([
+                        'status' => 'occupied',
+                        'current_order_id' => $existingOrder->id,
+                    ]);
+                    return ['order' => $existingOrder, 'existing' => true];
                 }
 
                 // Get the first available order type for this tenant, or create default ones
@@ -314,16 +322,29 @@ class PosApiController extends Controller
                     ->first();
                 
                 if (!$orderType) {
-                    // Create default order types if none exist
+                    // Create tenant fallback order type with globally unique slug.
+                    $baseSlug = 'dine-in';
+                    $slug = $baseSlug;
+                    $suffix = 1;
+                    while (\App\Models\OrderType::withoutGlobalScopes()
+                        ->where('slug', $slug)
+                        ->exists()) {
+                        $suffix++;
+                        $slug = Str::slug("{$baseSlug}-{$tenantId}-{$suffix}");
+                    }
+
                     $orderType = \App\Models\OrderType::create([
                         'tenant_id' => $tenantId,
                         'name' => 'Dine In',
-                        'slug' => 'dine-in',
+                        'slug' => $slug,
                         'color' => '#10B981',
                         'is_active' => true,
                         'sort_order' => 1,
                     ]);
                 }
+
+                $shiftId = $this->resolveActiveShiftId($tenantId, $table->outlet_id);
+                $cashierId = $this->resolveCashierId();
 
                 $order = Order::create([
                     'tenant_id' => $tenantId,
@@ -332,6 +353,12 @@ class PosApiController extends Controller
                     'status' => 'OPEN',
                     'order_type_id' => $orderType->id,
                     'mode' => 'DINE_IN',
+                    'state' => 'NEW',
+                    'meta' => [
+                        'session_type' => 'running',
+                        'shift_id' => $shiftId,
+                        'cashier_id' => $cashierId,
+                    ],
                 ]);
 
                 $table->update([
@@ -339,14 +366,17 @@ class PosApiController extends Controller
                     'current_order_id' => $order->id,
                 ]);
 
-                return $order;
+                return ['order' => $order, 'existing' => false];
             });
 
             return response()->json([
                 'success' => true, 
-                'order_id' => $order->id,
+                'order_id' => $order['order']->id,
                 'table_id' => $tableId,
-                'message' => 'Order placed successfully'
+                'existing_order' => $order['existing'],
+                'message' => $order['existing']
+                    ? 'Existing running order loaded'
+                    : 'Running order started successfully'
             ]);
 
         } catch (\Exception $e) {
@@ -968,5 +998,39 @@ class PosApiController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function resolveActiveShiftId(int $tenantId, ?int $outletId): ?int
+    {
+        $query = Shift::where('tenant_id', $tenantId)->whereNull('closed_at');
+        if ($outletId) {
+            $query->where('outlet_id', $outletId);
+        }
+
+        return optional($query->latest('id')->first())->id;
+    }
+
+    private function resolveCashierId(): ?int
+    {
+        $sessionToken = request()->header('X-Terminal-Session-Token') ?? request()->cookie('terminal_session_token');
+        if ($sessionToken && strlen($sessionToken) > 100) {
+            try {
+                $sessionToken = decrypt($sessionToken);
+            } catch (\Throwable $e) {
+                $sessionToken = request()->header('X-Terminal-Session-Token');
+            }
+        }
+
+        if ($sessionToken) {
+            $session = \App\Models\TerminalSession::where('session_token', $sessionToken)
+                ->where('expires_at', '>', now())
+                ->with('terminalUser')
+                ->first();
+            if ($session && $session->terminalUser) {
+                return $session->terminalUser->id;
+            }
+        }
+
+        return optional(auth()->user())->id;
     }
 }
