@@ -17,7 +17,8 @@ class BillingService
     {
         [$sub, $tax, $disc] = $this->totals($order);
         $invoice = $this->invoiceNo($order->outlet_id);
-        
+        [$netTotal, $roundOff] = $this->payableRounded($sub, $tax, $disc);
+
         return Bill::create([
             'tenant_id' => app('tenant.id'),
             'outlet_id' => $order->outlet_id,
@@ -27,10 +28,24 @@ class BillingService
             'sub_total' => $sub,
             'tax_total' => $tax,
             'discount_total' => $disc,
-            'round_off' => round(($sub + $tax - $disc) - round($sub + $tax - $disc), 2),
-            'net_total' => round($sub + $tax - $disc, 2),
+            'round_off' => $roundOff,
+            'net_total' => $netTotal,
             'state' => 'OPEN'
         ]);
+    }
+
+    /**
+     * Nearest-rupee payable: e.g. 12.98 → 13 with round_off +0.02.
+     *
+     * @return array{0: float, 1: float} [net_total, round_off]
+     */
+    protected function payableRounded(float $sub, float $tax, float $disc): array
+    {
+        $raw = $sub + $tax - $disc;
+        $net = (float) round($raw);
+        $roundOff = round($net - $raw, 2);
+
+        return [$net, $roundOff];
     }
 
     protected function totals(Order $order): array
@@ -105,17 +120,20 @@ class BillingService
 
         $totalTax = round($taxSummary['total_tax'], 2);
         $totalDiscount = round($order->items->sum('discount'), 2);
-        $netTotal = round($subtotal + $totalTax - $totalDiscount, 2);
+        $subR = round($subtotal, 2);
+        $rawPayable = $subR + $totalTax - $totalDiscount;
+        [$finalTotal, $roundOff] = $this->payableRounded($subR, $totalTax, $totalDiscount);
+        $netBeforeRound = round($rawPayable, 2);
 
         return [
-            'subtotal' => round($subtotal, 2),
+            'subtotal' => $subR,
             'tax_summary' => $taxSummary,
             'discount_summary' => $discountSummary,
             'total_tax' => $totalTax,
             'total_discount' => $totalDiscount,
-            'net_total' => $netTotal,
-            'round_off' => round($netTotal) - $netTotal,
-            'final_total' => round($netTotal),
+            'net_total' => $netBeforeRound,
+            'round_off' => $roundOff,
+            'final_total' => $finalTotal,
             'item_details' => $itemDetails,
         ];
     }
