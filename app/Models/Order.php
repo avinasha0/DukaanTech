@@ -57,6 +57,13 @@ class Order extends Model
     {
         parent::boot();
 
+        // orders.mode ENUM is DINE_IN, TAKEAWAY, DELIVERY — UI/API use PICKUP as synonym for take-away.
+        static::saving(function ($order) {
+            if (($order->mode ?? null) === 'PICKUP') {
+                $order->mode = 'TAKEAWAY';
+            }
+        });
+
         static::creating(function ($order) {
             // Prevent multiple OPEN orders for the same table
             if ($order->mode === 'DINE_IN' && $order->table_id && $order->status === self::STATUS_OPEN) {

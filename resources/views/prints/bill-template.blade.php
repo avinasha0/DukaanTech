@@ -188,7 +188,7 @@
         <div class="order-info">
             <div><span>Invoice #:</span><span>{{ $bill->invoice_no }}</span></div>
             <div><span>Date:</span><span>{{ $bill->created_at->format('d/m/Y H:i') }}</span></div>
-            <div><span>Order Type:</span><span>{{ $bill->order->orderType->name ?? ($bill->order->mode === 'DELIVERY' ? 'Delivery' : ($bill->order->mode === 'DINE_IN' ? 'Dine In' : ($bill->order->mode === 'PICKUP' ? 'Take Away' : 'Dine In'))) }}</span></div>
+            <div><span>Order Type:</span><span>{{ $bill->order->orderType->name ?? ($bill->order->mode === 'DELIVERY' ? 'Delivery' : ($bill->order->mode === 'DINE_IN' ? 'Dine In' : (in_array($bill->order->mode, ['PICKUP', 'TAKEAWAY'], true) ? 'Take Away' : 'Dine In'))) }}</span></div>
             @if($bill->order->table_no)
                 <div><span>Table:</span><span>{{ $bill->order->table_no }}</span></div>
             @endif

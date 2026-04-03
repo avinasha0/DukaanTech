@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 // POS API routes - use optimized controllers with tenant context
-Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['web', 'auth', 'resolve.tenant']], function () {
+Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['web', 'resolve.tenant', 'pos.access']], function () {
     Route::get('/categories', [\App\Http\Controllers\PosApiController::class, 'categories']);
     Route::get('/items', [\App\Http\Controllers\PosApiController::class, 'items']);
     Route::get('/order-types', [\App\Http\Controllers\PosApiController::class, 'orderTypes']);
