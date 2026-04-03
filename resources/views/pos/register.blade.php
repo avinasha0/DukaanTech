@@ -5729,13 +5729,23 @@ function orderDetailsModal() {
                     credentials: 'include',
                 });
                 if (r.ok) {
-                    this.tables = await r.json();
+                    const data = await r.json();
+                    this.tables = Array.isArray(data) ? data : (data.data || data.tables || []);
                 }
             } catch (e) {
                 console.error('loadTables', e);
             } finally {
                 this.loadingTables = false;
             }
+        },
+
+        /** Label for QR approve dropdown (API uses `name`; avoid undefined if DOM breaks) */
+        qrTableOptionLabel(t) {
+            if (!t || typeof t !== 'object') return '';
+            const n = t.name ?? t.table_name ?? t.label;
+            const base = (n != null && String(n).trim() !== '') ? String(n).trim() : ('Table #' + (t.id ?? '?'));
+            const st = t.status;
+            return base + (st && st !== 'free' ? ' (' + st + ')' : '');
         },
         
         async confirmQrOrder() {
@@ -6816,13 +6826,15 @@ function getCookie(name) {
                                 <p class="text-sm text-amber-900/90">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
                                 <div x-show="order.mode === 'DINE_IN'">
                                     <label class="block text-sm font-medium text-amber-900 mb-1">Table</label>
+                                    {{-- <template> inside <select> is invalid HTML; use x-for on <option> --}}
                                     <select x-model="selectedTableId"
                                             class="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
                                             :disabled="loadingTables || loadingApprove">
                                         <option value="">Select table…</option>
-                                        <template x-for="t in tables" :key="t.id">
-                                            <option :value="t.id" x-text="t.name + (t.status && t.status !== 'free' ? ' (' + t.status + ')' : '')"></option>
-                                        </template>
+                                        <option x-for="t in tables"
+                                                :key="'qr-tbl-' + t.id"
+                                                :value="String(t.id)"
+                                                x-text="qrTableOptionLabel(t)"></option>
                                     </select>
                                     <p x-show="loadingTables" class="text-xs text-amber-800 mt-1">Loading tables…</p>
                                 </div>
