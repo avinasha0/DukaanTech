@@ -5808,9 +5808,25 @@ function orderDetailsModal() {
                     credentials: 'include',
                     body: JSON.stringify(body),
                 });
-                const data = await r.json().catch(() => ({}));
+                let data = {};
+                try {
+                    const ct = r.headers.get('content-type') || '';
+                    if (ct.includes('application/json')) {
+                        data = await r.json();
+                    } else {
+                        const text = await r.text();
+                        alert('Could not confirm order (HTTP ' + r.status + '). ' + (text ? text.slice(0, 200) : ''));
+                        return;
+                    }
+                } catch (e) {
+                    alert('Could not confirm order: ' + (e.message || 'invalid response'));
+                    return;
+                }
                 if (!r.ok) {
-                    alert(data.error || 'Could not confirm order');
+                    const msg = data.error || data.message
+                        || (data.errors && (Array.isArray(data.errors) ? data.errors[0] : Object.values(data.errors).flat().join(' ')))
+                        || ('HTTP ' + r.status);
+                    alert(msg);
                     return;
                 }
                 this.close();

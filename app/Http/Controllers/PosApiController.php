@@ -15,6 +15,7 @@ use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PosApiController extends Controller
 {
@@ -1043,66 +1044,90 @@ class PosApiController extends Controller
      */
     public function approveQrOrder(Request $request, $orderId)
     {
-        $request->validate([
-            'shift_id' => 'required|exists:shifts,id',
-            'table_id' => 'nullable|exists:restaurant_tables,id',
-        ]);
-
-        $tenantId = $this->getTenantId();
-
-        $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
-        if ($terminalUser) {
-            $terminalUser->ensureLinkedShadowUser();
-        }
-
-        $userId = auth()->check()
-            ? (int) auth()->id()
-            : (int) ($terminalUser?->user_id ?? 0);
-
-        if ($userId === 0) {
-            return response()->json(['error' => 'Authentication required'], 401);
-        }
-
-        $order = Order::where('tenant_id', $tenantId)->findOrFail($orderId);
-
-        if ($order->source !== 'mobile_qr' || ! $order->isPendingQrApproval()) {
-            return response()->json(['error' => 'Order is not awaiting QR approval'], 422);
-        }
-
-        $shift = Shift::withoutGlobalScope('tenant')
-            ->where('id', $request->shift_id)
-            ->where('tenant_id', $tenantId)
-            ->where('outlet_id', $order->outlet_id)
-            ->whereNull('closed_at')
-            ->first();
-
-        if (! $shift) {
-            return response()->json(['error' => 'Invalid or closed shift for this outlet'], 422);
-        }
-
-        if ((int) $shift->opened_by !== $userId) {
-            return response()->json(['error' => 'Only the staff member who opened this shift can confirm QR orders'], 403);
-        }
-
-        if ($order->mode === 'DINE_IN' && ! $request->filled('table_id')) {
-            return response()->json(['error' => 'Assign a table for dine-in orders before confirming'], 422);
-        }
-
         try {
-            DB::transaction(function () use ($request, $order, $tenantId, $shift) {
+            $tenantId = $this->getTenantId();
+
+            $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+            if ($terminalUser) {
+                try {
+                    $terminalUser->ensureLinkedShadowUser();
+                } catch (\Throwable $e) {
+                    \Log::warning('approveQrOrder: ensureLinkedShadowUser', ['message' => $e->getMessage()]);
+                }
+                $terminalUser->refresh();
+            }
+
+            $userId = auth()->check()
+                ? (int) auth()->id()
+                : (int) ($terminalUser?->user_id ?? 0);
+
+            // Web user, or terminal session (shift may be opened by another user — still allow confirm)
+            if ($userId === 0 && ! $terminalUser) {
+                return response()->json([
+                    'error' => 'Authentication required. Sign in to the POS terminal again, then retry.',
+                ], 401);
+            }
+
+            $order = Order::where('tenant_id', $tenantId)->findOrFail($orderId);
+
+            if ($order->source !== 'mobile_qr' || ! $order->isPendingQrApproval()) {
+                return response()->json(['error' => 'Order is not awaiting QR approval'], 422);
+            }
+
+            $validated = $request->validate([
+                'shift_id' => 'required|integer|exists:shifts,id',
+                'table_id' => 'nullable|integer',
+            ]);
+
+            $shift = Shift::withoutGlobalScope('tenant')
+                ->where('id', $validated['shift_id'])
+                ->where('tenant_id', $tenantId)
+                ->where('outlet_id', $order->outlet_id)
+                ->whereNull('closed_at')
+                ->first();
+
+            if (! $shift) {
+                return response()->json([
+                    'error' => 'This shift is closed or does not match the order outlet. Refresh and try again.',
+                ], 422);
+            }
+
+            $tableId = $validated['table_id'] ?? null;
+
+            if ($order->mode === 'DINE_IN' && (empty($tableId) || $tableId < 1)) {
+                return response()->json(['error' => 'Assign a table for dine-in orders before confirming'], 422);
+            }
+
+            if (! empty($tableId)) {
+                $ok = RestaurantTable::where('tenant_id', $tenantId)
+                    ->where('outlet_id', $order->outlet_id)
+                    ->whereKey($tableId)
+                    ->exists();
+                if (! $ok) {
+                    return response()->json([
+                        'error' => 'Selected table is not valid for this order\'s outlet.',
+                    ], 422);
+                }
+            }
+
+            DB::transaction(function () use ($tableId, $order, $tenantId, $shift, $terminalUser) {
                 $meta = $order->meta ?? [];
                 $meta['shift_id'] = $shift->id;
                 $meta['qr_approved_at'] = now()->toIso8601String();
+                $meta['qr_confirmed_by_user_id'] = auth()->id() ?? ($terminalUser?->user_id ?? null);
+                if ($terminalUser) {
+                    $meta['qr_confirmed_by_terminal_user_id'] = $terminalUser->id;
+                }
 
                 $updates = [
                     'state' => 'NEW',
                     'meta' => $meta,
                 ];
 
-                if ($request->filled('table_id')) {
+                if (! empty($tableId)) {
                     $table = RestaurantTable::where('tenant_id', $tenantId)
                         ->where('outlet_id', $order->outlet_id)
-                        ->whereKey($request->table_id)
+                        ->whereKey($tableId)
                         ->firstOrFail();
 
                     $conflict = Order::where('tenant_id', $tenantId)
@@ -1112,7 +1137,7 @@ class PosApiController extends Controller
                         ->exists();
 
                     if ($conflict) {
-                        throw new \RuntimeException('That table already has an open order.');
+                        throw new \RuntimeException('That table already has an open order. Close or bill it first.');
                     }
 
                     $updates['table_id'] = $table->id;
@@ -1126,8 +1151,25 @@ class PosApiController extends Controller
 
                 $order->update($updates);
             });
+        } catch (ValidationException $e) {
+            $first = collect($e->errors())->flatten()->first();
+
+            return response()->json([
+                'error' => $first ?: $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\RuntimeException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            \Log::error('approveQrOrder failed', [
+                'order_id' => $orderId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage() ?: 'Server error while confirming order',
+            ], 500);
         }
 
         return response()->json([
