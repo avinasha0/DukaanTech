@@ -1045,6 +1045,11 @@ class PosApiController extends Controller
     public function approveQrOrder(Request $request, $orderId)
     {
         try {
+            $orderId = (int) $orderId;
+            if ($orderId < 1) {
+                return response()->json(['error' => 'Invalid order id'], 422);
+            }
+
             $tenantId = $this->getTenantId();
 
             $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);

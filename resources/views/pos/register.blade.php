@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        window.__POS_TENANT_SLUG__ = @json($tenant->slug ?? null);
+    </script>
     
     <!-- SEO Meta Tags -->
     <title>POS Terminal - DukaanTech</title>
@@ -1942,22 +1945,14 @@ function posRegister() {
         
         // Methods
         async init() {
-            // Build API base depending on path-based vs subdomain routing
-            const host = window.location.host; // e.g., localhost:8000 or dukaantech.localhost:8000
-            const path = window.location.pathname; // e.g., /dukaantech/pos/register or /pos/register
-            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
-            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
-            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
-            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            this.apiBase = posRegisterApiBase();
+            const path = window.location.pathname;
             // Match server-side route flag so defaults work even if session flags differ
             this.terminalPickupQuickDefaults = Boolean(this.terminalPickupQuickDefaults)
                 || /\/pos\/terminal(\/|$)/.test(path);
             
             console.log('API Base URL constructed:', this.apiBase);
-            console.log('Host:', host);
             console.log('Path:', path);
-            console.log('Is Path Based:', isPathBased);
-            console.log('Tenant Slug:', tenantSlug);
 
             // Alternative approach: Use server-side data as primary, localStorage as fallback
             this.initializeShiftState();
@@ -5674,6 +5669,25 @@ function customerModal() {
     }
 }
 
+/**
+ * Base URL for /{tenant}/pos/api. Uses server-injected slug when present so
+ * subdomain or unusual paths still resolve the correct tenant (avoids wrong /orders/{id} segments).
+ */
+function posRegisterApiBase() {
+    const slug = typeof window.__POS_TENANT_SLUG__ === 'string' && window.__POS_TENANT_SLUG__.length > 0
+        ? window.__POS_TENANT_SLUG__
+        : null;
+    if (slug) {
+        return '/' + slug + '/pos/api';
+    }
+    const host = window.location.host;
+    const path = window.location.pathname;
+    const segments = path.replace(/^\/+|\/+$/g, '').split('/');
+    const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
+    const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
+    return isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+}
+
 // Order Details Modal component
 function orderDetailsModal() {
     return {
@@ -5687,12 +5701,7 @@ function orderDetailsModal() {
         apiBase: '',
         
         init() {
-            const host = window.location.host;
-            const path = window.location.pathname;
-            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
-            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
-            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
-            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            this.apiBase = posRegisterApiBase();
             
             window.addEventListener('open-order-details', (e) => {
                 const detail = e.detail || {};
@@ -5789,6 +5798,13 @@ function orderDetailsModal() {
                 alert('Select a table for dine-in orders before confirming.');
                 return;
             }
+            this.apiBase = posRegisterApiBase();
+            const rawOid = this.order?.id ?? this.order?.order_id;
+            const orderIdNum = parseInt(String(rawOid), 10);
+            if (!Number.isFinite(orderIdNum) || orderIdNum < 1) {
+                alert('Invalid order reference. Close this dialog, refresh Recent Orders, and try again.');
+                return;
+            }
             this.loadingApprove = true;
             const sid = this.shiftId;
             try {
@@ -5796,7 +5812,7 @@ function orderDetailsModal() {
                 if (this.selectedTableId) {
                     body.table_id = parseInt(this.selectedTableId, 10);
                 }
-                const r = await fetch(`${this.apiBase}/orders/${this.order.id}/approve-qr`, {
+                const r = await fetch(`${this.apiBase}/orders/${orderIdNum}/approve-qr`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -5878,13 +5894,7 @@ function ordersModal() {
         shiftId: null,
         
         init() {
-            // Build API base depending on path-based vs subdomain routing
-            const host = window.location.host;
-            const path = window.location.pathname;
-            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
-            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
-            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
-            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            this.apiBase = posRegisterApiBase();
             
             // Listen for open-orders-modal event
             window.addEventListener('open-orders-modal', (e) => {
@@ -5921,7 +5931,7 @@ function ordersModal() {
                 
                 if (response.ok) {
                     const data = await response.json();
-                    this.orders = data || [];
+                    this.orders = Array.isArray(data) ? data : [];
                     console.log('Orders loaded successfully:', this.orders.length, 'orders');
                     console.log('Orders data:', this.orders);
                 } else {
@@ -6002,13 +6012,7 @@ function tableOrdersModal() {
         apiBase: '',
         
         init() {
-            // Build API base depending on path-based vs subdomain routing
-            const host = window.location.host;
-            const path = window.location.pathname;
-            const segments = path.replace(/^\/+|\/+$/g, '').split('/');
-            const isPathBased = host.indexOf('.') === -1 || segments[0] !== 'pos';
-            const tenantSlug = (isPathBased && segments.length > 0) ? segments[0] : null;
-            this.apiBase = isPathBased && tenantSlug ? `/${tenantSlug}/pos/api` : `/pos/api`;
+            this.apiBase = posRegisterApiBase();
             
             // Listen for open-table-orders-modal event
             window.addEventListener('open-table-orders-modal', (e) => {
