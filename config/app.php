@@ -53,7 +53,20 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
-    
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password reset email base URL
+    |--------------------------------------------------------------------------
+    |
+    | Reset links are signed absolute URLs. They use APP_URL unless you set
+    | PASSWORD_RESET_URL (e.g. public https://yourdomain.com while APP_URL is
+    | internal, or http://localhost/pos/public on XAMPP when APP_URL was :8000).
+    |
+    */
+
+    'password_reset_url' => env('PASSWORD_RESET_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | QR Code Base IP

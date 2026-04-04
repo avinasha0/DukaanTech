@@ -64,14 +64,23 @@ class ResetPasswordNotification extends Notification
      */
     protected function resetUrl($notifiable)
     {
-        return URL::temporarySignedRoute(
-            'password.reset',
-            Carbon::now()->addMinutes(Config::get('auth.passwords.users.expire', 60)),
-            [
-                'token' => $this->token,
-                'email' => $notifiable->getEmailForPasswordReset(),
-            ]
-        );
+        $expire = Carbon::now()->addMinutes(Config::get('auth.passwords.users.expire', 60));
+        $params = [
+            'token' => $this->token,
+            'email' => $notifiable->getEmailForPasswordReset(),
+        ];
+
+        $customRoot = Config::get('app.password_reset_url');
+        if (is_string($customRoot) && $customRoot !== '') {
+            URL::forceRootUrl(rtrim($customRoot, '/'));
+            try {
+                return URL::temporarySignedRoute('password.reset', $expire, $params);
+            } finally {
+                URL::forceRootUrl(null);
+            }
+        }
+
+        return URL::temporarySignedRoute('password.reset', $expire, $params);
     }
 
     /**
