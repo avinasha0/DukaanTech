@@ -1212,6 +1212,105 @@ class PosApiController extends Controller
     }
 
     /**
+     * Decline a QR/mobile order awaiting POS confirmation: cancel the order and free the table if needed.
+     */
+    public function rejectQrOrder(Request $request)
+    {
+        try {
+            $raw = $request->route('orderId');
+            $orderId = is_numeric($raw) ? (int) $raw : 0;
+            if ($orderId < 1) {
+                return response()->json(['error' => 'Invalid order id'], 422);
+            }
+
+            $tenantId = $this->getTenantId();
+
+            $terminalUser = TerminalSession::terminalUserFromHttpRequest($request);
+            if ($terminalUser) {
+                try {
+                    $terminalUser->ensureLinkedShadowUser();
+                } catch (\Throwable $e) {
+                    \Log::warning('rejectQrOrder: ensureLinkedShadowUser', ['message' => $e->getMessage()]);
+                }
+                $terminalUser->refresh();
+            }
+
+            $userId = auth()->check()
+                ? (int) auth()->id()
+                : (int) ($terminalUser?->user_id ?? 0);
+
+            if ($userId === 0 && ! $terminalUser) {
+                return response()->json([
+                    'error' => 'Authentication required. Sign in to the POS terminal again, then retry.',
+                ], 401);
+            }
+
+            $order = Order::where('tenant_id', $tenantId)->findOrFail($orderId);
+
+            if ($order->source !== 'mobile_qr' || ! $order->isPendingQrApproval()) {
+                return response()->json(['error' => 'Order is not awaiting QR approval'], 422);
+            }
+
+            $validated = $request->validate([
+                'reason' => 'nullable|string|max:500',
+            ]);
+
+            DB::transaction(function () use ($order, $tenantId, $terminalUser, $validated) {
+                $meta = $order->meta ?? [];
+                unset($meta['qr_has_unsent_items'], $meta['qr_new_items_at']);
+                $meta['qr_rejected_at'] = now()->toIso8601String();
+                $meta['qr_rejected_by_user_id'] = auth()->id() ?? ($terminalUser?->user_id ?? null);
+                if ($terminalUser) {
+                    $meta['qr_rejected_by_terminal_user_id'] = $terminalUser->id;
+                }
+                $reason = trim((string) ($validated['reason'] ?? ''));
+                if ($reason !== '') {
+                    $meta['qr_rejection_reason'] = $reason;
+                } else {
+                    unset($meta['qr_rejection_reason']);
+                }
+
+                $order->update([
+                    'state' => 'CLOSED',
+                    'status' => Order::STATUS_CANCELLED,
+                    'meta' => $meta,
+                ]);
+
+                if ($order->table_id) {
+                    $table = RestaurantTable::where('tenant_id', $tenantId)
+                        ->whereKey($order->table_id)
+                        ->first();
+                    if ($table) {
+                        $table->syncStatus();
+                    }
+                }
+            });
+        } catch (ValidationException $e) {
+            $first = collect($e->errors())->flatten()->first();
+
+            return response()->json([
+                'error' => $first ?: $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('rejectQrOrder failed', [
+                'order_id' => $orderId ?? null,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage() ?: 'Server error while rejecting order',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'order' => $order->fresh()->load(['items.item', 'table', 'outlet']),
+        ]);
+    }
+
+    /**
      * After POS approves a QR order, send unsent lines to the kitchen (same rules as KotController).
      */
     private function fireKitchenTicketAfterQrApproval(Order $order): ?array

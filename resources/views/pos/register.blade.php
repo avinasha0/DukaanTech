@@ -5757,6 +5757,8 @@ function orderDetailsModal() {
         tables: [],
         selectedTableId: '',
         loadingApprove: false,
+        loadingReject: false,
+        rejectReason: '',
         loadingTables: false,
         apiBase: '',
         
@@ -5773,6 +5775,7 @@ function orderDetailsModal() {
             this.order = detail.order;
             this.shiftId = detail.shiftId ?? null;
             this.selectedTableId = '';
+            this.rejectReason = '';
             this.tables = [];
             this.isOpen = true;
             if (this.order && this.order.state === 'PENDING_QR_APPROVAL' && this.order.mode === 'DINE_IN' && !this.order.table_id) {
@@ -5920,6 +5923,78 @@ function orderDetailsModal() {
                 window.dispatchEvent(new CustomEvent('open-orders-modal', { detail: { shiftId: sid } }));
             } finally {
                 this.loadingApprove = false;
+            }
+        },
+
+        async rejectQrOrder() {
+            if (!confirm('Reject this QR order? It will be cancelled and the guest may need to order again.')) {
+                return;
+            }
+            this.apiBase = posRegisterApiBase();
+            const rawOid = this.order?.id ?? this.order?.order_id ?? this.order?.orderId;
+            const orderIdNum = parseInt(String(rawOid ?? ''), 10);
+            if (!Number.isFinite(orderIdNum) || orderIdNum < 1) {
+                alert('Invalid order reference. Close this dialog, refresh Recent Orders, and try again.');
+                return;
+            }
+            this.loadingReject = true;
+            const sid = this.shiftId;
+            try {
+                const body = {};
+                const reason = (this.rejectReason || '').trim();
+                if (reason) {
+                    body.reason = reason.slice(0, 500);
+                }
+                const r = await fetch(`${this.apiBase}/orders/${orderIdNum}/reject-qr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || '',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(body),
+                });
+                let data = {};
+                try {
+                    const ct = r.headers.get('content-type') || '';
+                    if (ct.includes('application/json')) {
+                        data = await r.json();
+                    } else {
+                        const text = await r.text();
+                        alert('Could not reject order (HTTP ' + r.status + '). ' + (text ? text.slice(0, 200) : ''));
+                        return;
+                    }
+                } catch (e) {
+                    alert('Could not reject order: ' + (e.message || 'invalid response'));
+                    return;
+                }
+                if (!r.ok) {
+                    const msg = data.error || data.message
+                        || (data.errors && (Array.isArray(data.errors) ? data.errors[0] : Object.values(data.errors).flat().join(' ')))
+                        || ('HTTP ' + r.status);
+                    alert(msg);
+                    return;
+                }
+                window.dispatchEvent(new CustomEvent('pos-refresh-tables'));
+                if (window.Alpine && typeof Alpine.store === 'function') {
+                    try {
+                        Alpine.store('notifications').showNotification(
+                            'success',
+                            'Order rejected',
+                            `Order #${orderIdNum} was cancelled.`,
+                            ''
+                        );
+                    } catch (e) { /* ignore toast errors */ }
+                }
+                this.close();
+                if (sid) {
+                    window.dispatchEvent(new CustomEvent('open-orders-modal', { detail: { shiftId: sid } }));
+                }
+            } finally {
+                this.loadingReject = false;
             }
         },
         
@@ -7068,19 +7143,36 @@ function getCookie(name) {
                                     <select id="qr-table-select-approve"
                                             x-model="selectedTableId"
                                             class="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
-                                            :disabled="loadingTables || loadingApprove">
+                                            :disabled="loadingTables || loadingApprove || loadingReject">
                                         <option value="">Select table…</option>
                                     </select>
                                     <p x-show="loadingTables" class="text-xs text-amber-800 mt-1">Loading tables…</p>
                                     <p x-show="!loadingTables && tables.length === 0" class="text-xs text-amber-800 mt-1">No tables for this outlet. Add tables in admin.</p>
                                 </div>
-                                <button type="button"
-                                        @click="confirmQrOrder()"
-                                        :disabled="loadingApprove || (order.mode === 'DINE_IN' && !order.table_id && !selectedTableId)"
-                                        class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <span x-show="!loadingApprove">Confirm &amp; accept order</span>
-                                    <span x-show="loadingApprove">Saving…</span>
-                                </button>
+                                <div>
+                                    <label class="block text-sm font-medium text-amber-900 mb-1">Reject reason <span class="font-normal text-amber-800/80">(optional)</span></label>
+                                    <textarea x-model="rejectReason"
+                                              rows="2"
+                                              placeholder="e.g. Item unavailable, closing soon…"
+                                              class="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white placeholder:text-amber-800/50"
+                                              :disabled="loadingApprove || loadingReject"></textarea>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                                    <button type="button"
+                                            @click="rejectQrOrder()"
+                                            :disabled="loadingReject || loadingApprove"
+                                            class="w-full sm:w-auto order-2 sm:order-1 px-4 py-2.5 rounded-lg border border-red-300 bg-white text-red-700 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span x-show="!loadingReject">Reject order</span>
+                                        <span x-show="loadingReject">Rejecting…</span>
+                                    </button>
+                                    <button type="button"
+                                            @click="confirmQrOrder()"
+                                            :disabled="loadingApprove || loadingReject || (order.mode === 'DINE_IN' && !order.table_id && !selectedTableId)"
+                                            class="w-full sm:w-auto order-1 sm:order-2 px-4 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span x-show="!loadingApprove">Confirm &amp; accept order</span>
+                                        <span x-show="loadingApprove">Saving…</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </template>

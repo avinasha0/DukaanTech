@@ -234,6 +234,9 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
 
     Route::post('/orders/{orderId}/approve-qr', [PosApiController::class, 'approveQrOrder'])
         ->whereNumber('orderId');
+
+    Route::post('/orders/{orderId}/reject-qr', [PosApiController::class, 'rejectQrOrder'])
+        ->whereNumber('orderId');
     
     Route::post('/orders', function ($tenant) {
         $account = app('tenant'); // Get tenant from middleware context
