@@ -27,7 +27,7 @@
                 <a href="/" class="text-gray-700 hover:text-orange-600 transition-colors">Home</a>
                 <a href="/#about" class="text-gray-700 hover:text-orange-600 transition-colors">About Us</a>
                 <a href="/#pricing" class="text-gray-700 hover:text-orange-600 transition-colors">Pricing</a>
-                <a href="/#contact" class="text-gray-700 hover:text-orange-600 transition-colors">Contact Us</a>
+                <a href="/contact-us" class="text-gray-700 hover:text-orange-600 transition-colors">Contact Us</a>
             </nav>
             
             <div class="flex items-center gap-4">

@@ -26,7 +26,7 @@
                 <a href="/#features" class="text-gray-700 hover:text-orange-600 transition-colors">Features</a>
                 <a href="/#pricing" class="text-gray-700 hover:text-orange-600 transition-colors">Pricing</a>
                 <a href="/#testimonials" class="text-gray-700 hover:text-orange-600 transition-colors">Reviews</a>
-                <a href="/#contact" class="text-gray-700 hover:text-orange-600 transition-colors">Contact</a>
+                <a href="/contact-us" class="text-gray-700 hover:text-orange-600 transition-colors">Contact</a>
             </nav>
 
             <div class="flex items-center gap-4">
