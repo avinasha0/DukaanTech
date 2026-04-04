@@ -11,6 +11,10 @@ use Carbon\Carbon;
 
 class ReportService
 {
+    public function __construct(
+        private ShiftService $shiftService
+    ) {}
+
     public function getDailySales(int $outletId, Carbon $date): array
     {
         $startOfDay = $date->startOfDay();
@@ -152,27 +156,29 @@ class ReportService
 
     public function getShiftReport(Shift $shift): array
     {
-        $endTime = $shift->closed_at ?? now();
-        
-        $bills = $shift->outlet->bills()
-            ->whereBetween('created_at', [$shift->created_at, $endTime])
-            ->get();
-            
-        $payments = $bills->pluck('payments')->flatten();
-        
+        // Match POS / dashboard: sales from orders in the shift window (ShiftService),
+        // not from bills — bills are often unused while orders carry all revenue.
+        $summary = $this->shiftService->getShiftSummary($shift);
+
+        $total = (float) $summary['total_sales'];
+        $cash = (float) $summary['cash_sales'];
+        $card = (float) $summary['card_sales'];
+        $upi = (float) $summary['upi_sales'];
+        $remainder = max(0.0, round($total - $cash - $card - $upi, 2));
+
         return [
             'shift_id' => $shift->id,
             'opened_at' => $shift->created_at,
             'closed_at' => $shift->closed_at,
-            'opened_by' => $shift->openedBy->name,
-            'total_sales' => $bills->sum('net_total'),
-            'total_bills' => $bills->count(),
+            'opened_by' => $shift->openedBy?->name ?? '—',
+            'total_sales' => $total,
+            'total_bills' => (int) $summary['total_orders'],
             'payment_breakdown' => [
-                'cash' => $payments->where('method', 'CASH')->sum('amount'),
-                'card' => $payments->where('method', 'CARD')->sum('amount'),
-                'upi' => $payments->where('method', 'UPI')->sum('amount'),
-                'wallet' => $payments->where('method', 'WALLET')->sum('amount'),
-                'other' => $payments->where('method', 'OTHER')->sum('amount'),
+                'cash' => $cash,
+                'card' => $card,
+                'upi' => $upi,
+                'wallet' => 0.0,
+                'other' => $remainder,
             ],
             'cash_management' => [
                 'opening_float' => $shift->opening_float,
