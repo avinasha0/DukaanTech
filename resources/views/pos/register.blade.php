@@ -1990,6 +1990,12 @@ function posRegister() {
                 this.loadItems();
                 console.log('=== END MAIN POS REFRESH EVENT ===');
             });
+
+            // QR approve / other flows: reload table occupancy from API without full page refresh
+            window.addEventListener('pos-refresh-tables', () => {
+                this.lastTableUpdate = null;
+                this.refreshTablesFromDatabase(true);
+            });
             
             // If no server-side shift data, try to restore from localStorage
             if (!this.shift) {
@@ -3987,7 +3993,7 @@ function posRegister() {
             // Method to force refresh all tables
             window.refreshTables = () => {
                 this.lastTableUpdate = null; // Reset timestamp to force refresh
-                this.refreshTablesFromDatabase();
+                this.refreshTablesFromDatabase(true);
                 console.log('Tables refreshed from database');
             };
             
@@ -5844,6 +5850,17 @@ function orderDetailsModal() {
                         || ('HTTP ' + r.status);
                     alert(msg);
                     return;
+                }
+                window.dispatchEvent(new CustomEvent('pos-refresh-tables'));
+                if (data.kot && data.kot.id && window.Alpine && typeof Alpine.store === 'function') {
+                    try {
+                        Alpine.store('notifications').showNotification(
+                            'success',
+                            'Order approved',
+                            `Order #${orderIdNum} sent to kitchen (KOT #${data.kot.id}).`,
+                            data.kot.lines_count ? `${data.kot.lines_count} line(s) · ${data.kot.station || 'kitchen'}` : ''
+                        );
+                    } catch (e) { /* ignore toast errors */ }
                 }
                 this.close();
                 window.dispatchEvent(new CustomEvent('open-orders-modal', { detail: { shiftId: sid } }));

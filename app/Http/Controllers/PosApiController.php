@@ -10,8 +10,11 @@ use App\Models\Outlet;
 use App\Models\Shift;
 use App\Models\TerminalSession;
 use App\Models\RestaurantTable;
+use App\Models\Account;
+use App\Models\KitchenTicket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PrinterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -1190,10 +1193,90 @@ class PosApiController extends Controller
             ], 500);
         }
 
+        $kot = null;
+        try {
+            $kot = $this->fireKitchenTicketAfterQrApproval($order->fresh());
+        } catch (\Throwable $e) {
+            \Log::error('approveQrOrder: auto KOT failed', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'order' => $order->fresh()->load(['items.item', 'table', 'outlet']),
+            'kot' => $kot,
         ]);
+    }
+
+    /**
+     * After POS approves a QR order, send unsent lines to the kitchen (same rules as KotController).
+     */
+    private function fireKitchenTicketAfterQrApproval(Order $order): ?array
+    {
+        $account = Account::find($order->tenant_id);
+        if (! $account || ! $account->kot_enabled) {
+            return null;
+        }
+
+        $order->loadMissing('items');
+
+        if ($reason = $order->kitchenBlockedReason()) {
+            \Log::warning('approveQrOrder: KOT skipped (kitchen blocked)', [
+                'order_id' => $order->id,
+                'reason' => $reason,
+            ]);
+
+            return null;
+        }
+
+        $newItems = $order->items()->where('sent_to_kitchen', false)->get();
+        if ($newItems->isEmpty()) {
+            return null;
+        }
+
+        $station = (string) (data_get($account->kot_settings, 'default_station') ?: 'hot-kitchen');
+
+        $kitchenTicket = KitchenTicket::create([
+            'tenant_id' => $order->tenant_id,
+            'outlet_id' => $order->outlet_id,
+            'device_id' => $order->device_id,
+            'order_id' => $order->id,
+            'station' => $station,
+            'status' => 'SENT',
+        ]);
+
+        foreach ($newItems as $orderItem) {
+            $kitchenTicket->lines()->create([
+                'tenant_id' => $order->tenant_id,
+                'order_item_id' => $orderItem->id,
+                'qty' => $orderItem->qty,
+            ]);
+        }
+
+        $order->items()
+            ->whereIn('id', $newItems->pluck('id')->all())
+            ->update(['sent_to_kitchen' => true]);
+
+        if ($order->state === 'NEW') {
+            $order->update(['state' => 'IN_KITCHEN']);
+        }
+
+        try {
+            app(PrinterService::class)->printKOT($kitchenTicket);
+        } catch (\Throwable $e) {
+            \Log::warning('approveQrOrder: printKOT failed', ['message' => $e->getMessage()]);
+        }
+
+        return [
+            'id' => $kitchenTicket->id,
+            'order_id' => $kitchenTicket->order_id,
+            'station' => $kitchenTicket->station,
+            'status' => $kitchenTicket->status,
+            'lines_count' => $kitchenTicket->lines()->count(),
+        ];
     }
 
     private function resolveActiveShiftId(int $tenantId, ?int $outletId): ?int

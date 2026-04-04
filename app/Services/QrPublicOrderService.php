@@ -67,8 +67,42 @@ class QrPublicOrderService
 
             $table = $tableId > 0 ? RestaurantTable::where('tenant_id', $account->id)->whereKey($tableId)->first() : null;
 
+            if ($table) {
+                $this->assertTableAllowsNewQrOrder($account, $table);
+            }
+
             return $this->createNewOrder($data, $account, $table);
         });
+    }
+
+    /**
+     * Block a brand-new QR session when the table is already in use (POS or approved dine-in session).
+     */
+    protected function assertTableAllowsNewQrOrder(Account $account, RestaurantTable $table): void
+    {
+        $table->refresh();
+
+        if ($table->status === 'occupied') {
+            throw new \RuntimeException(
+                'This table is already occupied. Please ask staff for assistance.'
+            );
+        }
+
+        $hasOpenPosOrNonQrSession = Order::where('tenant_id', $account->id)
+            ->where('table_id', $table->id)
+            ->where('status', Order::STATUS_OPEN)
+            ->where('mode', 'DINE_IN')
+            ->where(function ($q) {
+                $q->whereNull('source')
+                    ->orWhere('source', '!=', 'mobile_qr');
+            })
+            ->exists();
+
+        if ($hasOpenPosOrNonQrSession) {
+            throw new \RuntimeException(
+                'This table is already occupied. Please ask staff for assistance.'
+            );
+        }
     }
 
     protected function findOpenQrOrderForTable(
@@ -110,18 +144,17 @@ class QrPublicOrderService
             }
             if ($matches->isEmpty()) {
                 throw new \RuntimeException(
-                    'This table already has an active order. Use the same phone number as your first order, or ask staff for help.'
+                    'This table is already occupied. Use the same phone number as the first guest on this table, or ask staff for help.'
                 );
             }
 
             throw new \RuntimeException('Multiple active orders match this phone — ask staff for help.');
         }
 
-        if ($orders->count() === 1) {
-            return $orders->first();
-        }
-
-        throw new \RuntimeException('Enter the same phone number you used for your first order to add more items.');
+        // No phone: resume only via existing_order_id (handled above). Orders is non-empty here, so another guest cannot start.
+        throw new \RuntimeException(
+            'This table is already occupied. Use the same phone number as your first order, or ask staff for help.'
+        );
     }
 
     protected function assertPhoneMatch(Order $order, string $phone): void
@@ -133,7 +166,7 @@ class QrPublicOrderService
         $op = preg_replace('/\D+/', '', (string) ($order->customer_phone ?? ''));
         if ($op !== '' && $op !== $phoneNorm) {
             throw new \RuntimeException(
-                'This table already has an active order. Use the same phone number as your first order, or ask staff for help.'
+                'This table is already occupied. Use the same phone number as the first guest on this table, or ask staff for help.'
             );
         }
     }
