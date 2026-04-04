@@ -81,8 +81,9 @@ class ShiftService
     }
 
     /**
-     * Orders that belong to this shift window: same outlet, or tagged meta.shift_id, or dine-in table at this outlet.
-     * Strict outlet-only matching misses rows when order.outlet_id ≠ shift.outlet_id but the table (or meta) says otherwise.
+     * Orders counted toward shift sales / expected cash: outlet-scoped, and only after the bill is settled.
+     * OPEN (running tab / occupied table) amounts are excluded until status is CLOSED or PAID.
+     * Long-running tabs settled in this shift match via updated_at even if created_at is earlier.
      */
     protected function baseShiftOrdersQuery(Shift $shift): Builder
     {
@@ -97,28 +98,23 @@ class ShiftService
             ->select($orderTable . '.*')
             ->join('outlets', $orderTable . '.outlet_id', '=', 'outlets.id')
             ->where('outlets.tenant_id', $tid)
-            ->where(function ($outer) use ($shift, $windowEnd, $orderTable, $tid) {
-                // Normal case: order created during the shift window.
+            ->where(function ($outer) use ($shift, $windowEnd, $orderTable) {
                 $outer->where(function ($q) use ($shift, $windowEnd, $orderTable) {
                     $q->where($orderTable . '.created_at', '>=', $shift->created_at)
                         ->where($orderTable . '.created_at', '<=', $windowEnd);
                 })
-                    // Carry-over: dine-in table session still OPEN from a previous shift (same outlet).
-                    ->orWhere(function ($q) use ($shift, $orderTable, $tid) {
-                        $q->where($orderTable . '.status', Order::STATUS_OPEN)
-                            ->whereNotNull($orderTable . '.table_id')
-                            ->where($orderTable . '.mode', 'DINE_IN')
-                            ->whereHas('table', function ($tq) use ($shift, $tid) {
-                                $tq->withoutGlobalScope('tenant')
-                                    ->where('tenant_id', $tid)
-                                    ->where('outlet_id', $shift->outlet_id);
-                            });
+                    ->orWhere(function ($q) use ($shift, $windowEnd, $orderTable) {
+                        $q->whereIn($orderTable . '.status', [Order::STATUS_CLOSED, Order::STATUS_PAID])
+                            ->where($orderTable . '.updated_at', '>=', $shift->created_at)
+                            ->where($orderTable . '.updated_at', '<=', $windowEnd);
                     });
             })
             ->where(function ($q) use ($orderTable) {
                 $q->whereNull($orderTable . '.status')
                     ->orWhereRaw('UPPER(TRIM(' . $orderTable . '.status)) <> ?', ['CANCELLED']);
             })
+            // Unsettled running orders (incl. occupied dine-in) never affect shift totals.
+            ->whereRaw('UPPER(TRIM(IFNULL(' . $orderTable . '.status, \'\'))) <> ?', [Order::STATUS_OPEN])
             ->where(function ($q) use ($shift, $tid, $sid, $orderTable) {
                 $driver = $q->getModel()->getConnection()->getDriverName();
                 $q->where($orderTable . '.outlet_id', $shift->outlet_id);
