@@ -776,9 +776,9 @@
                 </div>
             </div>
             
-            <!-- Payment Methods (optional for dine-in) -->
+            <!-- Payment Methods (optional for dine-in; also when adding lines to an occupied table session) -->
             <div class="mb-3 relative z-10">
-                <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment optional for dine-in — settle later</p>
+                <p x-show="selectedOrderType === 'dine-in' || isAddingItemsToExistingOrder" class="text-xs text-gray-500 mb-1">Payment optional — settle when billing this table</p>
                 <div class="grid grid-cols-3 gap-1 mb-2">
                     <button type="button" @click="selectPaymentMethod('cash')"
                             class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
@@ -822,20 +822,20 @@
                         <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
                     </div>
                 </div>
-                <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center mt-1">
+                <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder" class="text-red-500 text-xs text-center mt-1">
                     Please select a payment method
                 </div>
             </div>
             
             <div class="space-y-2">
                 <div class="grid grid-cols-3 gap-1">
-                    <button @click="createOrder()" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '') || terminalCashBlocked" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder()" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)" class="bg-red-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                         <span class="text-xs font-medium hidden sm:block" x-text="isAddingItemsToExistingOrder ? 'Add Items' : 'Create Order'"></span>
                     </button>
-                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && paymentMethod === '') || terminalCashBlocked" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
+                    <button @click="createOrder(true, true)" :disabled="cart.length === 0 || (selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder && paymentMethod === '') || (!isAddingItemsToExistingOrder && terminalCashBlocked)" class="bg-green-500 text-white py-1.5 px-1 rounded-md font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-xs transition-colors flex flex-col items-center gap-0.5">
                         <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
@@ -1525,9 +1525,9 @@
                     </div>
                 </div>
 
-                <!-- Payment Methods (optional for dine-in — settle at table / Mark Paid) -->
+                <!-- Payment Methods (optional for dine-in — settle at table / Mark Paid; same when adding to occupied table) -->
                 <div class="mb-2 relative z-10">
-                    <p x-show="selectedOrderType === 'dine-in'" class="text-xs text-gray-500 mb-1">Payment when settling the bill (optional now)</p>
+                    <p x-show="selectedOrderType === 'dine-in' || isAddingItemsToExistingOrder" class="text-xs text-gray-500 mb-1">Payment when settling the bill (optional now)</p>
                     <div class="grid grid-cols-3 gap-1 mb-1">
                         <button type="button"
                                 @click="selectPaymentMethod('cash')"
@@ -1559,7 +1559,7 @@
                             <span class="text-orange-700" x-text="'₹' + cashChangeToReturn.toFixed(2)"></span>
                         </div>
                     </div>
-                    <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in'" class="text-red-500 text-xs text-center">
+                    <div x-show="paymentMethod === '' && cart.length > 0 && selectedOrderType !== 'dine-in' && !isAddingItemsToExistingOrder" class="text-red-500 text-xs text-center">
                         Please select a payment method
                     </div>
                 </div>
@@ -3101,6 +3101,9 @@ function posRegister() {
                 if (tableStatus.has_active_order) {
                     this.isAddingItemsToExistingOrder = true;
                     await this.loadCurrentTableOrder(table.id);
+                    // Align with dine-in so payment is not required for add-items flow (same as new dine-in orders)
+                    this.selectedOrderType = 'dine-in';
+                    this.customerInfo.orderType = 'dine-in';
                 } else {
                     this.isAddingItemsToExistingOrder = false;
                     this.currentTableOrder = null;
