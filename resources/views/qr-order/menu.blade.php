@@ -177,6 +177,19 @@
             return tableId ? ('qr_order_' + tenantSlug + '_' + tableId) : null;
         }
 
+        /** Set ?qr_debug=1 on the URL or localStorage.setItem('qr_debug','1') then reload — verbose console logs. */
+        const qrDebug =
+            new URLSearchParams(window.location.search).get('qr_debug') === '1' ||
+            window.localStorage.getItem('qr_debug') === '1';
+        function qrLog(label, payload) {
+            if (qrDebug) {
+                console.log('[QR order debug]', label, payload);
+            }
+        }
+        function qrWarn(label, payload) {
+            console.warn('[QR order]', label, payload);
+        }
+
         const itemsMeta = {
             @foreach($categories as $cat)
                 @foreach($cat->items as $item)
@@ -343,18 +356,38 @@
             }
 
             const endpoint = `/api/${tenantSlug}/public/qr-order/create`;
+            qrLog('POST ' + endpoint, {
+                table_id: orderData.table_id,
+                existing_order_id: orderData.existing_order_id,
+                mode: orderData.mode,
+                order_type_id: orderData.order_type_id,
+                item_lines: orderData.items.length,
+                phone_last4: phone.length >= 4 ? phone.slice(-4) : '(short)',
+            });
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(orderData)
                 });
+                const retryAfter = response.headers.get('retry-after');
                 const ct = response.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) {
-                    alert(await response.text().then(t => t || 'Invalid response from server'));
+                    const txt = await response.text().then(t => t || 'Invalid response from server');
+                    qrWarn('non-JSON response', { status: response.status, retryAfter, body: txt });
+                    alert(txt);
                     return;
                 }
                 const result = await response.json();
+                if (!response.ok || (!result.success && !result.order_id)) {
+                    qrWarn('request failed', {
+                        httpStatus: response.status,
+                        retryAfter,
+                        error: result.error,
+                        message: result.message,
+                        full: result,
+                    });
+                }
                 if (response.ok && (result.success || result.order_id)) {
                     const oid = result.order_id || result.order?.id;
                     if (sk && oid) sessionStorage.setItem(sk, String(oid));
@@ -373,6 +406,7 @@
                     document.getElementById('input_mode').value = 'DINE_IN';
                     goBrowse();
                     syncCartBar();
+                    qrLog('success', { order_id: result.order_id, appended: result.appended });
                     return;
                 }
                 let err = result.error || result.message;
@@ -381,6 +415,7 @@
                 }
                 alert(err || ('Request failed (' + response.status + ')'));
             } catch (e) {
+                qrWarn('fetch threw', { message: e.message, error: e });
                 alert(e.message || 'Request failed');
             }
         }
