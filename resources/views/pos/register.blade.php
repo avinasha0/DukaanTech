@@ -779,7 +779,7 @@
             <!-- Payment Methods (optional for dine-in; also when adding lines to an occupied table session) -->
             <div class="mb-3 relative z-10">
                 <p x-show="selectedOrderType === 'dine-in' || isAddingItemsToExistingOrder" class="text-xs text-gray-500 mb-1">Payment optional — settle when billing this table</p>
-                <div class="grid grid-cols-3 gap-1 mb-2">
+                <div class="grid grid-cols-2 gap-1 mb-2">
                     <button type="button" @click="selectPaymentMethod('cash')"
                             class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
                             :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
@@ -788,16 +788,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                             <span class="text-xs font-medium hidden sm:block">Cash</span>
-                        </div>
-                    </button>
-                    <button type="button" @click="selectPaymentMethod('card')"
-                            class="flex items-center justify-center py-1.5 px-1 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
-                            :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
-                        <div class="flex flex-col items-center gap-0.5">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                            </svg>
-                            <span class="text-xs font-medium hidden sm:block">Card</span>
                         </div>
                     </button>
                     <button type="button" @click="selectPaymentMethod('upi')"
@@ -812,7 +802,7 @@
                     </button>
                 </div>
                 <div x-show="terminalPickupQuickDefaults && paymentMethod === 'cash' && cart.length > 0" class="mt-2 rounded-lg border border-orange-200 bg-orange-50/90 p-2 space-y-1.5">
-                    <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                    <label class="block text-xs font-medium text-gray-700">Amount collected <span class="text-gray-500 font-normal">(optional)</span></label>
                     <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
                            class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                            placeholder="Cash from customer" autocomplete="off">
@@ -1528,18 +1518,12 @@
                 <!-- Payment Methods (optional for dine-in — settle at table / Mark Paid; same when adding to occupied table) -->
                 <div class="mb-2 relative z-10">
                     <p x-show="selectedOrderType === 'dine-in' || isAddingItemsToExistingOrder" class="text-xs text-gray-500 mb-1">Payment when settling the bill (optional now)</p>
-                    <div class="grid grid-cols-3 gap-1 mb-1">
+                    <div class="grid grid-cols-2 gap-1 mb-1">
                         <button type="button"
                                 @click="selectPaymentMethod('cash')"
                                 class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                                 :class="{'bg-orange-100 border-orange-500': paymentMethod === 'cash'}">
                             <span>Cash</span>
-                        </button>
-                        <button type="button"
-                                @click="selectPaymentMethod('card')"
-                                class="flex items-center flex-1 justify-center py-2 px-2 border border-gray-300 rounded text-xs font-medium cursor-pointer hover:bg-gray-50 transition-colors"
-                                :class="{'bg-orange-100 border-orange-500': paymentMethod === 'card'}">
-                            <span>Card</span>
                         </button>
                         <button type="button"
                                 @click="selectPaymentMethod('upi')"
@@ -1549,7 +1533,7 @@
                         </button>
                     </div>
                     <div x-show="terminalPickupQuickDefaults && paymentMethod === 'cash' && cart.length > 0" class="mb-2 rounded-lg border border-orange-200 bg-orange-50/90 p-2 space-y-1.5">
-                        <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                        <label class="block text-xs font-medium text-gray-700">Amount collected <span class="text-gray-500 font-normal">(optional)</span></label>
                         <input type="number" inputmode="decimal" step="0.01" min="0" x-model="cashCollectedInput"
                                class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                                placeholder="Cash from customer" autocomplete="off">
@@ -1644,7 +1628,7 @@
                             :class="settleBillPayment === 'upi' ? 'bg-orange-100 border-orange-500 text-orange-900' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">UPI</button>
                 </div>
                 <div x-show="terminalPickupQuickDefaults && settleBillPayment === 'cash'" class="rounded-lg border border-orange-200 bg-orange-50/90 p-3 mb-3 space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">Amount collected</label>
+                    <label class="block text-xs font-medium text-gray-700">Amount collected <span class="text-gray-500 font-normal">(optional)</span></label>
                     <input type="number" inputmode="decimal" step="0.01" min="0" x-model="settleCashCollected"
                            class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                            placeholder="Cash from customer" autocomplete="off">
@@ -1866,6 +1850,10 @@ function posRegister() {
         isAddingItemsToExistingOrder: false,
         currentTableOrder: null,
         currentTableOrderItems: [],
+        /** Poll for QR orders awaiting POS approval; show popup on terminal */
+        qrPendingPollInterval: null,
+        seenQrPendingOrderIds: {},
+        lastQrPollShiftId: null,
         showTableOptionsModal: false,
         selectedTableForOptions: null,
         
@@ -1931,8 +1919,10 @@ function posRegister() {
         },
         get terminalCashBlocked() {
             if (!this.terminalPickupQuickDefaults || this.paymentMethod !== 'cash') return false;
-            const t = parseFloat(this.cashCollectedInput);
-            if (this.cashCollectedInput === '' || isNaN(t)) return true;
+            const raw = this.cashCollectedInput;
+            if (raw === '' || raw === null || String(raw).trim() === '') return false;
+            const t = parseFloat(raw);
+            if (isNaN(t)) return true;
             return t + 1e-6 < this.finalTotal;
         },
         get settleBillCashChange() {
@@ -2014,7 +2004,77 @@ function posRegister() {
                 this.shiftSummary = null; // Clear shift summary
                 this.lockPOS(); // Lock the POS system
                 this.clearShiftFromStorage(); // Clear localStorage
+                this.stopQrApprovalPolling();
+                this.seenQrPendingOrderIds = {};
+                this.lastQrPollShiftId = null;
             });
+
+            setTimeout(() => this.syncQrApprovalPolling(), 600);
+        },
+        syncQrApprovalPolling() {
+            const sid = this.shift?.id;
+            if (!sid || !this.outletId || this.posLocked) {
+                this.stopQrApprovalPolling();
+                return;
+            }
+            if (this.lastQrPollShiftId !== sid) {
+                this.seenQrPendingOrderIds = {};
+                this.lastQrPollShiftId = sid;
+            }
+            if (this.qrPendingPollInterval) {
+                return;
+            }
+            const tick = () => this.checkPendingQrOrders();
+            tick();
+            this.qrPendingPollInterval = setInterval(tick, 12000);
+        },
+        stopQrApprovalPolling() {
+            if (this.qrPendingPollInterval) {
+                clearInterval(this.qrPendingPollInterval);
+                this.qrPendingPollInterval = null;
+            }
+        },
+        async checkPendingQrOrders() {
+            if (!this.shift?.id || !this.outletId || this.posLocked) {
+                return;
+            }
+            try {
+                const response = await fetch(
+                    `${this.apiBase}/orders/current-shift?outlet_id=${this.outletId}&shift_id=${this.shift.id}`,
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-Terminal-Session-Token': localStorage.getItem('terminal_session_token') || '',
+                        },
+                        credentials: 'include',
+                    }
+                );
+                if (!response.ok) {
+                    return;
+                }
+                const orders = await response.json();
+                if (!Array.isArray(orders)) {
+                    return;
+                }
+                const pending = orders.filter(
+                    (o) => o && o.state === 'PENDING_QR_APPROVAL' && o.source === 'mobile_qr'
+                );
+                for (const order of pending) {
+                    if (this.seenQrPendingOrderIds[order.id]) {
+                        continue;
+                    }
+                    this.seenQrPendingOrderIds[order.id] = true;
+                    window.dispatchEvent(
+                        new CustomEvent('qr-pending-approval', {
+                            detail: { order, shiftId: this.shift.id },
+                        })
+                    );
+                }
+            } catch (e) {
+                console.warn('QR approval poll failed', e);
+            }
         },
         async loadDevices() {
             try {
@@ -2393,6 +2453,7 @@ function posRegister() {
                         console.log('✅ Active shift found');
                         this.loadShiftSummary();
                         this.saveShiftToStorage(); // Save to localStorage
+                        this.syncQrApprovalPolling();
                     } else {
                         console.log('❌ No active shift found');
                         this.clearShiftFromStorage(); // Clear localStorage
@@ -2428,6 +2489,7 @@ function posRegister() {
                     console.log('_debug', data._debug ?? '(none — enable APP_DEBUG in .env)');
                     console.log('full', JSON.stringify(data, null, 2));
                     console.groupEnd();
+                    this.syncQrApprovalPolling();
                 } else {
                     const text = await response.text();
                     console.warn('loadShiftSummary failed', response.status, text.slice(0, 500));
@@ -3617,10 +3679,13 @@ function posRegister() {
             }
             if (this.terminalPickupQuickDefaults && this.settleBillPayment === 'cash') {
                 const due = Math.round(Number(table.total_amount || 0));
-                const tender = parseFloat(this.settleCashCollected);
-                if (this.settleCashCollected === '' || isNaN(tender) || tender + 1e-6 < due) {
-                    this.settleBillError = 'Enter cash received (must be at least ₹' + due.toFixed(0) + ').';
-                    return;
+                const raw = this.settleCashCollected;
+                if (raw !== '' && raw !== null && String(raw).trim() !== '') {
+                    const tender = parseFloat(raw);
+                    if (isNaN(tender) || tender + 1e-6 < due) {
+                        this.settleBillError = 'Cash received must be at least ₹' + due.toFixed(0) + ', or leave the field empty.';
+                        return;
+                    }
                 }
             }
             this.settleBillError = '';
@@ -4286,10 +4351,13 @@ function posRegister() {
                     return;
                 }
                 if (this.terminalPickupQuickDefaults && this.paymentMethod === 'cash') {
-                    const tender = parseFloat(this.cashCollectedInput);
-                    if (this.cashCollectedInput === '' || isNaN(tender) || tender + 1e-6 < this.finalTotal) {
-                        alert('Enter cash received. It must be at least the order total (₹' + this.finalTotal + ').');
-                        return;
+                    const raw = this.cashCollectedInput;
+                    if (raw !== '' && raw !== null && String(raw).trim() !== '') {
+                        const tender = parseFloat(raw);
+                        if (isNaN(tender) || tender + 1e-6 < this.finalTotal) {
+                            alert('Cash received must be at least the order total (₹' + this.finalTotal + '), or leave the field empty.');
+                            return;
+                        }
                     }
                 }
             
@@ -4889,6 +4957,7 @@ function posRegister() {
                     
                     // Reload shift summary
                     this.loadShiftSummary();
+                    this.syncQrApprovalPolling();
                 } else {
                     const error = await response.json();
                     alert('Error opening shift: ' + (error.error || 'Unknown error'));
@@ -6022,6 +6091,69 @@ function ordersModal() {
     }
 }
 
+/** High-priority popup when a new QR order needs POS approval (terminal / register). */
+function qrApprovalPopup() {
+    return {
+        visible: false,
+        queue: [],
+        current: null,
+        init() {
+            window.addEventListener('qr-pending-approval', (e) => {
+                const d = e.detail;
+                if (!d || !d.order) {
+                    return;
+                }
+                this.queue.push(d);
+                if (!this.visible) {
+                    this.showNext();
+                }
+            });
+        },
+        showNext() {
+            if (this.queue.length === 0) {
+                this.visible = false;
+                this.current = null;
+                return;
+            }
+            this.current = this.queue.shift();
+            this.visible = true;
+        },
+        dismiss() {
+            this.visible = false;
+            this.current = null;
+            setTimeout(() => this.showNext(), 50);
+        },
+        reviewAndApprove() {
+            if (!this.current?.order) {
+                return;
+            }
+            const detail = { order: this.current.order, shiftId: this.current.shiftId };
+            this.dismiss();
+            window.dispatchEvent(new CustomEvent('open-order-details', { detail }));
+        },
+        orderLabel(order) {
+            if (!order) {
+                return '';
+            }
+            const mode = order.mode === 'TAKEAWAY' || order.mode === 'PICKUP' ? 'Pickup' : 'Dine-in';
+            const tbl = order.table_no || order.table?.name;
+            if (tbl) {
+                return mode + ' · ' + tbl;
+            }
+            return mode;
+        },
+        orderTotal(order) {
+            if (!order?.items?.length) {
+                return 0;
+            }
+            const raw = order.items.reduce((t, i) => {
+                return t + Number(i.price || 0) * Number(i.qty || 1);
+            }, 0);
+            return Math.round(raw * 100) / 100;
+        },
+    };
+}
+
 // Table Orders Modal component
 function tableOrdersModal() {
     return {
@@ -6650,6 +6782,53 @@ function getCookie(name) {
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR order awaiting approval — card only (no full-screen layer) so order modals stay on top -->
+    <div x-data="qrApprovalPopup()" x-cloak aria-live="polite">
+        <div
+            x-show="visible && current"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-6 sm:translate-y-0 sm:translate-x-8"
+            x-transition:enter-end="opacity-100 translate-y-0 translate-x-0"
+            class="fixed z-[10050] bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 w-auto max-w-md rounded-2xl border-2 border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-2xl ring-4 ring-amber-300/40"
+            role="alertdialog"
+            aria-modal="true"
+        >
+            <div x-show="current && current.order">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-900/90">QR order — needs approval</p>
+                            <h3 class="text-lg font-bold text-gray-900 mt-0.5">
+                                Order #<span x-text="current.order.id"></span>
+                            </h3>
+                            <p class="text-sm text-gray-700 mt-1" x-text="orderLabel(current.order)"></p>
+                            <p class="text-xs text-gray-600 mt-0.5" x-show="current.order.customer_phone" x-text="'Phone: ' + (current.order.customer_phone || '')"></p>
+                        </div>
+                        <span class="shrink-0 rounded-full bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-950">Pending</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-lg bg-white/80 border border-amber-200/80 px-3 py-2 mb-3">
+                        <span class="text-sm text-gray-600">Estimated total</span>
+                        <span class="text-lg font-bold text-gray-900">₹<span x-text="orderTotal(current.order).toFixed(0)"></span></span>
+                    </div>
+                    <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                        <button
+                            type="button"
+                            @click="dismiss()"
+                            class="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-800 hover:bg-gray-50"
+                        >
+                            Later
+                        </button>
+                        <button
+                            type="button"
+                            @click="reviewAndApprove()"
+                            class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 shadow-sm"
+                        >
+                            Review &amp; approve
+                        </button>
+                    </div>
             </div>
         </div>
     </div>
