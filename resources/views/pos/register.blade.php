@@ -6696,7 +6696,7 @@ function getCookie(name) {
                         <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Total Sales:</span>
-                                <span class="font-semibold" x-text="'₹' + (shiftSummary?.total_sales || 0)"></span>
+                                <span class="font-semibold" x-text="'₹' + Math.round(Number(shiftSummary?.total_sales ?? 0))"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Total Orders:</span>
@@ -6704,19 +6704,19 @@ function getCookie(name) {
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Cash Sales:</span>
-                                <span class="font-semibold" x-text="'₹' + (shiftSummary?.cash_sales || 0)"></span>
+                                <span class="font-semibold" x-text="'₹' + Math.round(Number(shiftSummary?.cash_sales ?? 0))"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Card Sales:</span>
-                                <span class="font-semibold" x-text="'₹' + (shiftSummary?.card_sales || 0)"></span>
+                                <span class="font-semibold" x-text="'₹' + Math.round(Number(shiftSummary?.card_sales ?? 0))"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">UPI Sales:</span>
-                                <span class="font-semibold" x-text="'₹' + (shiftSummary?.upi_sales || 0)"></span>
+                                <span class="font-semibold" x-text="'₹' + Math.round(Number(shiftSummary?.upi_sales ?? 0))"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Opening Float:</span>
-                                <span class="font-semibold" x-text="'₹' + (shiftSummary?.opening_float || 0)"></span>
+                                <span class="font-semibold" x-text="'₹' + Math.round(Number(shiftSummary?.opening_float ?? 0))"></span>
                             </div>
                         </div>
                     </div>
