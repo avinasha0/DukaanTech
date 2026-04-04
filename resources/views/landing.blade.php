@@ -530,8 +530,8 @@
               M
             </div>
             <div>
-              <div class="font-semibold text-gray-900">Maria Rodriguez</div>
-              <div class="text-sm text-gray-600">Restaurant Owner, Bella Vista</div>
+              <div class="font-semibold text-gray-900">Megha Patel</div>
+              <div class="text-sm text-gray-600">Restaurant Owner, Swagat Hotel &amp; Dining, Ahmedabad</div>
             </div>
           </div>
         </div>
@@ -557,11 +557,11 @@
           <p class="text-gray-700 mb-6 italic">"We switched to Dukaantech six months ago and haven't looked back. The multi-location management feature is perfect for our chain of restaurants. The customer support team is fantastic, and the system is so intuitive that our staff was up and running in just one day."</p>
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background: linear-gradient(to bottom right, #F66C17, #DE2B25);">
-              A
+              K
             </div>
             <div>
-              <div class="font-semibold text-gray-900">Ahmed Hassan</div>
-              <div class="text-sm text-gray-600">Operations Manager, Food Chain</div>
+              <div class="font-semibold text-gray-900">Karthik Srinivasan</div>
+              <div class="text-sm text-gray-600">Operations Manager, Sapphire Hotels India</div>
             </div>
           </div>
         </div>
