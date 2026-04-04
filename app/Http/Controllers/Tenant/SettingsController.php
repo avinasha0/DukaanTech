@@ -143,14 +143,16 @@ class SettingsController extends Controller
         $request->validate([
             'qr_require_pos_approval_before_kot' => 'required|boolean',
             'qr_approval_each_submit' => 'required|boolean',
+            'pos_orders_include_kot' => 'required|boolean',
         ]);
 
         $settings = $tenant->settings ?? [];
         $settings['qr_require_pos_approval_before_kot'] = $request->boolean('qr_require_pos_approval_before_kot');
         $settings['qr_approval_each_submit'] = $request->boolean('qr_approval_each_submit');
+        $settings['pos_orders_include_kot'] = $request->boolean('pos_orders_include_kot');
         $tenant->update(['settings' => $settings]);
 
-        return response()->json(['message' => 'QR ordering settings saved']);
+        return response()->json(['message' => 'Settings saved']);
     }
 
     /**

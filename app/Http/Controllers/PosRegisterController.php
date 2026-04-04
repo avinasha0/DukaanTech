@@ -69,6 +69,7 @@ class PosRegisterController extends Controller
             'activeShift' => $userOpenShift,
             'outletId' => $userOpenShift->outlet_id,
             'kotEnabled' => $account->kot_enabled,
+            'posOrdersIncludeKot' => (bool) (($account->settings ?? [])['pos_orders_include_kot'] ?? false),
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => $isTerminalAuth,
             'isRegularAuth' => $isRegularAuth,
@@ -115,6 +116,7 @@ class PosRegisterController extends Controller
             'activeShift' => $userOpenShift,
             'outletId' => $userOpenShift->outlet_id,
             'kotEnabled' => $account->kot_enabled,
+            'posOrdersIncludeKot' => (bool) (($account->settings ?? [])['pos_orders_include_kot'] ?? false),
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => true,
             'isRegularAuth' => false // Always false for terminal-only access
@@ -150,6 +152,7 @@ class PosRegisterController extends Controller
             'activeShift' => $activeShift,
             'outletId' => $outletId,
             'kotEnabled' => $account->kot_enabled,
+            'posOrdersIncludeKot' => (bool) (($account->settings ?? [])['pos_orders_include_kot'] ?? false),
             'terminalUser' => $terminalUser,
             'isTerminalAuth' => true,
             'isRegularAuth' => false

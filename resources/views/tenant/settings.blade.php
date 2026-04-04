@@ -276,9 +276,21 @@
                         <span class="block text-gray-600 mt-0.5">Only applies while approval-before-KOT is enabled. For <strong>table QR</strong>, when off, only the first basket needs approval; extra items guests add later stay on the same order without going back to &quot;awaiting approval&quot; (pickup re-approval rules still apply).</span>
                     </span>
                 </label>
+                <div class="border-t border-gray-200 pt-5 mt-5">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-2">POS register</h4>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="pos_orders_include_kot" name="pos_orders_include_kot" value="1"
+                               class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                               {{ ($tenant->settings['pos_orders_include_kot'] ?? false) ? 'checked' : '' }}>
+                        <span class="text-sm text-gray-700">
+                            <span class="font-medium text-gray-900">Send new POS orders to kitchen (KOT)</span>
+                            <span class="block text-gray-600 mt-0.5">When enabled and KOT is on for your business, Create Order and the green Order + Print button send the order to the kitchen. The other green With Print button on the cart only prints the bill after placing the order (no KOT).</span>
+                        </span>
+                    </label>
+                </div>
                 <button type="button" onclick="saveQrOrderSettings()"
                         class="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
-                    Save QR settings
+                    Save settings
                 </button>
                 <p id="qr-order-settings-msg" class="text-sm mt-2 text-green-700 hidden"></p>
             </div>
@@ -479,6 +491,7 @@ function resetForm() {
 function saveQrOrderSettings() {
     const requireApproval = document.getElementById('qr_require_pos_approval_before_kot');
     const eachSubmit = document.getElementById('qr_approval_each_submit');
+    const posKot = document.getElementById('pos_orders_include_kot');
     const msg = document.getElementById('qr-order-settings-msg');
     fetch('{{ route("tenant.settings", ["tenant" => $tenant->slug]) }}/qr-order', {
         method: 'POST',
@@ -489,7 +502,8 @@ function saveQrOrderSettings() {
         },
         body: JSON.stringify({
             qr_require_pos_approval_before_kot: !!requireApproval.checked,
-            qr_approval_each_submit: !!eachSubmit.checked
+            qr_approval_each_submit: !!eachSubmit.checked,
+            pos_orders_include_kot: !!posKot.checked
         })
     })
     .then(r => r.json())
