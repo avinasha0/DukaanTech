@@ -155,8 +155,8 @@
             </li>
           </ul>
           
-          <a href="/contact-us" class="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
-            Start free for your chain
+          <a href="https://dukaantech.com/register" class="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
+            Start Free For Your Chain
           </a>
         </div>
       </div>

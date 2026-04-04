@@ -426,8 +426,8 @@
               <span class="text-gray-700">Email Support</span>
             </li>
           </ul>
-          <a href="/contact" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
-            Start free for your chain
+          <a href="https://dukaantech.com/register" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
+            Start Free For Your Chain
           </a>
         </div>
       </div>
