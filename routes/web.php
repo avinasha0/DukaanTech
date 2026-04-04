@@ -154,10 +154,13 @@ Route::get('/{tenant}/kot', function ($tenant) {
     if (!$account) {
         abort(404, 'Tenant not found');
     }
-    
+
+    $user = auth()->user();
+
     return view('tenant.kot-dashboard', [
         'tenant' => $account,
         'kotDebugUi' => request()->boolean('kot_debug'),
+        'kotDisplayOnly' => $user && $user->isKotDisplayOnly(),
     ]);
 })->name('tenant.kot.public')->withoutMiddleware(['resolve.tenant']);
 
@@ -817,6 +820,9 @@ Route::middleware(['auth'])->group(function () {
         if ($user && $user->tenant_id) {
             $tenant = $user->tenant;
             if ($tenant) {
+                if ($user->isKotDisplayOnly()) {
+                    return redirect()->to(url("/{$tenant->slug}/kot"));
+                }
                 // Redirect to tenant-specific dashboard
                 if ($tenant->plan === 'free') {
                     return redirect()->to("/{$tenant->slug}/dashboard");
@@ -861,7 +867,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Path-based tenant routes (for free users)
-Route::middleware(['web', 'auth', 'resolve.tenant'])->group(function () {
+Route::middleware(['web', 'auth', 'resolve.tenant', 'restrict.kot.display.only'])->group(function () {
     // Dashboard route is now handled by tenant.php with prefix {tenant}
     
         Route::get('/{tenant}/menu', function () {
@@ -962,7 +968,7 @@ Route::get('/{tenant}/orders', function ($tenant) {
 })->name('tenant.orders.path');
 
 // Path-based tenant web routes mount (re-uses routes/tenant.php under /{tenant}/*)
-Route::middleware(['web', 'auth', 'resolve.tenant'])
+Route::middleware(['web', 'auth', 'resolve.tenant', 'restrict.kot.display.only'])
     ->prefix('{tenant}')
     ->group(function () {
         require base_path('routes/tenant.php');
@@ -976,7 +982,7 @@ Route::middleware(['api', 'resolve.tenant'])
     });
 
 // KOT API routes
-Route::middleware(['api', 'auth', 'resolve.tenant'])
+Route::middleware(['api', 'auth', 'resolve.tenant', 'restrict.kot.display.only'])
     ->prefix('{tenant}/api')
     ->group(function () {
         Route::get('kot', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'index']);

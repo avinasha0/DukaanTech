@@ -22,7 +22,11 @@
     {{-- Simple Kitchen Header --}}
     <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div class="mx-auto max-w-7xl px-4 py-3">
-            <a href="{{ route('tenant.dashboard', ['tenant' => $tenant->slug]) }}" class="flex items-center gap-3">
+            @if(!empty($kotDisplayOnly))
+                <div class="flex items-center gap-3">
+            @else
+                <a href="{{ route('tenant.dashboard', ['tenant' => $tenant->slug]) }}" class="flex items-center gap-3">
+            @endif
                 <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
                     <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -32,7 +36,11 @@
                     <span class="text-2xl font-bold text-gray-900">{{ $tenant->name }}</span>
                     <span class="text-lg text-gray-600 ml-2">Kitchen</span>
                 </div>
-            </a>
+            @if(!empty($kotDisplayOnly))
+                </div>
+            @else
+                </a>
+            @endif
         </div>
     </div>
 
@@ -56,13 +64,15 @@
                         </svg>
                     </div>
                     <h3 class="text-xl font-semibold text-red-800 mb-2">KOT Functionality Disabled</h3>
-                    <p class="text-red-600 mb-4">Kitchen Order Ticket functionality is currently disabled. Please enable KOT in the dashboard header to use this feature.</p>
+                    <p class="text-red-600 mb-4">Kitchen Order Ticket functionality is currently disabled. @if(!empty($kotDisplayOnly))Ask an administrator to enable KOT in settings.@else Please enable KOT in the dashboard header to use this feature.@endif</p>
+                    @if(empty($kotDisplayOnly))
                     <a href="{{ route('tenant.dashboard', ['tenant' => $tenant->slug]) }}" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                         </svg>
                         Go to Dashboard
                     </a>
+                    @endif
                 </div>
                 {{-- KOT Enabled Content --}}
                 <div x-show="kotEnabled" class="space-y-6">

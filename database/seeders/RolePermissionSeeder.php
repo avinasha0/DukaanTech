@@ -18,6 +18,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             // Dashboard permissions
             ['name' => 'View Dashboard', 'slug' => 'view-dashboard', 'module' => 'dashboard', 'description' => 'Can view the main dashboard'],
+            ['name' => 'Kitchen display (KOT only)', 'slug' => 'view-kot', 'module' => 'dashboard', 'description' => 'Can open the kitchen KOT screen only (no full dashboard)'],
             
             // Order permissions
             ['name' => 'View Orders', 'slug' => 'view-orders', 'module' => 'orders', 'description' => 'Can view orders'],
@@ -137,7 +138,7 @@ class RolePermissionSeeder extends Seeder
         $cashierRole->syncPermissions($cashierPermissions);
 
         $kitchenPermissions = Permission::whereIn('slug', [
-            'view-dashboard', 'view-orders', 'process-orders', 'view-menu'
+            'view-kot',
         ])->pluck('id')->toArray();
         $kitchenRole->syncPermissions($kitchenPermissions);
     }

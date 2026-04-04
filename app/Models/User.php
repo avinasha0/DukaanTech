@@ -181,6 +181,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Kitchen display login: may use /{tenant}/kot only (no main dashboard).
+     */
+    public function isKotDisplayOnly(): bool
+    {
+        return $this->hasPermission('view-kot') && ! $this->hasPermission('view-dashboard');
+    }
+
+    /**
      * Get notification preference with default value.
      */
     public function getNotificationPreference(string $key, $default = false)

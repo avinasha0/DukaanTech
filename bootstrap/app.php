@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'terminal.auth' => \App\Http\Middleware\TerminalAuth::class,
+            'restrict.kot.display.only' => \App\Http\Middleware\RestrictKotDisplayOnlyUsers::class,
         ]);
         
         // Disable CSRF for now to get the system working

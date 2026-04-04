@@ -40,6 +40,9 @@ class AuthenticatedSessionController extends Controller
             
             // Check if organization setup is complete
             if ($this->isOrganizationSetupComplete($tenant)) {
+                if ($user->isKotDisplayOnly()) {
+                    return redirect()->to(url("/{$tenant->slug}/kot"));
+                }
                 // Setup complete, redirect based on plan
                 if ($tenant->plan === 'free') {
                     return redirect()->to(url("/{$tenant->slug}/dashboard"));
