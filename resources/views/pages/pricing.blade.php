@@ -103,9 +103,12 @@
           <div class="text-center mb-8">
             <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
             <p class="text-gray-600 mb-4">For restaurant chains & franchises</p>
-            <div class="text-5xl font-bold text-gray-900 mb-2" data-monthly="₹299" data-yearly="₹2,870">₹299</div>
-            <div class="text-gray-600 pricing-period">per month</div>
-            <div class="text-sm text-purple-600 font-semibold mt-2 pricing-savings" data-monthly="" data-yearly="(Save ₹718)"></div>
+            <div class="flex flex-wrap items-baseline justify-center gap-2 mb-2">
+              <span class="text-3xl text-gray-400 line-through font-semibold">₹299</span>
+              <span class="text-5xl font-bold text-gray-900">₹0</span>
+            </div>
+            <div class="text-gray-600">per month</div>
+            <div class="text-sm text-green-600 font-semibold mt-2">Now free — full platform for chains</div>
           </div>
           
           <ul class="space-y-4 mb-8">

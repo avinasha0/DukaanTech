@@ -362,8 +362,12 @@
           <div class="text-center mb-8">
             <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
             <p class="text-gray-600 mb-4">For restaurant chains</p>
-            <div class="text-4xl font-bold text-gray-900">₹299</div>
+            <div class="flex flex-wrap items-baseline justify-center gap-2 mb-1">
+              <span class="text-2xl text-gray-400 line-through font-semibold">₹299</span>
+              <span class="text-4xl font-bold text-gray-900">₹0</span>
+            </div>
             <div class="text-gray-600">per month</div>
+            <div class="text-sm text-green-600 font-semibold mt-2">Now free</div>
           </div>
           <ul class="space-y-4 mb-8">
             <li class="flex items-center gap-3">
