@@ -590,4 +590,5 @@
   {{-- Footer Component --}}
   <x-footer />
 </div>
+<script src="https://www.sitebotgpt.com/widget.js" data-bot="atlas_nv8xagyov9mnk03y6z" data-base="https://www.sitebotgpt.com"></script>
 @endsection
