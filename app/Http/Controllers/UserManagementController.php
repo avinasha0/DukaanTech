@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\TerminalUser;
 use App\Rules\GmailOnly;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
@@ -42,10 +44,7 @@ class UserManagementController extends Controller
     public function create()
     {
         $tenant = Auth::user()->tenant;
-        $roles = \App\Models\Role::where('tenant_id', $tenant->id)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $roles = $this->assignableRolesForTenant($tenant);
         return view('tenant.users.create', compact('tenant', 'roles'));
     }
 
@@ -55,13 +54,15 @@ class UserManagementController extends Controller
     public function store(Request $request)
     {
         $tenantId = Auth::user()->tenant_id;
+        $tenant = Auth::user()->tenant;
+        $assignableRoleIds = $this->assignableRoleIdsForTenant($tenant);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email:rfc,dns', 'unique:users,email', new GmailOnly()],
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'array',
-            'roles.*' => 'exists:roles,id',
+            'roles.*' => ['integer', Rule::in($assignableRoleIds)],
         ]);
 
         $user = User::create([
@@ -90,9 +91,7 @@ class UserManagementController extends Controller
         if ($user->tenant_id !== $tenantId) {
             abort(404);
         }
-        $roles = Role::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->get();
+        $roles = $this->assignableRolesForTenant($tenant);
 
         $user->load('roles');
 
@@ -107,9 +106,10 @@ class UserManagementController extends Controller
         if ($user->tenant_id !== Auth::user()->tenant_id) {
             abort(404);
         }
+        $assignableRoleIds = $this->assignableRoleIdsForTenant(Auth::user()->tenant);
         $request->validate([
             'roles' => 'array',
-            'roles.*' => 'exists:roles,id',
+            'roles.*' => ['integer', Rule::in($assignableRoleIds)],
         ]);
 
         $user->syncRoles($request->roles ?? []);
@@ -262,5 +262,27 @@ class UserManagementController extends Controller
         
         return redirect()->route('tenant.users.index', ['tenant' => Auth::user()->tenant->slug])
             ->with('success', "Terminal user {$status} successfully.");
+    }
+
+    /**
+     * Global roles (tenant_id null) from seeders plus this tenant's custom roles.
+     */
+    private function assignableRolesForTenant(Account $tenant)
+    {
+        return Role::query()
+            ->where('is_active', true)
+            ->where(function ($q) use ($tenant) {
+                $q->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id);
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignableRoleIdsForTenant(Account $tenant): array
+    {
+        return $this->assignableRolesForTenant($tenant)->pluck('id')->all();
     }
 }
