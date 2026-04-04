@@ -324,41 +324,36 @@
                 const response = await fetch(`/api/${tenantSlug}/public/qr-order/create`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(orderData)
                 });
 
-                // Check if response is ok
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Server error:', response.status, errorText);
-                    alert('Server error: ' + response.status + '. Please try again.');
-                    return;
-                }
-
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const errorText = await response.text();
-                    console.error('Non-JSON response:', errorText);
-                    alert('Server returned invalid response. Please try again.');
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    alert(await response.text().then(t => t || 'Invalid response from server'));
                     return;
                 }
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (response.ok && (result.success || result.order_id)) {
                     alert('Order placed successfully! Order ID: ' + result.order_id);
                     cart = [];
                     updateCartDisplay();
                     document.getElementById('orderForm').reset();
-                } else {
-                    alert('Error: ' + result.message);
+                    return;
                 }
+
+                let err = result.error || result.message;
+                if (!err && result.errors && typeof result.errors === 'object') {
+                    err = Object.values(result.errors).flat().join(' ');
+                }
+                alert(err || ('Request failed (' + response.status + ')'));
             } catch (error) {
                 console.error('Fetch error:', error);
-                alert('Error placing order: ' + error.message);
+                alert(error.message || 'Request failed');
             }
         }
     </script>

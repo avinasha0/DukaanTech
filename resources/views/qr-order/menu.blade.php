@@ -342,51 +342,47 @@
                 }
             }
 
-            const endpoints = [
-                `/api/${tenantSlug}/public/qr-order/create`,
-                `/api/${tenantSlug}/public/simple-order`
-            ];
-
-            let lastError = null;
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify(orderData)
-                    });
-                    const ct = response.headers.get('content-type') || '';
-                    if (!ct.includes('application/json')) {
-                        lastError = 'Invalid response';
-                        continue;
-                    }
-                    const result = await response.json();
-                    if (response.ok && (result.success || result.order_id)) {
-                        const oid = result.order_id || result.order?.id;
-                        if (sk && oid) sessionStorage.setItem(sk, String(oid));
-                        const appended = result.appended === true;
-                        alert(
-                            appended
-                                ? ('Items added to your order #' + (oid || '—') + '.')
-                                : ('Order received! Our team will confirm it shortly. Order #' + (oid || '—'))
-                        );
-                        quantities = {};
-                        Object.keys(itemsMeta).forEach(id => {
-                            const el = document.getElementById('qty-' + id);
-                            if (el) el.textContent = '0';
-                        });
-                        document.getElementById('checkoutForm')?.reset();
-                        document.getElementById('input_mode').value = 'DINE_IN';
-                        goBrowse();
-                        syncCartBar();
-                        return;
-                    }
-                    lastError = result.message || result.error || 'Failed';
-                } catch (e) {
-                    lastError = e.message;
+            const endpoint = `/api/${tenantSlug}/public/qr-order/create`;
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    alert(await response.text().then(t => t || 'Invalid response from server'));
+                    return;
                 }
+                const result = await response.json();
+                if (response.ok && (result.success || result.order_id)) {
+                    const oid = result.order_id || result.order?.id;
+                    if (sk && oid) sessionStorage.setItem(sk, String(oid));
+                    const appended = result.appended === true;
+                    alert(
+                        appended
+                            ? ('Items added to your order #' + (oid || '—') + '.')
+                            : ('Order received! Our team will confirm it shortly. Order #' + (oid || '—'))
+                    );
+                    quantities = {};
+                    Object.keys(itemsMeta).forEach(id => {
+                        const el = document.getElementById('qty-' + id);
+                        if (el) el.textContent = '0';
+                    });
+                    document.getElementById('checkoutForm')?.reset();
+                    document.getElementById('input_mode').value = 'DINE_IN';
+                    goBrowse();
+                    syncCartBar();
+                    return;
+                }
+                let err = result.error || result.message;
+                if (!err && result.errors && typeof result.errors === 'object') {
+                    err = Object.values(result.errors).flat().join(' ');
+                }
+                alert(err || ('Request failed (' + response.status + ')'));
+            } catch (e) {
+                alert(e.message || 'Request failed');
             }
-            alert('Could not place order: ' + (lastError || 'Try again'));
         }
 
         // Continue button on checkout = submit (second bar)
