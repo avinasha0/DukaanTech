@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Item;
 use App\Models\Category;
 use App\Models\Outlet;
+use App\Models\RestaurantTable;
 use App\Models\QRCode as QRCodeModel;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
@@ -159,6 +160,35 @@ class QRCodeService
             'is_active' => true
         ]);
         
+        return $this->publicStorageUrlPath($filename);
+    }
+
+    /**
+     * Stable QR per physical table: encodes /{tenant}/qr-order/table-id/{id}
+     */
+    public function generateTableQrByRestaurantTable(RestaurantTable $table, string $tenantSlug, int $tenantId): string
+    {
+        $baseUrl = $this->getEncodedLinkBaseUrl();
+        $url = "{$baseUrl}/{$tenantSlug}/qr-order/table-id/{$table->id}";
+
+        $qrCode = QrCode::format('svg')
+            ->size(300)
+            ->margin(2)
+            ->generate($url);
+
+        $filename = 'qr-codes/tables/table-db-'.$table->id.'-'.time().'.svg';
+        Storage::disk('public')->put($filename, $qrCode);
+
+        QRCodeModel::create([
+            'tenant_id' => $tenantId,
+            'type' => 'table',
+            'name' => 'Table '.$table->name,
+            'file_path' => $filename,
+            'url' => $url,
+            'metadata' => ['table_id' => $table->id, 'table_name' => $table->name],
+            'is_active' => true,
+        ]);
+
         return $this->publicStorageUrlPath($filename);
     }
 }

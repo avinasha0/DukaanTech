@@ -187,11 +187,27 @@ class Order extends Model
      */
     public function kitchenBlockedReason(): ?string
     {
-        if ($this->isPendingQrApproval()) {
-            return 'Approve this QR order in POS (assign table if dine-in, then confirm) before sending to kitchen.';
+        if (! $this->isPendingQrApproval()) {
+            return null;
         }
 
-        return null;
+        $tenant = $this->relationLoaded('tenant')
+            ? $this->getRelation('tenant')
+            : Account::find($this->tenant_id);
+
+        if ($tenant && ! $tenant->qrRequirePosApprovalBeforeKot()) {
+            return null;
+        }
+
+        $mode = $this->mode === 'PICKUP' ? 'TAKEAWAY' : $this->mode;
+        if ($mode === 'TAKEAWAY') {
+            return 'Confirm this pickup QR order on the POS terminal before sending to kitchen.';
+        }
+        if ($mode === 'DINE_IN') {
+            return 'Approve this dine-in QR order on the POS (assign table, then confirm) before sending to kitchen.';
+        }
+
+        return 'Confirm this QR order on the POS terminal before sending to kitchen.';
     }
 
     /**

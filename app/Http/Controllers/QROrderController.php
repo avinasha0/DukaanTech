@@ -11,6 +11,7 @@ use App\Models\Outlet;
 use App\Models\RestaurantTable;
 use App\Services\OrderService;
 use App\Services\QRCodeService;
+use App\Services\QrPublicOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -18,7 +19,8 @@ class QROrderController extends Controller
 {
     public function __construct(
         private OrderService $orderService,
-        private QRCodeService $qrCodeService
+        private QRCodeService $qrCodeService,
+        private QrPublicOrderService $qrPublicOrderService
     ) {}
 
     /**
@@ -26,45 +28,12 @@ class QROrderController extends Controller
      */
     public function showMenu(Request $request, string $tenantSlug)
     {
-        $account = Account::where('slug', $tenantSlug)->first();
-
-        if (! $account) {
-            return view('qr-order.error', ['message' => 'Restaurant not found']);
+        $payload = $this->buildQrMenuPayload($request, $tenantSlug, null, false, null);
+        if (isset($payload['error'])) {
+            return view('qr-order.error', ['message' => $payload['error']]);
         }
 
-        $categories = Category::where('tenant_id', $account->id)
-            ->whereHas('items', fn ($q) => $q->where('is_active', true))
-            ->with(['items' => function ($query) {
-                $query->where('is_active', true)->orderBy('name');
-            }])
-            ->orderBy('name')
-            ->get();
-
-        $outlets = Outlet::where('tenant_id', $account->id)->orderBy('id')->get();
-        $requestedOutletId = $request->query('outlet_id');
-        $defaultOutlet = $requestedOutletId
-            ? ($outlets->firstWhere('id', (int) $requestedOutletId) ?? $outlets->first())
-            : $outlets->first();
-
-        $orderTypes = OrderType::where('tenant_id', $account->id)
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
-        $orderTypes = $this->attachQrModeToOrderTypes($orderTypes);
-
-        $fromTableQr = false;
-        $tableModel = null;
-        $tableNoParam = null;
-
-        return view('qr-order.menu', compact(
-            'account',
-            'categories',
-            'orderTypes',
-            'defaultOutlet',
-            'fromTableQr',
-            'tableModel',
-            'tableNoParam'
-        ));
+        return view('qr-order.menu', $payload);
     }
 
     /**
@@ -100,12 +69,11 @@ class QROrderController extends Controller
     }
 
     /**
-     * Display table-specific ordering page
+     * Display table-specific ordering page (legacy: table number or numeric id in URL)
      */
     public function showTable(Request $request, string $tenantSlug, string $tableNo)
     {
         $account = Account::where('slug', $tenantSlug)->first();
-
         if (! $account) {
             return view('qr-order.error', ['message' => 'Restaurant not found']);
         }
@@ -119,6 +87,56 @@ class QROrderController extends Controller
             })
             ->first();
 
+        $tableNoLabel = $tableModel ? (string) $tableModel->name : $tableNo;
+        $payload = $this->buildQrMenuPayload($request, $tenantSlug, $tableModel, true, $tableNoLabel);
+        if (isset($payload['error'])) {
+            return view('qr-order.error', ['message' => $payload['error']]);
+        }
+
+        return view('qr-order.menu', $payload);
+    }
+
+    /**
+     * Table QR by restaurant_tables.id — stable unique link per physical table.
+     */
+    public function showTableById(Request $request, string $tenantSlug, int $tableId)
+    {
+        $account = Account::where('slug', $tenantSlug)->first();
+        if (! $account) {
+            return view('qr-order.error', ['message' => 'Restaurant not found']);
+        }
+
+        $tableModel = RestaurantTable::where('tenant_id', $account->id)
+            ->whereKey($tableId)
+            ->first();
+
+        if (! $tableModel) {
+            return view('qr-order.error', ['message' => 'Table not found']);
+        }
+
+        $payload = $this->buildQrMenuPayload($request, $tenantSlug, $tableModel, true, (string) $tableModel->name);
+        if (isset($payload['error'])) {
+            return view('qr-order.error', ['message' => $payload['error']]);
+        }
+
+        return view('qr-order.menu', $payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildQrMenuPayload(
+        Request $request,
+        string $tenantSlug,
+        ?RestaurantTable $tableModel,
+        bool $fromTableQr,
+        ?string $tableNoParam
+    ): array {
+        $account = Account::where('slug', $tenantSlug)->first();
+        if (! $account) {
+            return ['error' => 'Restaurant not found'];
+        }
+
         $categories = Category::where('tenant_id', $account->id)
             ->whereHas('items', fn ($q) => $q->where('is_active', true))
             ->with(['items' => function ($query) {
@@ -128,28 +146,39 @@ class QROrderController extends Controller
             ->get();
 
         $outlets = Outlet::where('tenant_id', $account->id)->orderBy('id')->get();
-        $defaultOutlet = $tableModel
-            ? ($outlets->firstWhere('id', $tableModel->outlet_id) ?? $outlets->first())
+        $requestedOutletId = $request->query('outlet_id');
+        $defaultOutlet = $requestedOutletId
+            ? ($outlets->firstWhere('id', (int) $requestedOutletId) ?? $outlets->first())
             : $outlets->first();
+
+        if ($tableModel && $defaultOutlet && (int) $tableModel->outlet_id !== (int) $defaultOutlet->id) {
+            $defaultOutlet = $outlets->firstWhere('id', $tableModel->outlet_id) ?? $defaultOutlet;
+        }
 
         $orderTypes = OrderType::where('tenant_id', $account->id)
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
         $orderTypes = $this->attachQrModeToOrderTypes($orderTypes);
+        // QR ordering: dine-in and pickup/take-away only — no delivery
+        $orderTypes = $this->filterQrAllowedOrderTypes($orderTypes);
 
-        $fromTableQr = true;
-        $tableNoParam = $tableModel ? (string) $tableModel->name : $tableNo;
+        $qrApprovalEachSubmit = $account->qrApprovalEachSubmit();
+        $forcedDineInOrderTypeId = $orderTypes->first(function ($ot) {
+            return ($ot->qr_mode ?? '') === 'DINE_IN';
+        })?->id;
 
-        return view('qr-order.menu', compact(
-            'account',
-            'categories',
-            'orderTypes',
-            'defaultOutlet',
-            'fromTableQr',
-            'tableModel',
-            'tableNoParam'
-        ));
+        return [
+            'account' => $account,
+            'categories' => $categories,
+            'orderTypes' => $orderTypes,
+            'defaultOutlet' => $defaultOutlet,
+            'fromTableQr' => $fromTableQr,
+            'tableModel' => $tableModel,
+            'tableNoParam' => $tableNoParam,
+            'qrApprovalEachSubmit' => $qrApprovalEachSubmit,
+            'forcedDineInOrderTypeId' => $forcedDineInOrderTypeId,
+        ];
     }
 
     /**
@@ -175,21 +204,29 @@ class QROrderController extends Controller
     }
 
     /**
+     * Keep only order types suitable for QR (dine-in + pickup), excluding delivery.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\OrderType>  $orderTypes
+     * @return \Illuminate\Support\Collection<int, \App\Models\OrderType>
+     */
+    protected function filterQrAllowedOrderTypes($orderTypes)
+    {
+        return $orderTypes->filter(function ($ot) {
+            return in_array($ot->qr_mode ?? '', ['DINE_IN', 'TAKEAWAY'], true);
+        })->values();
+    }
+
+    /**
      * Create order from QR ordering interface
      */
     public function createOrder(Request $request, string $tenantSlug)
     {
         try {
             $account = Account::where('slug', $tenantSlug)->first();
-            
-            if (!$account) {
+
+            if (! $account) {
                 return response()->json(['error' => 'Restaurant not found'], 404);
             }
-
-            // Set tenant context for the order service
-            app()->instance('tenant.id', $account->id);
-            app()->instance('tenant.model', $account);
-            app()->instance('tenant', $account);
 
             $validator = Validator::make($request->all(), [
                 'outlet_id' => 'required|exists:outlets,id',
@@ -201,8 +238,10 @@ class QROrderController extends Controller
                 'delivery_address' => 'nullable|string',
                 'delivery_fee' => 'nullable|numeric|min:0',
                 'special_instructions' => 'nullable|string',
-                'mode' => 'required|in:DINE_IN,TAKEAWAY,DELIVERY,PICKUP',
+                'mode' => 'required|in:DINE_IN,TAKEAWAY,PICKUP',
                 'table_no' => 'nullable|string|max:255',
+                'table_id' => 'nullable|integer',
+                'existing_order_id' => 'nullable|integer',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:items,id',
                 'items.*.qty' => 'required|integer|min:1',
@@ -213,28 +252,31 @@ class QROrderController extends Controller
             }
 
             $data = $validator->validated();
-            $data['tenant_id'] = $account->id;
-            $data['state'] = \App\Models\Order::STATE_PENDING_QR_APPROVAL;
-            $data['source'] = 'mobile_qr';
+            $result = $this->qrPublicOrderService->createOrAppend($data, $account);
+            $order = $result['order'];
 
-            $order = $this->orderService->create($data);
-            
             return response()->json([
                 'success' => true,
-                'message' => 'Order placed successfully!',
+                'message' => $result['appended'] ? 'Items added to your order.' : 'Order placed successfully!',
                 'order' => $order,
-                'order_id' => $order->id
-            ], 201);
+                'order_id' => $order->id,
+                'appended' => $result['appended'],
+                'created' => $result['created'],
+            ], $result['created'] ? 201 : 200);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 409);
         } catch (\Exception $e) {
             \Log::error('QR Order Creation Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
+                'request_data' => $request->all(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create order: ' . $e->getMessage()
+                'message' => 'Failed to create order: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -272,8 +314,18 @@ class QROrderController extends Controller
                 }
                 break;
             case 'table':
-                $tableNo = $request->input('table_no');
-                $qrUrl = $this->qrCodeService->generateTableQR($tenantSlug, $tableNo);
+                $tableId = $request->input('table_id');
+                if ($tableId) {
+                    $table = RestaurantTable::where('tenant_id', $account->id)->whereKey($tableId)->first();
+                    if ($table) {
+                        $qrUrl = $this->qrCodeService->generateTableQrByRestaurantTable($table, $tenantSlug, $account->id);
+                    }
+                } else {
+                    $tableNo = $request->input('table_no');
+                    if ($tableNo) {
+                        $qrUrl = $this->qrCodeService->generateTableQR($tenantSlug, $tableNo, $account->id);
+                    }
+                }
                 break;
         }
 

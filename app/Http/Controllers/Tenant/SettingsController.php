@@ -131,6 +131,29 @@ class SettingsController extends Controller
     }
 
     /**
+     * QR table ordering: require POS approval on every customer submit after the first approval.
+     */
+    public function updateQrOrder(Request $request)
+    {
+        $tenant = $this->getTenant();
+        if (! $tenant) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+
+        $request->validate([
+            'qr_require_pos_approval_before_kot' => 'required|boolean',
+            'qr_approval_each_submit' => 'required|boolean',
+        ]);
+
+        $settings = $tenant->settings ?? [];
+        $settings['qr_require_pos_approval_before_kot'] = $request->boolean('qr_require_pos_approval_before_kot');
+        $settings['qr_approval_each_submit'] = $request->boolean('qr_approval_each_submit');
+        $tenant->update(['settings' => $settings]);
+
+        return response()->json(['message' => 'QR ordering settings saved']);
+    }
+
+    /**
      * Handle redirects from old tenant slugs
      */
     public function handleOldSlugRedirect($oldSlug)

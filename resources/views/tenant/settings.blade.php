@@ -255,6 +255,33 @@
 
         {{-- Notifications Tab --}}
         <div id="notifications-content" class="tab-content p-4 sm:p-6 hidden">
+            <div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">QR ordering (dine-in &amp; pickup)</h3>
+                <p class="text-sm text-gray-600 mb-4">These options apply to orders placed from your public QR menu (dine-in and pickup). Delivery is not offered from QR.</p>
+                <label class="flex items-start gap-3 cursor-pointer mb-5">
+                    <input type="checkbox" id="qr_require_pos_approval_before_kot" name="qr_require_pos_approval_before_kot" value="1"
+                           class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                           {{ ($tenant->settings['qr_require_pos_approval_before_kot'] ?? true) ? 'checked' : '' }}>
+                    <span class="text-sm text-gray-700">
+                        <span class="font-medium text-gray-900">Require POS approval before kitchen (KOT)</span>
+                        <span class="block text-gray-600 mt-0.5">When <strong>enabled</strong> (default), QR orders wait for staff to confirm on the POS before they can be sent to the kitchen. When <strong>disabled</strong>, QR orders go straight to the normal flow so KOT can run without a confirm step.</span>
+                    </span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="qr_approval_each_submit" name="qr_approval_each_submit" value="1"
+                           class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                           {{ ($tenant->settings['qr_approval_each_submit'] ?? false) ? 'checked' : '' }}>
+                    <span class="text-sm text-gray-700">
+                        <span class="font-medium text-gray-900">Require POS approval for every new submit (after the first)</span>
+                        <span class="block text-gray-600 mt-0.5">Only applies while approval-before-KOT is enabled. For <strong>table QR</strong>, when off, only the first basket needs approval; extra items guests add later stay on the same order without going back to &quot;awaiting approval&quot; (pickup re-approval rules still apply).</span>
+                    </span>
+                </label>
+                <button type="button" onclick="saveQrOrderSettings()"
+                        class="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                    Save QR settings
+                </button>
+                <p id="qr-order-settings-msg" class="text-sm mt-2 text-green-700 hidden"></p>
+            </div>
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                 <h3 class="text-lg font-semibold text-gray-900">Notification Settings</h3>
                 <button onclick="openAddSettingModal()" 
@@ -447,6 +474,35 @@ document.getElementById('general-settings-form').addEventListener('submit', func
 function resetForm() {
     document.getElementById('general-settings-form').reset();
     document.getElementById('slug-preview').textContent = '{{ $tenant->slug ?? "" }}';
+}
+
+function saveQrOrderSettings() {
+    const requireApproval = document.getElementById('qr_require_pos_approval_before_kot');
+    const eachSubmit = document.getElementById('qr_approval_each_submit');
+    const msg = document.getElementById('qr-order-settings-msg');
+    fetch('{{ route("tenant.settings", ["tenant" => $tenant->slug]) }}/qr-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            qr_require_pos_approval_before_kot: !!requireApproval.checked,
+            qr_approval_each_submit: !!eachSubmit.checked
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        msg.textContent = data.message || 'Saved.';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+    })
+    .catch(e => alert(e.message));
 }
 
 // Outlet modal functions

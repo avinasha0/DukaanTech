@@ -94,6 +94,7 @@
                     <button type="button" onclick="goBrowse()" class="text-brand font-medium text-sm">← Menu</button>
                 </div>
                 <h2 class="text-xl font-bold text-slate-900 mb-1">Almost there</h2>
+                <p class="text-sm text-slate-500 mb-2">Dine-in or pickup only — delivery is not available from this QR menu.</p>
                 <p class="text-sm text-slate-500 mb-6">Order type, your details, and any comments for the kitchen.</p>
 
                 <form id="checkoutForm" class="space-y-5" onsubmit="return false;">
@@ -103,8 +104,11 @@
                     @if(!empty($fromTableQr) && !empty($tableNoParam))
                         <input type="hidden" name="table_no" id="input_table_no" value="{{ $tableNoParam }}">
                     @endif
+                    @if(!empty($tableModel))
+                        <input type="hidden" name="table_id" id="input_table_id" value="{{ (int) $tableModel->id }}">
+                    @endif
 
-                    <div>
+                    <div id="order-type-wrap">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Order type <span class="text-red-500">*</span></label>
                         <select name="order_type_id" id="order_type_id" required
                                 class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-brand outline-none">
@@ -115,6 +119,15 @@
                         </select>
                         <p class="text-xs text-slate-500 mt-1.5" id="mode-hint"></p>
                     </div>
+                    @if(!empty($fromTableQr))
+                        <p class="text-xs text-slate-600 bg-slate-100 rounded-lg px-3 py-2" id="table-qr-hint">
+                            @if(!empty($qrApprovalEachSubmit))
+                                Extra rounds of items will also need staff approval before the kitchen sees them.
+                            @else
+                                Staff approve the first order; you can add more items to the same order without a second approval (unless your restaurant changed this in Settings).
+                            @endif
+                        </p>
+                    @endif
 
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Your name</label>
@@ -156,6 +169,14 @@
 
     <script>
         const tenantSlug = @json($account->slug);
+        const tableId = @json(isset($tableModel) && $tableModel ? (int) $tableModel->id : null);
+        const fromTableQr = @json(!empty($fromTableQr));
+        const forcedOrderTypeId = @json($forcedDineInOrderTypeId ?? null);
+
+        function qrSessionStorageKey() {
+            return tableId ? ('qr_order_' + tenantSlug + '_' + tableId) : null;
+        }
+
         const itemsMeta = {
             @foreach($categories as $cat)
                 @foreach($cat->items as $item)
@@ -236,6 +257,13 @@
             const mode = opt && opt.getAttribute('data-qr-mode');
             const inputMode = document.getElementById('input_mode');
             const hint = document.getElementById('mode-hint');
+            if (fromTableQr && tableId) {
+                if (inputMode) inputMode.value = 'DINE_IN';
+                if (hint) {
+                    hint.textContent = 'You are ordering for this table. Staff confirm the first order before it goes to the kitchen; extra items stay on the same bill.';
+                }
+                return;
+            }
             if (mode && inputMode) {
                 inputMode.value = mode === 'PICKUP' ? 'TAKEAWAY' : mode;
             }
@@ -251,6 +279,15 @@
         }
 
         document.getElementById('order_type_id')?.addEventListener('change', syncModeFromOrderType);
+
+        if (forcedOrderTypeId && fromTableQr) {
+            const ot = document.getElementById('order_type_id');
+            if (ot) {
+                ot.value = String(forcedOrderTypeId);
+                const wrap = document.getElementById('order-type-wrap');
+                if (wrap) wrap.classList.add('hidden');
+            }
+        }
 
         document.getElementById('menuSearch')?.addEventListener('input', function () {
             const q = this.value.trim().toLowerCase();
@@ -294,6 +331,16 @@
             };
             const tn = document.getElementById('input_table_no');
             if (tn && tn.value) orderData.table_no = tn.value;
+            const tid = document.getElementById('input_table_id');
+            if (tid && tid.value) orderData.table_id = parseInt(tid.value, 10);
+            const sk = qrSessionStorageKey();
+            if (sk) {
+                const prev = sessionStorage.getItem(sk);
+                if (prev) {
+                    const oid = parseInt(prev, 10);
+                    if (Number.isFinite(oid) && oid > 0) orderData.existing_order_id = oid;
+                }
+            }
 
             const endpoints = [
                 `/api/${tenantSlug}/public/qr-order/create`,
@@ -315,7 +362,14 @@
                     }
                     const result = await response.json();
                     if (response.ok && (result.success || result.order_id)) {
-                        alert('Order received! Our team will confirm it shortly. Order #' + (result.order_id || result.order?.id || '—'));
+                        const oid = result.order_id || result.order?.id;
+                        if (sk && oid) sessionStorage.setItem(sk, String(oid));
+                        const appended = result.appended === true;
+                        alert(
+                            appended
+                                ? ('Items added to your order #' + (oid || '—') + '.')
+                                : ('Order received! Our team will confirm it shortly. Order #' + (oid || '—'))
+                        );
                         quantities = {};
                         Object.keys(itemsMeta).forEach(id => {
                             const el = document.getElementById('qty-' + id);

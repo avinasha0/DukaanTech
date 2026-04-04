@@ -150,11 +150,20 @@
     <!-- Table QR Code Generator -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Table QR Code Generator</h2>
-        <p class="text-gray-600 mb-4">Generate QR codes for specific tables</p>
+        <p class="text-gray-600 mb-4">One QR per physical table — links to the menu with that table pre-selected. All orders from the same scan session add to one open order until the bill is closed.</p>
         
-        <div class="flex items-center space-x-4">
-            <input type="text" id="tableNumber" placeholder="Enter table number" 
-                   class="border-gray-300 rounded-md shadow-sm focus:ring-royal-purple focus:border-royal-purple">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            @if(isset($tables) && $tables->count() > 0)
+                <select id="tableSelectId" class="border-gray-300 rounded-md shadow-sm focus:ring-royal-purple focus:border-royal-purple min-w-[200px] px-3 py-2">
+                    <option value="">Select table…</option>
+                    @foreach($tables as $t)
+                        <option value="{{ $t->id }}">{{ $t->name }} (outlet #{{ $t->outlet_id }})</option>
+                    @endforeach
+                </select>
+            @endif
+            <span class="text-gray-500 text-sm hidden sm:inline">or</span>
+            <input type="text" id="tableNumber" placeholder="Free-text table label (legacy)" 
+                   class="border-gray-300 rounded-md shadow-sm focus:ring-royal-purple focus:border-royal-purple max-w-xs">
             <button onclick="generateTableQR()" 
                     class="bg-royal-purple text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
                 Generate QR Code
@@ -271,16 +280,19 @@
     }
 
     async function generateTableQR() {
-        const tableNumber = document.getElementById('tableNumber').value;
-        if (!tableNumber) {
-            alert('Please enter a table number');
+        const sel = document.getElementById('tableSelectId');
+        const tableId = sel && sel.value ? parseInt(sel.value, 10) : null;
+        const tableNumber = document.getElementById('tableNumber').value.trim();
+        if (!tableId && !tableNumber) {
+            alert('Select a table from the list or enter a legacy table label');
             return;
         }
 
         try {
+            const body = tableId ? { table_id: tableId } : { table_no: tableNumber };
             const result = await postGenerateQr(
                 `${baseUrl}/${tenantSlug}/qr-codes/generate-table`,
-                { table_no: tableNumber }
+                body
             );
             if (result.qr_url) {
                 await loadSvgIntoPreview(result.qr_url, 'tableQRImage', 'tableQRResult');

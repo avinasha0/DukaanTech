@@ -95,4 +95,23 @@ class Account extends Model
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
+
+    /**
+     * When true (default), QR dine-in and pickup orders stay in PENDING_QR_APPROVAL until POS confirms before KOT.
+     * When false, QR orders go straight to NEW and the kitchen can receive KOT without a POS confirm step.
+     */
+    public function qrRequirePosApprovalBeforeKot(): bool
+    {
+        return (bool) data_get($this->settings, 'qr_require_pos_approval_before_kot', true);
+    }
+
+    /**
+     * When true, every QR submit that adds items to an already-approved (NEW) order sends it back to POS for approval.
+     * When false, only the first basket needs approval; further adds stay on the same order without re-approval.
+     * Only applies while {@see qrRequirePosApprovalBeforeKot()} is true.
+     */
+    public function qrApprovalEachSubmit(): bool
+    {
+        return (bool) data_get($this->settings, 'qr_approval_each_submit', false);
+    }
 }

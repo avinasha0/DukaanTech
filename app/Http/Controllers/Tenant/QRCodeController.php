@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\Category;
 use App\Models\QRCode;
+use App\Models\RestaurantTable;
 use App\Services\QRCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -36,13 +37,18 @@ class QRCodeController extends Controller
             ->with('category')
             ->get();
 
+        $tables = RestaurantTable::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         // Load saved QR codes
         $savedQRCodes = QRCode::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('tenant.qr-codes.index', compact('tenant', 'categories', 'items', 'savedQRCodes'));
+        return view('tenant.qr-codes.index', compact('tenant', 'categories', 'items', 'savedQRCodes', 'tables'));
     }
 
     /**
@@ -105,19 +111,33 @@ class QRCodeController extends Controller
     public function generateTableQR(Request $request)
     {
         $tenant = app('tenant');
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json(['error' => 'Tenant not found'], 404);
         }
 
-        $request->validate([
-            'table_no' => 'required|string|max:255'
+        $data = $request->validate([
+            'table_id' => 'nullable|integer|exists:restaurant_tables,id',
+            'table_no' => 'nullable|string|max:255',
         ]);
 
+        if (empty($data['table_id']) && empty($data['table_no'])) {
+            return response()->json(['error' => 'Select a table or enter a table label'], 422);
+        }
+
         try {
-            $qrUrl = $this->qrCodeService->generateTableQR($tenant->slug, $request->table_no, $tenant->id);
+            if (! empty($data['table_id'])) {
+                $table = RestaurantTable::where('tenant_id', $tenant->id)->whereKey($data['table_id'])->first();
+                if (! $table) {
+                    return response()->json(['error' => 'Table not found'], 404);
+                }
+                $qrUrl = $this->qrCodeService->generateTableQrByRestaurantTable($table, $tenant->slug, $tenant->id);
+            } else {
+                $qrUrl = $this->qrCodeService->generateTableQR($tenant->slug, $data['table_no'], $tenant->id);
+            }
+
             return response()->json(['qr_url' => $qrUrl]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to generate QR code: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to generate QR code: '.$e->getMessage()], 500);
         }
     }
 

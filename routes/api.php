@@ -185,76 +185,9 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
     // QR Order Creation (bypasses CSRF)
     Route::post('/qr-order/create', [App\Http\Controllers\QROrderApiController::class, 'createOrder']);
     
-    // Super simple QR order creation - minimal validation
+    // Super simple QR order creation — delegates to main QR API (table sessions + append)
     Route::post('/simple-order', function ($tenant, Request $request) {
-        try {
-            $account = \App\Models\Account::where('slug', $tenant)->first();
-            if (!$account) {
-                return response()->json(['error' => 'Restaurant not found'], 404);
-            }
-
-            $data = $request->all();
-            
-            // Create order with minimal validation
-            // Get the first available order type for this tenant, or create default ones
-            $orderType = \App\Models\OrderType::where('tenant_id', $account->id)
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->first();
-            
-            if (!$orderType) {
-                // Create default order types if none exist
-                $orderType = \App\Models\OrderType::create([
-                    'tenant_id' => $account->id,
-                    'name' => 'Dine In',
-                    'slug' => 'dine-in',
-                    'color' => '#10B981',
-                    'is_active' => true,
-                    'sort_order' => 1,
-                ]);
-            }
-
-            $order = \App\Models\Order::create([
-                'tenant_id' => $account->id,
-                'outlet_id' => $data['outlet_id'] ?? 1,
-                'order_type_id' => $data['order_type_id'] ?? $orderType->id,
-                'payment_method' => $data['payment_method'] ?? 'cash',
-                'customer_name' => $data['customer_name'] ?? null,
-                'customer_phone' => $data['customer_phone'] ?? null,
-                'mode' => $data['mode'] ?? 'DINE_IN',
-                'table_no' => $data['table_no'] ?? null,
-                'state' => \App\Models\Order::STATE_PENDING_QR_APPROVAL,
-                'source' => 'mobile_qr',
-            ]);
-
-            // Add items
-            if (isset($data['items']) && is_array($data['items'])) {
-                foreach ($data['items'] as $itemData) {
-                    $item = \App\Models\Item::find($itemData['item_id']);
-                    if ($item) {
-                        \App\Models\OrderItem::create([
-                            'tenant_id' => $account->id,
-                            'order_id' => $order->id,
-                            'item_id' => $item->id,
-                            'qty' => $itemData['qty'] ?? 1,
-                            'price' => $item->price,
-                        ]);
-                    }
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Order created successfully!',
-                'order_id' => $order->id
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
+        return app(\App\Http\Controllers\QROrderApiController::class)->createOrder($request, $tenant);
     });
     
     Route::post('/orders', function ($tenant) {

@@ -5715,7 +5715,7 @@ function orderDetailsModal() {
             this.selectedTableId = '';
             this.tables = [];
             this.isOpen = true;
-            if (this.order && this.order.state === 'PENDING_QR_APPROVAL') {
+            if (this.order && this.order.state === 'PENDING_QR_APPROVAL' && this.order.mode === 'DINE_IN') {
                 this.loadTables();
             }
         },
@@ -6875,7 +6875,8 @@ function getCookie(name) {
                             <div x-show="order.state === 'PENDING_QR_APPROVAL' && order.source === 'mobile_qr'"
                                  class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
                                 <h4 class="font-semibold text-amber-900">Confirm QR order (required before kitchen)</h4>
-                                <p class="text-sm text-amber-900/90">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
+                                <p class="text-sm text-amber-900/90" x-show="order.mode === 'DINE_IN'">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
+                                <p class="text-sm text-amber-900/90" x-show="order.mode === 'TAKEAWAY' || order.mode === 'PICKUP'">Confirm this pickup order on the POS. After this, you can send it to KOT from the register.</p>
                                 <div x-show="order.mode === 'DINE_IN'">
                                     <label class="block text-sm font-medium text-amber-900 mb-1">Table</label>
                                     <select id="qr-table-select-approve"

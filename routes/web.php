@@ -84,6 +84,8 @@ Route::prefix('{tenant}/qr-order')->group(function () {
     Route::get('/menu', [App\Http\Controllers\QROrderController::class, 'showMenu']);
     Route::get('/category/{category}', [App\Http\Controllers\QROrderController::class, 'showCategory']);
     Route::get('/item/{item}', [App\Http\Controllers\QROrderController::class, 'showItem']);
+    Route::get('/table-id/{tableId}', [App\Http\Controllers\QROrderController::class, 'showTableById'])
+        ->whereNumber('tableId');
     Route::get('/table/{tableNo}', [App\Http\Controllers\QROrderController::class, 'showTable']);
     Route::post('/create', [App\Http\Controllers\QROrderController::class, 'createOrder']);
     Route::post('/generate-qr', [App\Http\Controllers\QROrderController::class, 'generateQR']);

@@ -1117,6 +1117,7 @@ class PosApiController extends Controller
 
             DB::transaction(function () use ($tableId, $order, $tenantId, $shift, $terminalUser) {
                 $meta = $order->meta ?? [];
+                unset($meta['qr_has_unsent_items'], $meta['qr_new_items_at']);
                 $meta['shift_id'] = $shift->id;
                 $meta['qr_approved_at'] = now()->toIso8601String();
                 $meta['qr_confirmed_by_user_id'] = auth()->id() ?? ($terminalUser?->user_id ?? null);
