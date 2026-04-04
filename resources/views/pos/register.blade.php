@@ -219,13 +219,13 @@
         </div>
     </div>
 
-    <!-- Top Header: single left-aligned strip (logo + context + actions) -->
-    <header class="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 max-w-full w-full lg:w-[calc(100%-420px)] lg:max-w-[calc(100%-420px)]">
-        <div class="flex flex-wrap items-center justify-start gap-x-2 gap-y-1.5 sm:gap-x-3 sm:gap-y-2 w-full min-w-0">
+    <!-- Top Header: brand + session/actions in four-dot overflow menu -->
+    <header class="relative z-30 bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 max-w-full w-full lg:w-[calc(100%-420px)] lg:max-w-[calc(100%-420px)]">
+        <div class="flex flex-nowrap items-center justify-between gap-2 w-full min-w-0">
             <!-- Brand -->
             <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-                <button type="button" @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0" aria-label="Open menu">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" @click="mobileMenuOpen = !mobileMenuOpen; headerMoreOpen = false" class="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0" aria-label="Open menu">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
@@ -233,81 +233,99 @@
                     <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                         <img src="/favicon.png" alt="" class="w-full h-full object-cover">
                     </div>
-                    <span class="text-sm sm:text-base font-bold text-gray-900 truncate max-w-[9rem] sm:max-w-none">DukaanTech POS</span>
+                    <span class="text-sm sm:text-base font-bold text-gray-900 truncate">DukaanTech POS</span>
                 </div>
             </div>
 
-            <span class="hidden sm:block h-5 w-px bg-gray-200 shrink-0" aria-hidden="true"></span>
+            <!-- Session & actions: four-dot menu (outlet, shift, staff, orders, products, checkout) -->
+            <div class="relative shrink-0" @keydown.escape.window="headerMoreOpen = false">
+                <button
+                    type="button"
+                    @click="headerMoreOpen = !headerMoreOpen; mobileMenuOpen = false"
+                    :aria-expanded="headerMoreOpen"
+                    aria-controls="pos-header-more-panel"
+                    aria-haspopup="true"
+                    class="inline-flex items-center justify-center min-h-[2.75rem] min-w-[2.75rem] rounded-xl border-2 border-gray-400 bg-gray-100 p-2 text-gray-900 shadow-sm hover:bg-white hover:border-gray-500 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
+                    title="Session and actions"
+                >
+                    <span class="sr-only">Open session menu</span>
+                    <svg class="w-7 h-7 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="8" cy="8" r="3"/>
+                        <circle cx="16" cy="8" r="3"/>
+                        <circle cx="8" cy="16" r="3"/>
+                        <circle cx="16" cy="16" r="3"/>
+                    </svg>
+                </button>
 
-            <!-- Outlet, shift, staff — compact row -->
-            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0 text-[11px] sm:text-xs">
-                <div class="inline-flex items-center gap-1 text-gray-600 whitespace-nowrap">
-                    <span class="text-gray-500 font-medium">Outlet</span>
-                    <template x-if="outlets.length === 0">
-                        <span class="text-gray-400">…</span>
-                    </template>
-                    <template x-if="outlets.length === 1">
-                        <span class="font-semibold text-gray-900" x-text="outlets[0].name"></span>
-                    </template>
-                    <template x-if="outlets.length > 1">
-                        <select x-model="outletId" @change="onOutletChange()"
-                                class="text-[11px] sm:text-xs border border-gray-200 rounded-md px-1.5 py-0.5 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 max-w-[8rem] sm:max-w-[11rem]">
-                            <template x-for="outlet in outlets" :key="outlet.id">
-                                <option :value="outlet.id" x-text="outlet.name"></option>
+                <div
+                    x-show="headerMoreOpen"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    @click.outside="headerMoreOpen = false"
+                    id="pos-header-more-panel"
+                    role="menu"
+                    x-cloak
+                    class="absolute right-0 top-full mt-1 w-[min(100vw-1rem,20rem)] rounded-xl border border-gray-200 bg-white py-2 shadow-lg ring-1 ring-black/5 z-50"
+                >
+                    <div class="px-3 pb-2 border-b border-gray-100 space-y-3 text-sm">
+                        <div>
+                            <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Outlet</div>
+                            <template x-if="outlets.length === 0">
+                                <span class="text-gray-400 mt-0.5 block">…</span>
                             </template>
-                        </select>
-                    </template>
+                            <template x-if="outlets.length === 1">
+                                <span class="font-semibold text-gray-900 mt-0.5 block" x-text="outlets[0].name"></span>
+                            </template>
+                            <template x-if="outlets.length > 1">
+                                <select x-model="outletId" @change="onOutletChange()"
+                                        class="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <template x-for="outlet in outlets" :key="outlet.id">
+                                        <option :value="outlet.id" x-text="outlet.name"></option>
+                                    </template>
+                                </select>
+                            </template>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Shift</span>
+                            <span x-text="shift?.id ?? '—'" class="font-semibold text-gray-900 tabular-nums"></span>
+                            <span x-show="shift" class="px-2 py-0.5 rounded-md bg-green-100 text-green-800 text-xs font-semibold">Open</span>
+                        </div>
+                        @if($isTerminalAuth && $terminalUser)
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-gray-900">{{ $terminalUser->name }}</span>
+                            <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">{{ ucfirst($terminalUser->role) }}</span>
+                        </div>
+                        @endif
+                    </div>
+
+                    <div class="p-2 space-y-1">
+                        <template x-if="shift">
+                            <button type="button" role="menuitem" @click="headerMoreOpen = false; openOrdersModal()" class="w-full inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                Recent Orders
+                            </button>
+                        </template>
+                        <template x-if="shift">
+                            <button type="button" role="menuitem" @click="headerMoreOpen = false; openProductVisibilityModal()" class="w-full inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors">
+                                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                Products
+                            </button>
+                        </template>
+                        <template x-if="shift">
+                            <button type="button" role="menuitem" @click="headerMoreOpen = false; $dispatch('open-checkout', {outletId: outletId})" class="w-full inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors">
+                                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Checkout &amp; Logout
+                            </button>
+                        </template>
+                        <template x-if="!shift">
+                            <p class="px-3 py-2 text-xs text-gray-500">Open a shift to use orders, products, and checkout.</p>
+                        </template>
+                    </div>
                 </div>
-
-                <span class="hidden md:inline text-gray-300 select-none" aria-hidden="true">|</span>
-
-                <div class="inline-flex items-center gap-1.5 text-gray-600 whitespace-nowrap">
-                    <span class="text-gray-500 font-medium">Shift</span>
-                    <span x-text="shift?.id ?? '—'" class="font-semibold text-gray-900 tabular-nums"></span>
-                    <span x-show="shift" class="px-1.5 py-0 rounded bg-green-100 text-green-800 font-medium">Open</span>
-                </div>
-
-                @if($isTerminalAuth && $terminalUser)
-                <span class="hidden md:inline text-gray-300 select-none" aria-hidden="true">|</span>
-                <div class="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="font-semibold text-gray-900">{{ $terminalUser->name }}</span>
-                    <span class="px-1.5 py-0 rounded bg-blue-100 text-blue-800 font-medium">{{ ucfirst($terminalUser->role) }}</span>
-                </div>
-                @endif
-            </div>
-
-            <span class="hidden lg:block h-5 w-px bg-gray-200 shrink-0" aria-hidden="true"></span>
-
-            <!-- Actions — same line, left after meta -->
-            <div class="flex flex-wrap items-center gap-1 sm:gap-1.5 shrink-0">
-                <template x-if="shift">
-                    <button type="button" @click="openOrdersModal()" class="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-white text-[11px] sm:text-xs font-semibold hover:bg-blue-700 transition-colors">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                        </svg>
-                        <span class="hidden sm:inline lg:hidden">Orders</span>
-                        <span class="hidden lg:inline">Recent Orders</span>
-                    </button>
-                </template>
-
-                <template x-if="shift">
-                    <button type="button" @click="openProductVisibilityModal()" class="inline-flex items-center gap-1 rounded-md bg-purple-600 px-2 py-1 text-white text-[11px] sm:text-xs font-semibold hover:bg-purple-700 transition-colors">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Products</span>
-                    </button>
-                </template>
-
-                <template x-if="shift">
-                    <button type="button" @click="$dispatch('open-checkout', {outletId: outletId})" class="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-white text-[11px] sm:text-xs font-semibold hover:bg-red-700 transition-colors">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                        <span class="hidden sm:inline">Checkout &amp; Logout</span>
-                    </button>
-                </template>
             </div>
         </div>
     </header>
@@ -1825,6 +1843,8 @@ function posRegister() {
         // UI state
         showCustomerDetails: false,
         mobileMenuOpen: false,
+        /** Header overflow: session + actions in four-dot menu */
+        headerMoreOpen: false,
         showOrderDetails: false,
         selectedOrderDetails: null,
         
