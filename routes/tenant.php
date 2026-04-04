@@ -37,6 +37,7 @@ Route::get('/analytics/category-performance', [AnalyticsController::class, 'getC
 Route::get('/analytics/shift-analytics', [AnalyticsController::class, 'getShiftAnalytics']);
 Route::get('/analytics/order-type-analytics', [AnalyticsController::class, 'getOrderTypeAnalytics']);
 Route::get('/analytics/summary-stats', [AnalyticsController::class, 'getSummaryStats']);
+Route::get('/analytics/business-trends', [AnalyticsController::class, 'getBusinessTrends']);
 
 // Table Management routes
 Route::get('/tables', function() {

@@ -110,7 +110,7 @@ class AnalyticsController extends Controller
             ->join('items', 'order_items.item_id', '=', 'items.id')
             ->where('orders.tenant_id', $tenantId)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->where('orders.state', '!=', 'CANCELLED')
+            ->where('orders.status', '!=', Order::STATUS_CANCELLED)
             ->select(
                 'items.name',
                 'items.id',
@@ -149,7 +149,7 @@ class AnalyticsController extends Controller
             ->join('categories', 'items.category_id', '=', 'categories.id')
             ->where('orders.tenant_id', $tenantId)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->where('orders.state', '!=', 'CANCELLED')
+            ->where('orders.status', '!=', Order::STATUS_CANCELLED)
             ->select(
                 'categories.name',
                 'categories.id',
@@ -223,11 +223,12 @@ class AnalyticsController extends Controller
             default => $endDate->copy()->subDays(30)
         };
 
+        $orders = collect();
         try {
             $orders = Order::where('tenant_id', $tenantId)
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', '!=', 'CANCELLED')
-                ->with(['items', 'orderType'])
+                ->where('status', '!=', Order::STATUS_CANCELLED)
+                ->with(['items.modifiers', 'orderType'])
                 ->get();
             
             \Log::info('Orders loaded for order type analytics', [
@@ -273,6 +274,141 @@ class AnalyticsController extends Controller
         ]);
 
         return response()->json($result);
+    }
+
+    public function getBusinessTrends(Request $request)
+    {
+        $tenantId = app('tenant.id');
+        $period = $request->get('period', '30days');
+
+        $endDate = Carbon::now();
+        $startDate = match ($period) {
+            '7days' => $endDate->copy()->subDays(7),
+            '30days' => $endDate->copy()->subDays(30),
+            '90days' => $endDate->copy()->subDays(90),
+            '1year' => $endDate->copy()->subYear(),
+            default => $endDate->copy()->subDays(30),
+        };
+
+        $orders = Order::where('tenant_id', $tenantId)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '!=', Order::STATUS_CANCELLED)
+            ->with(['items.modifiers'])
+            ->get();
+
+        $weekdayBuckets = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $weekdayBuckets[$i] = ['total_sales' => 0.0, 'orders_count' => 0];
+        }
+        $weekdayLabels = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
+
+        $hourBuckets = [];
+        for ($h = 0; $h < 24; $h++) {
+            $hourBuckets[$h] = ['total_sales' => 0.0, 'orders_count' => 0];
+        }
+
+        $modeBuckets = [];
+        $paymentBuckets = [];
+
+        foreach ($orders as $order) {
+            $total = $order->items->sum('total');
+
+            $dow = $order->created_at->isoWeekday();
+            $weekdayBuckets[$dow]['total_sales'] += $total;
+            $weekdayBuckets[$dow]['orders_count']++;
+
+            $h = (int) $order->created_at->format('G');
+            $hourBuckets[$h]['total_sales'] += $total;
+            $hourBuckets[$h]['orders_count']++;
+
+            $mode = $order->mode ?? 'UNKNOWN';
+            if (! isset($modeBuckets[$mode])) {
+                $modeBuckets[$mode] = ['total_sales' => 0.0, 'orders_count' => 0];
+            }
+            $modeBuckets[$mode]['total_sales'] += $total;
+            $modeBuckets[$mode]['orders_count']++;
+
+            $pm = $order->payment_method ? (string) $order->payment_method : 'Unspecified';
+            if (! isset($paymentBuckets[$pm])) {
+                $paymentBuckets[$pm] = ['total_sales' => 0.0, 'orders_count' => 0];
+            }
+            $paymentBuckets[$pm]['total_sales'] += $total;
+            $paymentBuckets[$pm]['orders_count']++;
+        }
+
+        $totalSalesAll = max(0.0001, $orders->sum(fn ($o) => $o->items->sum('total')));
+
+        $byWeekday = [];
+        foreach ($weekdayLabels as $isoD => $label) {
+            $b = $weekdayBuckets[$isoD];
+            $c = $b['orders_count'];
+            $byWeekday[] = [
+                'weekday' => $isoD,
+                'label' => $label,
+                'total_sales' => round($b['total_sales'], 2),
+                'orders_count' => $c,
+                'avg_order_value' => $c > 0 ? round($b['total_sales'] / $c, 2) : 0,
+            ];
+        }
+
+        $hourlyDistribution = [];
+        for ($h = 0; $h < 24; $h++) {
+            $b = $hourBuckets[$h];
+            $c = $b['orders_count'];
+            $hourlyDistribution[] = [
+                'hour' => $h,
+                'label' => sprintf('%02d:00', $h),
+                'total_sales' => round($b['total_sales'], 2),
+                'orders_count' => $c,
+            ];
+        }
+
+        $modeDisplay = [
+            'DINE_IN' => 'Dine-in',
+            'TAKEAWAY' => 'Takeaway',
+            'DELIVERY' => 'Delivery',
+            'PICKUP' => 'Pickup',
+            'UNKNOWN' => 'Other',
+        ];
+
+        $modeMix = [];
+        foreach ($modeBuckets as $mode => $b) {
+            $c = $b['orders_count'];
+            $modeMix[] = [
+                'mode' => $mode,
+                'label' => $modeDisplay[$mode] ?? ucfirst(strtolower(str_replace('_', ' ', (string) $mode))),
+                'total_sales' => round($b['total_sales'], 2),
+                'orders_count' => $c,
+                'pct_revenue' => round(($b['total_sales'] / $totalSalesAll) * 100, 1),
+            ];
+        }
+        usort($modeMix, fn ($a, $b) => $b['total_sales'] <=> $a['total_sales']);
+
+        $paymentMix = [];
+        foreach ($paymentBuckets as $pm => $b) {
+            $c = $b['orders_count'];
+            $paymentMix[] = [
+                'payment_method' => $pm,
+                'label' => $pm,
+                'total_sales' => round($b['total_sales'], 2),
+                'orders_count' => $c,
+                'pct_revenue' => round(($b['total_sales'] / $totalSalesAll) * 100, 1),
+            ];
+        }
+        usort($paymentMix, fn ($a, $b) => $b['total_sales'] <=> $a['total_sales']);
+
+        $bestWeekday = collect($byWeekday)->sortByDesc('total_sales')->first();
+
+        return response()->json([
+            'by_weekday' => $byWeekday,
+            'hourly_distribution' => $hourlyDistribution,
+            'mode_mix' => $modeMix,
+            'payment_mix' => $paymentMix,
+            'best_weekday' => $bestWeekday,
+            'period' => $period,
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate->toDateString(),
+        ]);
     }
 
     public function getSummaryStats(Request $request)

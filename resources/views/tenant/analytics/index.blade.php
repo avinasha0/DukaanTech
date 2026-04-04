@@ -93,15 +93,21 @@
         </div>
     </div>
 
+    {{-- AI-style insights from trends (filled by JS) --}}
+    <div id="trendInsights" class="hidden bg-gradient-to-r from-royal-purple/10 via-tiffany-blue/10 to-royal-purple/10 rounded-2xl border border-royal-purple/20 p-4 sm:p-5">
+        <p class="text-xs sm:text-sm font-semibold text-royal-purple uppercase tracking-wide mb-2">Trend insights</p>
+        <p class="text-sm sm:text-base text-gray-800 leading-relaxed" id="trendInsightsText"></p>
+    </div>
+
     {{-- Charts Section --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {{-- Sales Trend Chart --}}
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
-                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Sales Trend</h3>
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 bg-royal-purple rounded-full"></div>
-                    <span class="text-xs sm:text-sm text-gray-600">Daily Sales</span>
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Revenue &amp; order volume</h3>
+                <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600">
+                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 bg-royal-purple rounded-full"></span> Revenue</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 bg-tiffany-blue rounded-full"></span> Orders</span>
                 </div>
             </div>
             <div class="h-48 sm:h-56 lg:h-64 flex items-center justify-center">
@@ -120,6 +126,52 @@
             </div>
             <div class="h-48 sm:h-56 lg:h-64 flex items-center justify-center">
                 <canvas id="hourlyChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{-- Demand & revenue patterns (selected period) --}}
+    <div class="space-y-2">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 font-dm px-1">Demand &amp; revenue patterns</h2>
+        <p class="text-sm text-gray-600 px-1">Use these trends to plan staffing, promotions, and channel focus.</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Sales by day of week</h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="weekdayTrendPeriod">Last 30 days</span>
+            </div>
+            <div class="h-52 sm:h-64 flex items-center justify-center">
+                <canvas id="weekdayChart" width="400" height="220"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Peak hours <span class="text-gray-500 font-normal text-sm">(period total)</span></h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="peakHourTrendPeriod">Last 30 days</span>
+            </div>
+            <div class="h-52 sm:h-64 flex items-center justify-center">
+                <canvas id="peakHourChart" width="400" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Revenue by service mode</h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="modeMixPeriod">Last 30 days</span>
+            </div>
+            <div class="h-56 sm:h-64 flex items-center justify-center max-w-md mx-auto">
+                <canvas id="modeMixChart" width="320" height="280"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 font-dm">Revenue by payment method</h3>
+                <span class="text-xs sm:text-sm text-gray-500" id="paymentMixPeriod">Last 30 days</span>
+            </div>
+            <div class="h-56 sm:h-64 flex items-center justify-center max-w-md mx-auto">
+                <canvas id="paymentMixChart" width="320" height="280"></canvas>
             </div>
         </div>
     </div>
@@ -171,8 +223,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-let salesChart, hourlyChart;
+let salesChart, hourlyChart, weekdayChart, peakHourChart, modeMixChart, paymentMixChart;
 let currentPeriod = '30days';
+
+const analyticsPalette = ['#6E46AE', '#00B6B4', '#F59E0B', '#10B981', '#6366F1', '#EC4899', '#14B8A6', '#A855F7'];
 
 // Initialize charts
 document.addEventListener('DOMContentLoaded', function() {
@@ -187,36 +241,65 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeCharts() {
-    // Sales Trend Chart
+    // Sales Trend Chart (revenue + order volume)
     const salesCtx = document.getElementById('salesChart').getContext('2d');
     salesChart = new Chart(salesCtx, {
         type: 'line',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Sales',
-                data: [],
-                borderColor: '#6E46AE',
-                backgroundColor: 'rgba(110, 70, 174, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'Revenue (₹)',
+                    data: [],
+                    borderColor: '#6E46AE',
+                    backgroundColor: 'rgba(110, 70, 174, 0.12)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Orders',
+                    data: [],
+                    borderColor: '#00B6B4',
+                    backgroundColor: 'rgba(0, 182, 180, 0.06)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.35,
+                    yAxisID: 'y1',
+                    pointRadius: 2
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: { boxWidth: 12, font: { size: 11 } }
                 }
             },
             scales: {
                 y: {
+                    position: 'left',
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '₹' + value.toLocaleString();
+                            return '₹' + Number(value).toLocaleString();
+                        }
+                    }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            return Number.isInteger(value) ? value : '';
                         }
                     }
                 }
@@ -258,6 +341,111 @@ function initializeCharts() {
             }
         }
     });
+
+    const weekdayCtx = document.getElementById('weekdayChart').getContext('2d');
+    weekdayChart = new Chart(weekdayCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Revenue',
+                data: [],
+                backgroundColor: 'rgba(110, 70, 174, 0.78)',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + Number(value).toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const peakCtx = document.getElementById('peakHourChart').getContext('2d');
+    peakHourChart = new Chart(peakCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Revenue',
+                data: [],
+                backgroundColor: 'rgba(0, 182, 180, 0.65)',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { maxRotation: 45, minRotation: 0, font: { size: 9 } } },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + Number(value).toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const modeCtx = document.getElementById('modeMixChart').getContext('2d');
+    modeMixChart = new Chart(modeCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: analyticsPalette }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const v = ctx.raw;
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+                            return ctx.label + ': ₹' + Number(v).toLocaleString() + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const payCtx = document.getElementById('paymentMixChart').getContext('2d');
+    paymentMixChart = new Chart(payCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: analyticsPalette }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const v = ctx.raw;
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+                            return ctx.label + ': ₹' + Number(v).toLocaleString() + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 async function loadAllData() {
@@ -265,6 +453,7 @@ async function loadAllData() {
         await Promise.all([
             loadSummaryStats(),
             loadSalesData(),
+            loadBusinessTrends(),
             loadTopItems(),
             loadCategoryPerformance(),
             loadOrderTypeAnalytics()
@@ -322,9 +511,11 @@ async function loadSalesData() {
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             });
             const salesData = data.daily_sales.map(item => parseFloat(item.total_sales));
+            const ordersPerDay = data.daily_sales.map(item => parseInt(item.orders_count, 10) || 0);
             
             salesChart.data.labels = labels;
             salesChart.data.datasets[0].data = salesData;
+            salesChart.data.datasets[1].data = ordersPerDay;
             salesChart.update();
             
             // Update hourly chart
@@ -337,6 +528,104 @@ async function loadSalesData() {
         }
     } catch (error) {
         console.error('Error loading sales data:', error);
+    }
+}
+
+function updateTrendInsights(data) {
+    const box = document.getElementById('trendInsights');
+    const textEl = document.getElementById('trendInsightsText');
+    const best = data.best_weekday;
+    const hourly = data.hourly_distribution || [];
+    const pt = getPeriodText(currentPeriod);
+    if (!best || best.total_sales <= 0) {
+        box.classList.add('hidden');
+        return;
+    }
+    box.classList.remove('hidden');
+    let peak = hourly.length ? hourly[0] : null;
+    hourly.forEach(function (h) {
+        if (peak && h.total_sales > peak.total_sales) {
+            peak = h;
+        }
+    });
+    const topMode = (data.mode_mix && data.mode_mix.length) ? data.mode_mix[0] : null;
+    const topPay = (data.payment_mix && data.payment_mix.length) ? data.payment_mix[0] : null;
+    const parts = [
+        pt + ': strongest day is ' + best.label + ' (₹' + Number(best.total_sales).toLocaleString() + ' revenue, ' + best.orders_count + ' orders).'
+    ];
+    if (peak && peak.total_sales > 0) {
+        parts.push('Peak hour in this range: ' + peak.label + ' (~₹' + Number(peak.total_sales).toLocaleString() + ').');
+    }
+    if (topMode && topMode.pct_revenue > 0) {
+        parts.push('Leading service mode: ' + topMode.label + ' (' + topMode.pct_revenue + '% of revenue).');
+    }
+    if (topPay && topPay.pct_revenue > 0) {
+        parts.push('Top payment: ' + topPay.label + ' (' + topPay.pct_revenue + '%).');
+    }
+    textEl.textContent = parts.join(' ');
+}
+
+async function loadBusinessTrends() {
+    try {
+        const response = await fetch(`/{{ $tenant->slug }}/analytics/business-trends?period=${currentPeriod}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        if (!response.ok) {
+            return;
+        }
+        const data = await response.json();
+        const pt = getPeriodText(currentPeriod);
+        document.getElementById('weekdayTrendPeriod').textContent = pt;
+        document.getElementById('peakHourTrendPeriod').textContent = pt;
+        document.getElementById('modeMixPeriod').textContent = pt;
+        document.getElementById('paymentMixPeriod').textContent = pt;
+
+        updateTrendInsights(data);
+
+        if (data.by_weekday && data.by_weekday.length) {
+            weekdayChart.data.labels = data.by_weekday.map(function (d) { return d.label; });
+            weekdayChart.data.datasets[0].data = data.by_weekday.map(function (d) { return d.total_sales; });
+            weekdayChart.update();
+        }
+
+        if (data.hourly_distribution && data.hourly_distribution.length) {
+            peakHourChart.data.labels = data.hourly_distribution.map(function (d) { return d.label; });
+            peakHourChart.data.datasets[0].data = data.hourly_distribution.map(function (d) { return d.total_sales; });
+            peakHourChart.update();
+        }
+
+        if (data.mode_mix && data.mode_mix.length) {
+            modeMixChart.data.labels = data.mode_mix.map(function (m) { return m.label; });
+            modeMixChart.data.datasets[0].data = data.mode_mix.map(function (m) { return m.total_sales; });
+            modeMixChart.data.datasets[0].backgroundColor = data.mode_mix.map(function (_, i) {
+                return analyticsPalette[i % analyticsPalette.length];
+            });
+            modeMixChart.update();
+        } else {
+            modeMixChart.data.labels = ['No data'];
+            modeMixChart.data.datasets[0].data = [1];
+            modeMixChart.data.datasets[0].backgroundColor = ['#e5e7eb'];
+            modeMixChart.update();
+        }
+
+        if (data.payment_mix && data.payment_mix.length) {
+            paymentMixChart.data.labels = data.payment_mix.map(function (p) { return p.label; });
+            paymentMixChart.data.datasets[0].data = data.payment_mix.map(function (p) { return p.total_sales; });
+            paymentMixChart.data.datasets[0].backgroundColor = data.payment_mix.map(function (_, i) {
+                return analyticsPalette[i % analyticsPalette.length];
+            });
+            paymentMixChart.update();
+        } else {
+            paymentMixChart.data.labels = ['No data'];
+            paymentMixChart.data.datasets[0].data = [1];
+            paymentMixChart.data.datasets[0].backgroundColor = ['#e5e7eb'];
+            paymentMixChart.update();
+        }
+    } catch (error) {
+        console.error('Error loading business trends:', error);
     }
 }
 
