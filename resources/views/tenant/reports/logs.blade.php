@@ -153,7 +153,7 @@ function loadLogs() {
     const logsContainer = document.getElementById('logsContainer');
     logsContainer.innerHTML = '<div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>';
     
-    fetch('/teabench1/reports/logs', {
+    fetch(@json(url($tenant->slug.'/reports/logs')), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

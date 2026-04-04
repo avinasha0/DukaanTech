@@ -57,8 +57,54 @@ class ReportsController extends Controller
         }
     }
 
+    public function quickStats(Request $request)
+    {
+        $request->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+        ]);
+
+        $outlet = Outlet::where('id', $request->outlet_id)
+            ->where('tenant_id', app('tenant.id'))
+            ->first();
+
+        if (! $outlet) {
+            abort(403, 'Invalid outlet for this account');
+        }
+
+        $outletId = (int) $request->outlet_id;
+        $from = Carbon::today()->startOfDay();
+        $to = now();
+
+        $ordersToday = Order::where('tenant_id', app('tenant.id'))
+            ->where('outlet_id', $outletId)
+            ->where('status', 'PAID')
+            ->whereBetween('created_at', [$from, $to]);
+
+        $todaySales = (clone $ordersToday)->sum('total');
+        $totalOrders = (clone $ordersToday)->count();
+        $avgOrderValue = $totalOrders > 0 ? $todaySales / $totalOrders : 0;
+
+        $topItems = $this->reportService->getTopSellingItems($outletId, $from, $to, 100);
+
+        return response()->json([
+            'today_sales' => round((float) $todaySales, 2),
+            'total_orders' => $totalOrders,
+            'avg_order_value' => round((float) $avgOrderValue, 2),
+            'top_items_count' => count($topItems),
+        ]);
+    }
+
     public function logs(Request $request)
     {
+        if ($request->isMethod('get')) {
+            $tenant = app('tenant');
+            if (! $tenant) {
+                abort(404, 'Tenant not found');
+            }
+
+            return view('tenant.reports.logs', compact('tenant'));
+        }
+
         try {
             $level = $request->get('level');
             $dateFrom = $request->get('date_from');
@@ -196,20 +242,46 @@ class ReportsController extends Controller
 
     public function shiftReport(Request $request)
     {
-        $request->validate([
-            'shift_id' => 'required|exists:shifts,id'
-        ]);
+        if ($request->filled('shift_id')) {
+            $request->validate([
+                'shift_id' => 'required|exists:shifts,id',
+            ]);
 
-        $shift = Shift::findOrFail($request->shift_id);
-        
-        // Verify shift belongs to current tenant
-        if ($shift->tenant_id !== app('tenant.id')) {
-            abort(403, 'Unauthorized access to shift');
+            $shift = Shift::findOrFail($request->shift_id);
+
+            if ($shift->tenant_id !== app('tenant.id')) {
+                abort(403, 'Unauthorized access to shift');
+            }
+
+            return response()->json([$this->reportService->getShiftReport($shift)]);
         }
 
-        $report = $this->reportService->getShiftReport($shift);
+        $request->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
 
-        return response()->json($report);
+        $outlet = Outlet::where('id', $request->outlet_id)
+            ->where('tenant_id', app('tenant.id'))
+            ->first();
+
+        if (! $outlet) {
+            abort(403, 'Invalid outlet for this account');
+        }
+
+        $dateFrom = Carbon::parse($request->date_from)->startOfDay();
+        $dateTo = Carbon::parse($request->date_to)->endOfDay();
+
+        $shifts = Shift::where('tenant_id', app('tenant.id'))
+            ->where('outlet_id', $request->outlet_id)
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->orderBy('created_at')
+            ->get();
+
+        $reports = $shifts->map(fn (Shift $shift) => $this->reportService->getShiftReport($shift))->values()->all();
+
+        return response()->json($reports);
     }
 
     public function orderSummary(Request $request)
@@ -645,14 +717,38 @@ class ReportsController extends Controller
             case 'sales':
                 return isset($data['total_sales']) && $data['total_sales'] > 0;
             case 'top_items':
-                return is_array($data) && count($data) > 0;
+                return count($this->topItemRowsFromExportData($data)) > 0;
             case 'shift':
-                return is_array($data) && count($data) > 0;
+                return count($this->shiftRowsFromExportData($data)) > 0;
             case 'order_summary':
                 return isset($data['summary']['total_orders']) && $data['summary']['total_orders'] > 0;
             default:
                 return false;
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<array<string, mixed>>
+     */
+    private function topItemRowsFromExportData(array $data): array
+    {
+        return array_values(array_filter(
+            $data,
+            fn ($row) => is_array($row) && isset($row['item'])
+        ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<array<string, mixed>>
+     */
+    private function shiftRowsFromExportData(array $data): array
+    {
+        return array_values(array_filter(
+            $data,
+            fn ($row) => is_array($row) && isset($row['shift_id'])
+        ));
     }
 
     private function generatePDF($data, $reportType, $dateFrom, $dateTo)
@@ -842,19 +938,21 @@ class ReportsController extends Controller
                 </tr>
             </thead>
             <tbody>';
-        
-        if (is_array($data)) {
-            foreach ($data as $index => $item) {
-                $html .= '<tr>
+
+        $rows = $this->topItemRowsFromExportData($data);
+        foreach ($rows as $index => $item) {
+            $itemName = is_array($item['item'] ?? null)
+                ? ($item['item']['name'] ?? 'N/A')
+                : ($item['item']->name ?? 'N/A');
+            $html .= '<tr>
                     <td>' . ($index + 1) . '</td>
-                    <td>' . ($item['item']['name'] ?? 'N/A') . '</td>
+                    <td>' . e($itemName) . '</td>
                     <td>' . ($item['total_qty'] ?? 0) . '</td>
                     <td>₹' . number_format($item['total_revenue'] ?? 0, 2) . '</td>
                     <td>' . ($item['order_count'] ?? 0) . '</td>
                 </tr>';
-            }
         }
-        
+
         $html .= '</tbody></table>';
         return $html;
     }
@@ -862,9 +960,9 @@ class ReportsController extends Controller
     private function generateShiftHTML($data)
     {
         $html = '<h3>Shift Reports</h3>';
-        
-        if (is_array($data)) {
-            foreach ($data as $shift) {
+
+        $shifts = $this->shiftRowsFromExportData($data);
+        foreach ($shifts as $shift) {
                 $html .= '<div class="summary" style="margin-bottom: 15px;">
                     <h4>Shift #' . ($shift['shift_id'] ?? 'N/A') . '</h4>
                     <div class="summary-grid">
@@ -886,9 +984,8 @@ class ReportsController extends Controller
                         </div>
                     </div>
                 </div>';
-            }
         }
-        
+
         return $html;
     }
 
@@ -962,35 +1059,36 @@ class ReportsController extends Controller
     private function generateTopItemsCSV($file, $data)
     {
         fputcsv($file, ['Rank', 'Item Name', 'Quantity Sold', 'Total Revenue', 'Order Count']);
-        
-        if (is_array($data)) {
-            foreach ($data as $index => $item) {
-                fputcsv($file, [
-                    $index + 1,
-                    $item['item']['name'] ?? 'N/A',
-                    $item['total_qty'] ?? 0,
-                    '₹' . number_format($item['total_revenue'] ?? 0, 2),
-                    $item['order_count'] ?? 0
-                ]);
-            }
+
+        $rows = $this->topItemRowsFromExportData($data);
+        foreach ($rows as $index => $item) {
+            $itemName = is_array($item['item'] ?? null)
+                ? ($item['item']['name'] ?? 'N/A')
+                : ($item['item']->name ?? 'N/A');
+            fputcsv($file, [
+                $index + 1,
+                $itemName,
+                $item['total_qty'] ?? 0,
+                '₹' . number_format($item['total_revenue'] ?? 0, 2),
+                $item['order_count'] ?? 0,
+            ]);
         }
     }
 
     private function generateShiftCSV($file, $data)
     {
         fputcsv($file, ['Shift ID', 'Opened By', 'Opened At', 'Closed At', 'Total Sales', 'Total Bills']);
-        
-        if (is_array($data)) {
-            foreach ($data as $shift) {
-                fputcsv($file, [
-                    $shift['shift_id'] ?? 'N/A',
-                    $shift['opened_by'] ?? 'N/A',
-                    $shift['opened_at'] ? date('Y-m-d H:i:s', strtotime($shift['opened_at'])) : 'N/A',
-                    $shift['closed_at'] ? date('Y-m-d H:i:s', strtotime($shift['closed_at'])) : 'Open',
-                    '₹' . number_format($shift['total_sales'] ?? 0, 2),
-                    $shift['total_bills'] ?? 0
-                ]);
-            }
+
+        $shifts = $this->shiftRowsFromExportData($data);
+        foreach ($shifts as $shift) {
+            fputcsv($file, [
+                $shift['shift_id'] ?? 'N/A',
+                $shift['opened_by'] ?? 'N/A',
+                $shift['opened_at'] ? date('Y-m-d H:i:s', strtotime($shift['opened_at'])) : 'N/A',
+                $shift['closed_at'] ? date('Y-m-d H:i:s', strtotime($shift['closed_at'])) : 'Open',
+                '₹' . number_format($shift['total_sales'] ?? 0, 2),
+                $shift['total_bills'] ?? 0,
+            ]);
         }
     }
 

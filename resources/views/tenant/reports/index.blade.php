@@ -96,7 +96,7 @@
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {{-- Sales Summary Template --}}
-            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('sales_summary')">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('sales')">
                 <div class="flex items-center mb-2 sm:mb-3">
                     <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,7 +134,7 @@
             </div>
 
             {{-- Shift Report Template --}}
-            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('shift_report')">
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openViewReportsModal('shift')">
                 <div class="flex items-center mb-2 sm:mb-3">
                     <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,11 +350,11 @@
                 </button>
                 <button onclick="generateReport()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" id="generateReportBtn">
                     Generate Report
-                            </button>
+                </button>
             </div>
         </div>
     </div>
-                    </div>
+</div>
 
 {{-- Report Display Area --}}
 <div id="reportDisplayArea" class="hidden bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
@@ -372,6 +372,19 @@
 </div>
 
 <script>
+const reportsBaseUrl = @json(url($tenant->slug.'/reports'));
+
+function reportLoadUrl(reportType) {
+    const paths = {
+        sales: 'sales',
+        top_items: 'top-items',
+        shift: 'shift',
+        order_summary: 'order-summary'
+    };
+    const segment = paths[reportType] || reportType;
+    return `${reportsBaseUrl}/${segment}`;
+}
+
 // Error logging function
 function logError(level, message, data = null) {
     const timestamp = new Date().toISOString();
@@ -387,7 +400,7 @@ function logError(level, message, data = null) {
     console.log(`[${level}] ${message}`, data || '');
     
     // Send to server for logging
-    fetch('/teabench1/reports/log-error', {
+    fetch(reportsBaseUrl + '/log-error', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -500,7 +513,7 @@ function closeReportDisplay() {
 function loadQuickStats() {
     const outletId = document.getElementById('outletSelect').value;
     
-    fetch(`/teabench1/reports/quick-stats?outlet_id=${outletId}`, {
+    fetch(`${reportsBaseUrl}/quick-stats?outlet_id=${outletId}`, {
         method: 'GET',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -537,21 +550,31 @@ function loadReportData() {
     // Show report display area
     document.getElementById('reportDisplayArea').classList.remove('hidden');
     
-    // Make AJAX request
-    fetch(`/teabench1/reports/${reportType}`, {
+    const payload = {
+        outlet_id: outletId,
+        date_from: dateFrom,
+        date_to: dateTo
+    };
+    if (reportType === 'sales') {
+        payload.report_type = reportOptions;
+    }
+
+    fetch(reportLoadUrl(reportType), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify({
-            outlet_id: outletId,
-            date_from: dateFrom,
-            date_to: dateTo,
-            report_type: reportOptions
-        })
+        body: JSON.stringify(payload)
     })
-    .then(response => response.json())
+    .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(body.message || body.error || 'Failed to load report');
+        }
+        return body;
+    })
     .then(data => {
         displayReportData(data, reportType);
         closeViewReportsModal();
@@ -633,10 +656,11 @@ function generateReport() {
         logError('INFO', 'Starting AJAX request to export endpoint');
         
         // Make AJAX request
-        fetch('/teabench1/reports/export', {
+        fetch(reportsBaseUrl + '/export', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json, application/pdf, text/csv, */*',
                 'X-CSRF-TOKEN': csrfToken.getAttribute('content')
             },
             body: JSON.stringify({
@@ -740,55 +764,89 @@ function displayReportData(data, reportType) {
 
 function displaySalesReport(data) {
     const reportContent = document.getElementById('reportContent');
-    
+
+    let summary = data.summary;
+    if (!summary && data.daily_data && Array.isArray(data.daily_data)) {
+        const days = data.daily_data;
+        const totalSales = days.reduce((s, d) => s + Number(d.total_sales || 0), 0);
+        const totalBills = days.reduce((s, d) => s + Number(d.total_bills || 0), 0);
+        summary = {
+            total_sales: totalSales,
+            total_bills: totalBills,
+            average_bill_value: totalBills ? totalSales / totalBills : 0,
+            payment_methods: null
+        };
+    }
+    if (!summary && data.hourly_data) {
+        let totalSales = 0;
+        let totalBills = 0;
+        Object.values(data.hourly_data).forEach((dayHours) => {
+            (dayHours || []).forEach((h) => {
+                totalSales += Number(h.sales || 0);
+                totalBills += Number(h.bills || 0);
+            });
+        });
+        summary = {
+            total_sales: totalSales,
+            total_bills: totalBills,
+            average_bill_value: totalBills ? totalSales / totalBills : 0,
+            payment_methods: null
+        };
+    }
+    if (!summary) {
+        summary = data;
+    }
+
+    const pm = data.payment_methods || summary.payment_methods;
+
     let html = `
         <div class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-medium text-gray-900">Total Sales</h4>
-                    <p class="text-2xl font-bold text-green-600">₹${data.total_sales || 0}</p>
+                    <p class="text-2xl font-bold text-green-600">₹${Number(summary.total_sales || 0).toLocaleString()}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-medium text-gray-900">Total Bills</h4>
-                    <p class="text-2xl font-bold text-blue-600">${data.total_bills || 0}</p>
+                    <p class="text-2xl font-bold text-blue-600">${Number(summary.total_bills || 0).toLocaleString()}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-medium text-gray-900">Average Bill Value</h4>
-                    <p class="text-2xl font-bold text-purple-600">₹${data.average_bill_value || 0}</p>
+                    <p class="text-2xl font-bold text-purple-600">₹${Number(summary.average_bill_value || 0).toLocaleString()}</p>
                 </div>
             </div>
     `;
-    
-    if (data.payment_methods) {
+
+    if (pm) {
         html += `
             <div class="bg-gray-50 p-4 rounded-lg">
                 <h4 class="font-medium text-gray-900 mb-3">Payment Methods</h4>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div class="text-center">
                         <p class="text-sm text-gray-600">Cash</p>
-                        <p class="font-semibold">₹${data.payment_methods.cash || 0}</p>
+                        <p class="font-semibold">₹${Number(pm.cash || 0).toLocaleString()}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-600">Card</p>
-                        <p class="font-semibold">₹${data.payment_methods.card || 0}</p>
+                        <p class="font-semibold">₹${Number(pm.card || 0).toLocaleString()}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-600">UPI</p>
-                        <p class="font-semibold">₹${data.payment_methods.upi || 0}</p>
+                        <p class="font-semibold">₹${Number(pm.upi || 0).toLocaleString()}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-600">Wallet</p>
-                        <p class="font-semibold">₹${data.payment_methods.wallet || 0}</p>
+                        <p class="font-semibold">₹${Number(pm.wallet || 0).toLocaleString()}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-600">Other</p>
-                        <p class="font-semibold">₹${data.payment_methods.other || 0}</p>
+                        <p class="font-semibold">₹${Number(pm.other || 0).toLocaleString()}</p>
                     </div>
                 </div>
             </div>
         `;
     }
-    
+
     html += '</div>';
     reportContent.innerHTML = html;
 }
@@ -800,6 +858,8 @@ function displayTopItemsReport(data) {
     
     if (data && data.length > 0) {
         data.forEach((item, index) => {
+            const it = item.item || {};
+            const name = typeof it === 'object' && it !== null ? (it.name || 'Item') : String(it);
             html += `
                 <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
@@ -807,12 +867,12 @@ function displayTopItemsReport(data) {
                             <span class="text-sm font-medium text-purple-600">${index + 1}</span>
                         </div>
                         <div>
-                            <h4 class="font-medium text-gray-900">${item.item.name}</h4>
+                            <h4 class="font-medium text-gray-900">${name}</h4>
                             <p class="text-sm text-gray-600">${item.total_qty} sold</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-semibold text-gray-900">₹${item.total_revenue}</p>
+                        <p class="font-semibold text-gray-900">₹${Number(item.total_revenue || 0).toLocaleString()}</p>
                         <p class="text-sm text-gray-600">${item.order_count} orders</p>
                     </div>
                 </div>
@@ -895,9 +955,11 @@ function displayOrderSummaryReport(data) {
     if (data && data.order_types && data.order_types.length > 0) {
         html += '<div class="space-y-4">';
         data.order_types.forEach(orderType => {
+            const ot = orderType.order_type || {};
+            const otName = typeof ot === 'object' && ot !== null ? (ot.name || 'Order type') : String(ot);
             html += `
                 <div class="p-4 bg-gray-50 rounded-lg">
-                    <h4 class="font-medium text-gray-900 mb-3">${orderType.order_type.name}</h4>
+                    <h4 class="font-medium text-gray-900 mb-3">${otName}</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <p class="text-sm text-gray-600">Total Orders</p>
@@ -913,7 +975,7 @@ function displayOrderSummaryReport(data) {
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Tables/Addresses</p>
-                            <p class="font-semibold">${orderType.table_numbers.length + orderType.delivery_addresses.length}</p>
+                            <p class="font-semibold">${(Array.isArray(orderType.table_numbers) ? orderType.table_numbers.length : 0) + (Array.isArray(orderType.delivery_addresses) ? orderType.delivery_addresses.length : 0)}</p>
                         </div>
                     </div>
                 </div>
@@ -957,7 +1019,7 @@ function generateTestData() {
         // Show report display area
         document.getElementById('reportDisplayArea').classList.remove('hidden');
         
-        fetch('/teabench1/reports/generate-test-data', {
+        fetch(reportsBaseUrl + '/generate-test-data', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
