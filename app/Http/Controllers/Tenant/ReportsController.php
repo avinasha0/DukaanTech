@@ -30,6 +30,18 @@ class ReportsController extends Controller
         return view('tenant.reports.index', compact('tenant', 'outlets'));
     }
 
+    public function shiftLogs()
+    {
+        $tenant = app('tenant');
+        if (! $tenant) {
+            abort(404, 'Tenant not found');
+        }
+
+        $outlets = Outlet::where('tenant_id', app('tenant.id'))->orderBy('name')->get();
+
+        return view('tenant.reports.shift-logs', compact('tenant', 'outlets'));
+    }
+
     public function logError(Request $request)
     {
         try {

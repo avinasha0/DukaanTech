@@ -157,6 +157,7 @@ Route::get('bill-templates/{template}/preview', [BillTemplateController::class, 
 
 // Reports routes
 Route::get('reports', [ReportsController::class, 'index'])->name('tenant.reports');
+Route::get('reports/shift-logs', [ReportsController::class, 'shiftLogs'])->name('tenant.reports.shift-logs');
 Route::get('reports/logs', [ReportsController::class, 'logs'])->name('tenant.reports.logs');
 Route::get('reports/quick-stats', [ReportsController::class, 'quickStats']);
 Route::post('reports/log-error', [ReportsController::class, 'logError']);
