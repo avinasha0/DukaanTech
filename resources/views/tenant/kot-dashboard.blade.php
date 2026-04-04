@@ -390,8 +390,10 @@
                         
                         // First load KOT status
                         const statusResponse = await fetch(kotApiPath('status-public'), {
+                            credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                             }
                         });

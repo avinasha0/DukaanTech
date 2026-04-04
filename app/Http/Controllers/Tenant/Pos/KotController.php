@@ -94,7 +94,7 @@ class KotController extends Controller
     }
 
     /**
-     * Kitchen display at /{tenant}/kot is public; staff are not always logged in as web users.
+     * Kitchen display routes require a web session user for that tenant (see routes/web.php).
      * Uses numeric id (not route model binding) so missing tickets return JSON instead of an HTML 404 page.
      */
     public function markReadyPublic(Request $request, string $tenant, int $kitchenTicketId): JsonResponse

@@ -105,64 +105,66 @@ Route::get('/cookie-policy', function () {
     return view('pages.cookie-policy');
 })->name('cookie-policy');
 
-// KOT Settings routes without auth (for public access)
-Route::post('/{tenant}/kot/toggle-public', function ($tenant) {
-    \Log::info('KOT toggle called for tenant: ' . $tenant, request()->all());
-    
-    $account = \App\Models\Account::where('slug', $tenant)->first();
-    if (!$account) {
-        return response()->json(['error' => 'Tenant not found'], 404);
-    }
-    
-    $data = request()->validate([
-        'enabled' => 'required|boolean',
-    ]);
-    
-    \Log::info('Updating KOT enabled to: ' . ($data['enabled'] ? 'true' : 'false'));
-    $account->update(['kot_enabled' => $data['enabled']]);
-    
-    return response()->json([
-        'message' => $data['enabled'] ? 'KOT functionality enabled' : 'KOT functionality disabled',
-        'kot_enabled' => $account->kot_enabled
-    ]);
-})->withoutMiddleware(['web']);
+// Kitchen KOT display: requires web login as a user for this tenant (session cookie).
+Route::middleware(['auth', 'ensure.kot.tenant'])->group(function () {
+    Route::post('/{tenant}/kot/toggle-public', function ($tenant) {
+        \Log::info('KOT toggle called for tenant: ' . $tenant, request()->all());
 
-Route::get('/{tenant}/kot/status-public', function ($tenant) {
-    \Log::info('KOT status called for tenant: ' . $tenant);
-    
-    $account = \App\Models\Account::where('slug', $tenant)->first();
-    if (!$account) {
-        return response()->json(['error' => 'Tenant not found'], 404);
-    }
-    
-    \Log::info('KOT status for tenant ' . $tenant . ': ' . ($account->kot_enabled ? 'enabled' : 'disabled'));
-    
-    return response()->json([
-        'kot_enabled' => $account->kot_enabled,
-        'kot_settings' => $account->kot_settings
-    ]);
-})->withoutMiddleware(['web']);
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (! $account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
 
-Route::get('/{tenant}/kot/tickets-public', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'indexPublic'])
-    ->name('tenant.kot.tickets-public');
-Route::post('/{tenant}/kot/{kitchenTicketId}/mark-ready', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'markReadyPublic'])
-    ->whereNumber('kitchenTicketId')
-    ->name('tenant.kot.mark-ready-public');
+        $data = request()->validate([
+            'enabled' => 'required|boolean',
+        ]);
 
-Route::get('/{tenant}/kot', function ($tenant) {
-    $account = \App\Models\Account::where('slug', $tenant)->first();
-    if (!$account) {
-        abort(404, 'Tenant not found');
-    }
+        \Log::info('Updating KOT enabled to: ' . ($data['enabled'] ? 'true' : 'false'));
+        $account->update(['kot_enabled' => $data['enabled']]);
 
-    $user = auth()->user();
+        return response()->json([
+            'message' => $data['enabled'] ? 'KOT functionality enabled' : 'KOT functionality disabled',
+            'kot_enabled' => $account->kot_enabled,
+        ]);
+    });
 
-    return view('tenant.kot-dashboard', [
-        'tenant' => $account,
-        'kotDebugUi' => request()->boolean('kot_debug'),
-        'kotDisplayOnly' => $user && $user->isKotDisplayOnly(),
-    ]);
-})->name('tenant.kot.public')->withoutMiddleware(['resolve.tenant']);
+    Route::get('/{tenant}/kot/status-public', function ($tenant) {
+        \Log::info('KOT status called for tenant: ' . $tenant);
+
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (! $account) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+
+        \Log::info('KOT status for tenant ' . $tenant . ': ' . ($account->kot_enabled ? 'enabled' : 'disabled'));
+
+        return response()->json([
+            'kot_enabled' => $account->kot_enabled,
+            'kot_settings' => $account->kot_settings,
+        ]);
+    });
+
+    Route::get('/{tenant}/kot/tickets-public', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'indexPublic'])
+        ->name('tenant.kot.tickets-public');
+    Route::post('/{tenant}/kot/{kitchenTicketId}/mark-ready', [\App\Http\Controllers\Tenant\Pos\KotController::class, 'markReadyPublic'])
+        ->whereNumber('kitchenTicketId')
+        ->name('tenant.kot.mark-ready-public');
+
+    Route::get('/{tenant}/kot', function ($tenant) {
+        $account = \App\Models\Account::where('slug', $tenant)->first();
+        if (! $account) {
+            abort(404, 'Tenant not found');
+        }
+
+        $user = auth()->user();
+
+        return view('tenant.kot-dashboard', [
+            'tenant' => $account,
+            'kotDebugUi' => request()->boolean('kot_debug'),
+            'kotDisplayOnly' => $user && $user->isKotDisplayOnly(),
+        ]);
+    })->name('tenant.kot.public')->withoutMiddleware(['resolve.tenant']);
+});
 
 // Terminal Authentication Routes
 Route::get('/{tenant}/terminal/login', [TerminalAuthController::class, 'showLogin'])

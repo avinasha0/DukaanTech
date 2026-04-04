@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'terminal.auth' => \App\Http\Middleware\TerminalAuth::class,
             'restrict.kot.display.only' => \App\Http\Middleware\RestrictKotDisplayOnlyUsers::class,
+            'ensure.kot.tenant' => \App\Http\Middleware\EnsureWebUserMatchesKotTenant::class,
         ]);
         
         // Disable CSRF for now to get the system working
