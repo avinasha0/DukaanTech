@@ -21,18 +21,18 @@
 <body class="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen">
     {{-- Simple Kitchen Header --}}
     <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div class="mx-auto max-w-7xl px-4 py-3">
+        <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
             @if(!empty($kotDisplayOnly))
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 min-w-0">
             @else
-                <a href="{{ route('tenant.dashboard', ['tenant' => $tenant->slug]) }}" class="flex items-center gap-3">
+                <a href="{{ route('tenant.dashboard', ['tenant' => $tenant->slug]) }}" class="flex items-center gap-3 min-w-0">
             @endif
-                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shrink-0">
                     <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <span class="text-2xl font-bold text-gray-900">{{ $tenant->name }}</span>
                     <span class="text-lg text-gray-600 ml-2">Kitchen</span>
                 </div>
@@ -41,6 +41,15 @@
             @else
                 </a>
             @endif
+            <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-orange-400 hover:text-orange-700 transition-colors">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Logout
+                </button>
+            </form>
         </div>
     </div>
 
