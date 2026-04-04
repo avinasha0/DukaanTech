@@ -1097,9 +1097,16 @@ class PosApiController extends Controller
                 ], 422);
             }
 
-            $tableId = $validated['table_id'] ?? null;
+            // Table QR orders already carry table_id; staff may override via request. Menu QR dine-in may need a table pick.
+            $requestedTableId = isset($validated['table_id']) ? (int) $validated['table_id'] : 0;
+            $tableId = $requestedTableId > 0
+                ? $requestedTableId
+                : (int) ($order->table_id ?? 0);
+            if ($tableId < 1) {
+                $tableId = null;
+            }
 
-            if ($order->mode === 'DINE_IN' && (empty($tableId) || $tableId < 1)) {
+            if ($order->mode === 'DINE_IN' && empty($tableId)) {
                 return response()->json(['error' => 'Assign a table for dine-in orders before confirming'], 422);
             }
 

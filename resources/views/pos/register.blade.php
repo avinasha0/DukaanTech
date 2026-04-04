@@ -5715,7 +5715,7 @@ function orderDetailsModal() {
             this.selectedTableId = '';
             this.tables = [];
             this.isOpen = true;
-            if (this.order && this.order.state === 'PENDING_QR_APPROVAL' && this.order.mode === 'DINE_IN') {
+            if (this.order && this.order.state === 'PENDING_QR_APPROVAL' && this.order.mode === 'DINE_IN' && !this.order.table_id) {
                 this.loadTables();
             }
         },
@@ -5794,7 +5794,7 @@ function orderDetailsModal() {
                 alert('Shift not loaded. Open Recent Orders from the register again, then approve.');
                 return;
             }
-            if (this.order.mode === 'DINE_IN' && !this.selectedTableId) {
+            if (this.order.mode === 'DINE_IN' && !this.order.table_id && !this.selectedTableId) {
                 alert('Select a table for dine-in orders before confirming.');
                 return;
             }
@@ -6875,9 +6875,14 @@ function getCookie(name) {
                             <div x-show="order.state === 'PENDING_QR_APPROVAL' && order.source === 'mobile_qr'"
                                  class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
                                 <h4 class="font-semibold text-amber-900">Confirm QR order (required before kitchen)</h4>
-                                <p class="text-sm text-amber-900/90" x-show="order.mode === 'DINE_IN'">Assign a table for dine-in, then confirm. After this, you can send the order to KOT from the register.</p>
+                                <p class="text-sm text-amber-900/90" x-show="order.mode === 'DINE_IN' && order.table_id">Table is already set from the customer&apos;s table QR. Confirm to accept the order — the table will show as occupied after you approve.</p>
+                                <p class="text-sm text-amber-900/90" x-show="order.mode === 'DINE_IN' && !order.table_id">Choose which table this dine-in order is for, then confirm. After this, you can send the order to KOT from the register.</p>
                                 <p class="text-sm text-amber-900/90" x-show="order.mode === 'TAKEAWAY' || order.mode === 'PICKUP'">Confirm this pickup order on the POS. After this, you can send it to KOT from the register.</p>
-                                <div x-show="order.mode === 'DINE_IN'">
+                                <div x-show="order.mode === 'DINE_IN' && order.table_id" class="rounded-md border border-amber-200 bg-white px-3 py-2 text-sm text-amber-950">
+                                    <span class="font-medium">Table (from QR):</span>
+                                    <span x-text="order.table?.name || order.table_no || ('#' + order.table_id)"></span>
+                                </div>
+                                <div x-show="order.mode === 'DINE_IN' && !order.table_id">
                                     <label class="block text-sm font-medium text-amber-900 mb-1">Table</label>
                                     <select id="qr-table-select-approve"
                                             x-model="selectedTableId"
@@ -6890,7 +6895,7 @@ function getCookie(name) {
                                 </div>
                                 <button type="button"
                                         @click="confirmQrOrder()"
-                                        :disabled="loadingApprove || (order.mode === 'DINE_IN' && !selectedTableId)"
+                                        :disabled="loadingApprove || (order.mode === 'DINE_IN' && !order.table_id && !selectedTableId)"
                                         class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <span x-show="!loadingApprove">Confirm &amp; accept order</span>
                                     <span x-show="loadingApprove">Saving…</span>

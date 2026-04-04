@@ -198,9 +198,13 @@ class QrPublicOrderService
         }
 
         $order->update($updates);
+        $order->refresh();
 
-        $table->refresh();
-        $table->syncStatus();
+        // Table stays "free" until POS approves the QR order
+        if (! $order->isPendingQrApproval()) {
+            $table->refresh();
+            $table->syncStatus();
+        }
 
         return [
             'order' => $order->fresh()->load('items.item'),
@@ -252,7 +256,8 @@ class QrPublicOrderService
             }
         }
 
-        if ($table) {
+        // Occupied status only after POS approval — skip while awaiting QR confirmation
+        if ($table && ! $order->isPendingQrApproval()) {
             $table->syncStatus();
         }
 
