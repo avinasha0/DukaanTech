@@ -232,6 +232,35 @@ Route::group(['prefix' => '{tenant}/pos/api', 'middleware' => ['resolve.tenant']
         return response()->json($orders);
     });
 
+    /** Last N POS transactions for an outlet (not scoped to the current shift). */
+    Route::get('/orders/recent', function ($tenant) {
+        $account = app('tenant');
+
+        $data = request()->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+            'limit' => 'sometimes|integer|min:1|max:50',
+        ]);
+
+        $outlet = \App\Models\Outlet::where('id', $data['outlet_id'])
+            ->where('tenant_id', $account->id)
+            ->first();
+
+        if (!$outlet) {
+            return response()->json(['error' => 'Outlet not found'], 404);
+        }
+
+        $limit = (int) ($data['limit'] ?? 10);
+
+        $orders = \App\Models\Order::where('tenant_id', $account->id)
+            ->where('outlet_id', $data['outlet_id'])
+            ->with(['orderType', 'items.item', 'outlet', 'table'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json($orders);
+    });
+
     Route::post('/orders/{orderId}/approve-qr', [PosApiController::class, 'approveQrOrder'])
         ->whereNumber('orderId');
 

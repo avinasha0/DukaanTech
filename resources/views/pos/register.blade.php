@@ -2436,6 +2436,9 @@ function posRegister() {
                         this.loadShiftSummary();
                         this.saveShiftToStorage(); // Save to localStorage
                         this.syncQrApprovalPolling();
+                        // Occupied tables / open dine-in sessions persist across shifts — reload from API
+                        this.lastTableUpdate = null;
+                        this.refreshTablesFromDatabase(true);
                     } else {
                         console.log('❌ No active shift found');
                         this.clearShiftFromStorage(); // Clear localStorage
@@ -4940,6 +4943,8 @@ function posRegister() {
                     // Reload shift summary
                     this.loadShiftSummary();
                     this.syncQrApprovalPolling();
+                    this.lastTableUpdate = null;
+                    this.refreshTablesFromDatabase(true);
                 } else {
                     const error = await response.json();
                     alert('Error opening shift: ' + (error.error || 'Unknown error'));
@@ -5038,6 +5043,8 @@ function posRegister() {
                     alert('Shift closed successfully!');
                     this.closeShiftCheckout();
                     this.shift = null; // Clear shift
+                    this.lastTableUpdate = null;
+                    this.refreshTablesFromDatabase(true);
                 } else {
                     const error = await response.json();
                     alert(error.error || 'Error closing shift');
@@ -6064,11 +6071,11 @@ function ordersModal() {
         },
         
         async loadOrders() {
-            if (!this.shiftId) return;
-            
+            if (!this.outletId) return;
+
             this.loading = true;
             try {
-                const response = await fetch(`${this.apiBase}/orders/current-shift?outlet_id=${this.outletId}&shift_id=${this.shiftId}`, {
+                const response = await fetch(`${this.apiBase}/orders/recent?outlet_id=${this.outletId}&limit=10`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -6927,7 +6934,7 @@ function getCookie(name) {
                             <div class="col-span-1 text-center">Actions</div>
                         </div>
                         
-                        <!-- Orders Rows (up to 5 most recent this shift) -->
+                        <!-- Orders Rows (last 10 transactions at this outlet, all shifts) -->
                         <div x-show="orders.length > 0">
                             <template x-for="order in orders" :key="order.id">
                                 <!-- Desktop Layout -->
@@ -6997,7 +7004,7 @@ function getCookie(name) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                             </svg>
                             <p class="text-base sm:text-lg font-medium">No orders found</p>
-                            <p class="text-xs sm:text-sm">No orders have been created in this shift yet.</p>
+                            <p class="text-xs sm:text-sm">No orders found for this outlet yet.</p>
                         </div>
                     </div>
                 </div>

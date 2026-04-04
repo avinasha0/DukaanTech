@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\RestaurantTable;
 use App\Models\Shift;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -96,8 +97,24 @@ class ShiftService
             ->select($orderTable . '.*')
             ->join('outlets', $orderTable . '.outlet_id', '=', 'outlets.id')
             ->where('outlets.tenant_id', $tid)
-            ->where($orderTable . '.created_at', '>=', $shift->created_at)
-            ->where($orderTable . '.created_at', '<=', $windowEnd)
+            ->where(function ($outer) use ($shift, $windowEnd, $orderTable, $tid) {
+                // Normal case: order created during the shift window.
+                $outer->where(function ($q) use ($shift, $windowEnd, $orderTable) {
+                    $q->where($orderTable . '.created_at', '>=', $shift->created_at)
+                        ->where($orderTable . '.created_at', '<=', $windowEnd);
+                })
+                    // Carry-over: dine-in table session still OPEN from a previous shift (same outlet).
+                    ->orWhere(function ($q) use ($shift, $orderTable, $tid) {
+                        $q->where($orderTable . '.status', Order::STATUS_OPEN)
+                            ->whereNotNull($orderTable . '.table_id')
+                            ->where($orderTable . '.mode', 'DINE_IN')
+                            ->whereHas('table', function ($tq) use ($shift, $tid) {
+                                $tq->withoutGlobalScope('tenant')
+                                    ->where('tenant_id', $tid)
+                                    ->where('outlet_id', $shift->outlet_id);
+                            });
+                    });
+            })
             ->where(function ($q) use ($orderTable) {
                 $q->whereNull($orderTable . '.status')
                     ->orWhereRaw('UPPER(TRIM(' . $orderTable . '.status)) <> ?', ['CANCELLED']);
@@ -129,6 +146,43 @@ class ShiftService
             });
     }
 
+    /**
+     * Reconcile restaurant_tables with still-open dine-in orders after a shift opens or closes.
+     * Open table sessions are not tied to a single shift; occupancy must survive shift changes.
+     */
+    public function syncRestaurantTablesForOutlet(int $tenantId, int $outletId): void
+    {
+        $tableIds = Order::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->where('outlet_id', $outletId)
+            ->openForTableOccupancy()
+            ->whereNotNull('table_id')
+            ->distinct()
+            ->pluck('table_id');
+
+        foreach ($tableIds as $tableId) {
+            $table = RestaurantTable::withoutGlobalScope('tenant')
+                ->where('tenant_id', $tenantId)
+                ->whereKey($tableId)
+                ->first();
+            if ($table) {
+                $table->syncStatus();
+                $table->updateTotalAmount();
+            }
+        }
+
+        $staleOccupied = RestaurantTable::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->where('outlet_id', $outletId)
+            ->where('status', 'occupied')
+            ->when($tableIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $tableIds->all()))
+            ->get();
+
+        foreach ($staleOccupied as $table) {
+            $table->syncStatus();
+        }
+    }
+
     public function openShift(int $outletId, float $openingFloat = 0, ?int $openedBy = null): Shift
     {
         $userId = $openedBy ?? Auth::id();
@@ -136,12 +190,18 @@ class ShiftService
             throw new \RuntimeException('Cannot open shift without opened_by user.');
         }
 
-        return Shift::create([
-            'tenant_id' => app('tenant.id'),
+        $tenantId = (int) app('tenant.id');
+
+        $shift = Shift::create([
+            'tenant_id' => $tenantId,
             'outlet_id' => $outletId,
             'opened_by' => $userId,
             'opening_float' => $openingFloat,
         ]);
+
+        $this->syncRestaurantTablesForOutlet($tenantId, $outletId);
+
+        return $shift;
     }
 
     public function closeShift(Shift $shift, float $actualCash): Shift
@@ -155,6 +215,8 @@ class ShiftService
             'actual_cash' => $actualCash,
             'variance' => $variance
         ]);
+
+        $this->syncRestaurantTablesForOutlet((int) $shift->tenant_id, (int) $shift->outlet_id);
         
         return $shift;
     }
