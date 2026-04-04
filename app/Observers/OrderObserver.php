@@ -14,7 +14,8 @@ class OrderObserver
     public function created(Order $order): void
     {
         // Only update table status for dine-in orders with table_id
-        if ($order->mode === 'DINE_IN' && $order->table_id) {
+        // Pending QR orders must not occupy the table until POS approves (syncStatus uses same rule).
+        if ($order->mode === 'DINE_IN' && $order->table_id && ! $order->isPendingQrApproval()) {
             $table = $order->table;
             if ($table) {
                 $table->update([

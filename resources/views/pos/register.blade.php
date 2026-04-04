@@ -5799,8 +5799,8 @@ function orderDetailsModal() {
                 return;
             }
             this.apiBase = posRegisterApiBase();
-            const rawOid = this.order?.id ?? this.order?.order_id;
-            const orderIdNum = parseInt(String(rawOid), 10);
+            const rawOid = this.order?.id ?? this.order?.order_id ?? this.order?.orderId;
+            const orderIdNum = parseInt(String(rawOid ?? ''), 10);
             if (!Number.isFinite(orderIdNum) || orderIdNum < 1) {
                 alert('Invalid order reference. Close this dialog, refresh Recent Orders, and try again.');
                 return;

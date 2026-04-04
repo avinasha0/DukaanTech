@@ -75,7 +75,7 @@ class RestaurantTable extends Model
      */
     public function openOrder()
     {
-        return $this->hasOne(Order::class, 'table_id')->where('status', 'OPEN');
+        return $this->hasOne(Order::class, 'table_id')->openForTableOccupancy();
     }
 
     /**
@@ -92,7 +92,7 @@ class RestaurantTable extends Model
     public function scopeWithOpenOrders($query)
     {
         return $query->withCount(['orders as open_orders_count' => function ($q) {
-            $q->where('status', 'OPEN');
+            $q->openForTableOccupancy();
         }]);
     }
 
@@ -101,8 +101,8 @@ class RestaurantTable extends Model
      */
     public function scopeWithActiveOrder($query)
     {
-        return $query->with(['orders' => function($q) {
-            $q->where('status', 'OPEN')->latest()->limit(1);
+        return $query->with(['orders' => function ($q) {
+            $q->openForTableOccupancy()->latest()->limit(1);
         }]);
     }
 
@@ -136,7 +136,7 @@ class RestaurantTable extends Model
     public function calculateTotalAmount(): float
     {
         $openOrders = $this->orders()
-            ->where('status', Order::STATUS_OPEN)
+            ->openForTableOccupancy()
             ->with('items.modifiers')
             ->get();
 
@@ -157,9 +157,9 @@ class RestaurantTable extends Model
      */
     public function syncStatus(): void
     {
-        // Only consider OPEN orders as keeping the table occupied
+        // OPEN orders that are not awaiting POS QR approval keep the table occupied
         $openOrders = $this->orders()
-            ->where('status', 'OPEN')
+            ->openForTableOccupancy()
             ->get();
 
         \Log::info('Syncing table status', [
@@ -199,7 +199,7 @@ class RestaurantTable extends Model
     public function getActiveOrder()
     {
         return $this->orders()
-            ->where('status', 'OPEN')
+            ->openForTableOccupancy()
             ->latest()
             ->first();
     }

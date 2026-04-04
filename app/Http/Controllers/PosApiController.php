@@ -305,10 +305,13 @@ class PosApiController extends Controller
                     ->latest('id')
                     ->first();
                 if ($existingOrder) {
-                    $table->update([
-                        'status' => 'occupied',
-                        'current_order_id' => $existingOrder->id,
-                    ]);
+                    // Pending QR orders do not occupy the table until POS approves
+                    if (! $existingOrder->isPendingQrApproval()) {
+                        $table->update([
+                            'status' => 'occupied',
+                            'current_order_id' => $existingOrder->id,
+                        ]);
+                    }
                     return ['order' => $existingOrder, 'existing' => true];
                 }
 
@@ -507,20 +510,20 @@ class PosApiController extends Controller
             $query->where('outlet_id', $outletId);
         }
 
-        // Get tables with their open orders count in a single query
+        // Get tables with their open orders count in a single query (exclude pending QR approval)
         $tables = $query->select('id', 'name', 'status', 'current_order_id', 'total_amount')
             ->withCount(['orders as open_orders_count' => function ($q) {
-                $q->where('status', 'OPEN');
+                $q->openForTableOccupancy();
             }])
             ->orderBy('id')
             ->get();
 
-        // Backfill current_order_id when table has OPEN orders but pointer was never set (fixes Mark Paid)
+        // Backfill current_order_id when table has occupying OPEN orders but pointer was never set (fixes Mark Paid)
         foreach ($tables as $table) {
             if ($table->open_orders_count > 0 && ! $table->current_order_id) {
                 $openOrder = Order::where('tenant_id', $tenantId)
                     ->where('table_id', $table->id)
-                    ->where('status', 'OPEN')
+                    ->openForTableOccupancy()
                     ->latest('id')
                     ->first();
                 if ($openOrder) {
@@ -533,7 +536,7 @@ class PosApiController extends Controller
         // Update total amounts for occupied tables (one query for all open orders + lines)
         $tableIds = $tables->pluck('id');
         $openOrdersByTable = Order::where('tenant_id', $tenantId)
-            ->where('status', Order::STATUS_OPEN)
+            ->openForTableOccupancy()
             ->whereIn('table_id', $tableIds)
             ->with('items.modifiers')
             ->get()
@@ -634,14 +637,14 @@ class PosApiController extends Controller
             $occupiedTables = RestaurantTable::where('tenant_id', $tenantId)
                 ->where('outlet_id', $outletId)
                 ->where('status', 'occupied')
-                ->whereHas('orders', function($query) {
-                    $query->where('status', 'OPEN');
+                ->whereHas('orders', function ($query) {
+                    $query->openForTableOccupancy();
                 })
-                ->with(['orders' => function($query) {
-                    $query->where('status', 'OPEN')
-                          ->latest()
-                          ->limit(1)
-                          ->with(['items', 'items.modifiers']);
+                ->with(['orders' => function ($query) {
+                    $query->openForTableOccupancy()
+                        ->latest()
+                        ->limit(1)
+                        ->with(['items', 'items.modifiers']);
                 }])
                 ->get()
                 ->map(function($table) {
@@ -706,11 +709,11 @@ class PosApiController extends Controller
                 ], 404);
             }
 
-            // Get only the latest OPEN order for this table (current active order)
+            // Latest order that occupies the table session (excludes pending QR approval)
             $orders = Order::with(['items.item', 'items.modifiers'])
                 ->where('tenant_id', $tenantId)
                 ->where('table_id', $tableId)
-                ->where('status', 'OPEN')
+                ->openForTableOccupancy()
                 ->orderBy('created_at', 'desc')
                 ->limit(1)
                 ->get();
@@ -844,10 +847,10 @@ class PosApiController extends Controller
         try {
             $table = RestaurantTable::where('tenant_id', $tenantId)
                 ->where('id', $tableId)
-                ->with(['orders' => function($query) {
-                    $query->where('status', 'OPEN')
-                          ->latest()
-                          ->limit(1);
+                ->with(['orders' => function ($query) {
+                    $query->openForTableOccupancy()
+                        ->latest()
+                        ->limit(1);
                 }])
                 ->first();
 
@@ -1042,10 +1045,12 @@ class PosApiController extends Controller
     /**
      * Confirm a QR/mobile order: assign table (dine-in), tag shift, then allow KOT (state NEW).
      */
-    public function approveQrOrder(Request $request, $orderId)
+    public function approveQrOrder(Request $request)
     {
         try {
-            $orderId = (int) $orderId;
+            // Read from the route by name — avoids wrong controller arg binding (e.g. tenant slug → (int)0).
+            $raw = $request->route('orderId');
+            $orderId = is_numeric($raw) ? (int) $raw : 0;
             if ($orderId < 1) {
                 return response()->json(['error' => 'Invalid order id'], 422);
             }

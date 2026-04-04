@@ -211,6 +211,18 @@ class Order extends Model
     }
 
     /**
+     * OPEN orders that should mark the physical table as in use (excludes awaiting POS QR approval).
+     */
+    public function scopeOpenForTableOccupancy($query)
+    {
+        return $query->where('status', self::STATUS_OPEN)
+            ->where(function ($q) {
+                $q->whereNull('state')
+                    ->orWhere('state', '!=', self::STATE_PENDING_QR_APPROVAL);
+            });
+    }
+
+    /**
      * Scope for open orders
      */
     public function scopeOpen($query)
