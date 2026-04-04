@@ -180,7 +180,7 @@
                                         </svg>
                                         <div>
                                             <p class="text-xs text-gray-500">Plan</p>
-                                            <p class="text-sm text-gray-900">Free Trial</p>
+                                            <p class="text-sm text-gray-900">Free</p>
                                         </div>
                                     </div>
                                 </div>

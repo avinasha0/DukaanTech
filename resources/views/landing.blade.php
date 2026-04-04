@@ -322,7 +322,7 @@
     <div class="mx-auto max-w-7xl px-4">
       <div class="text-center mb-16">
         <h2 class="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-        <p class="text-xl text-gray-600">Choose the plan that fits your restaurant size</p>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">The platform is <span class="font-semibold text-gray-900">free for now</span>—pick Starter or Enterprise by features, not price.</p>
       </div>
       
       <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -332,6 +332,7 @@
             <p class="text-gray-600 mb-4">Perfect for small cafes</p>
             <div class="text-4xl font-bold text-gray-900">₹0</div>
             <div class="text-gray-600">per month</div>
+            <div class="text-sm text-green-600 font-semibold mt-2">Free right now</div>
           </div>
           <ul class="space-y-4 mb-8">
             <li class="flex items-center gap-3">
@@ -363,11 +364,11 @@
             <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
             <p class="text-gray-600 mb-4">For restaurant chains</p>
             <div class="flex flex-wrap items-baseline justify-center gap-2 mb-1">
-              <span class="text-2xl text-gray-400 line-through font-semibold">₹299</span>
+              <span class="text-2xl text-gray-400 font-semibold" style="text-decoration: line-through; text-decoration-thickness: 2px;">₹299</span>
               <span class="text-4xl font-bold text-gray-900">₹0</span>
             </div>
             <div class="text-gray-600">per month</div>
-            <div class="text-sm text-green-600 font-semibold mt-2">Now free</div>
+            <div class="text-sm text-green-600 font-semibold mt-2">Free for now — full platform for chains</div>
           </div>
           <ul class="space-y-4 mb-8">
             <li class="flex items-center gap-3">
@@ -426,7 +427,7 @@
             </li>
           </ul>
           <a href="/contact" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
-            Contact Sales
+            Start free for your chain
           </a>
         </div>
       </div>
@@ -573,11 +574,11 @@
     <div class="mx-auto max-w-7xl px-4 text-center">
       <h2 class="text-4xl font-bold text-white mb-4">Ready to Transform Your Restaurant?</h2>
       <p class="text-xl text-orange-100 mb-8 max-w-3xl mx-auto">
-        Join hundreds of successful restaurants already using Dukaantech. Start your free trial today and see the difference.
+        Join restaurants using Dukaantech while the platform is free—no POS subscription fees in this phase.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/register" class="bg-white text-orange-600 px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1">
-          Start Free Trial
+          Start free
         </a>
         <a href="/contact" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-orange-600 transition-all">
           Schedule Demo

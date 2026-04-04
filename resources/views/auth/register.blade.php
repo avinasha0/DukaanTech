@@ -25,7 +25,7 @@
               </svg>
             </div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p class="text-gray-600">Start your free trial with Dukaantech POS</p>
+            <p class="text-gray-600">Get started free with Dukaantech POS</p>
           </div>
 
           {{-- Register Form --}}

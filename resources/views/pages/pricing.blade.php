@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
-@section('title', 'Pricing - Dukaantech POS | Affordable Restaurant Management Solutions')
+@section('title', 'Pricing - Dukaantech POS | Free Restaurant POS (for now)')
 
 @section('meta')
-<meta name="description" content="Choose the perfect Dukaantech POS plan for your restaurant. Transparent pricing with no hidden fees. Start free or upgrade to Professional/Enterprise plans.">
+<meta name="description" content="Dukaantech POS: Starter and Enterprise plans are free right now—no platform subscription fees. Pick the feature set that fits your restaurant; we’ll give notice before any paid pricing.">
 @endsection
 
 @section('content')
@@ -22,26 +22,19 @@
           </span>
         </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Choose the plan that fits your restaurant size. No hidden fees, no surprises. 
-          Start free and scale as you grow.
+          <span class="font-semibold text-gray-900">Right now the platform is free</span>—no subscription fees for Starter or Enterprise.
+          Pick the plan that matches how you operate; we’ll announce any pricing changes in advance.
         </p>
       </div>
     </div>
   </section>
 
-  {{-- Pricing Toggle --}}
+  {{-- Free-for-now notice --}}
   <section class="py-8 bg-gray-50">
-    <div class="mx-auto max-w-7xl px-4">
-      <div class="flex items-center justify-center mb-8">
-        <div class="bg-white rounded-lg p-1 shadow-lg">
-          <button id="monthly-btn" class="px-6 py-3 rounded-md font-semibold text-white bg-gradient-to-r from-orange-500 to-red-600">
-            Monthly
-          </button>
-          <button id="yearly-btn" class="px-6 py-3 rounded-md font-semibold text-gray-600 hover:text-gray-900">
-            Yearly
-            <span class="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Save 20%</span>
-          </button>
-        </div>
+    <div class="mx-auto max-w-3xl px-4">
+      <div class="rounded-xl border border-green-200 bg-green-50 px-6 py-4 text-center text-green-900">
+        <p class="font-semibold">No platform fees today</p>
+        <p class="text-sm text-green-800 mt-1">Starter and Enterprise are ₹0 while we’re in this phase—we’ll give clear notice before any paid subscription.</p>
       </div>
     </div>
   </section>
@@ -56,7 +49,7 @@
             <h3 class="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
             <p class="text-gray-600 mb-4">Perfect for small cafes & food trucks</p>
             <div class="text-5xl font-bold text-gray-900 mb-2">₹0</div>
-            <div class="text-gray-600 pricing-period">per month</div>
+            <div class="text-gray-600">per month</div>
             <div class="text-sm text-green-600 font-semibold mt-2">Always Free</div>
           </div>
           
@@ -104,11 +97,11 @@
             <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
             <p class="text-gray-600 mb-4">For restaurant chains & franchises</p>
             <div class="flex flex-wrap items-baseline justify-center gap-2 mb-2">
-              <span class="text-3xl text-gray-400 line-through font-semibold">₹299</span>
+              <span class="text-3xl text-gray-400 font-semibold" style="text-decoration: line-through; text-decoration-thickness: 2px;">₹299</span>
               <span class="text-5xl font-bold text-gray-900">₹0</span>
             </div>
             <div class="text-gray-600">per month</div>
-            <div class="text-sm text-green-600 font-semibold mt-2">Now free — full platform for chains</div>
+            <div class="text-sm text-green-600 font-semibold mt-2">Free for now — full platform for chains</div>
           </div>
           
           <ul class="space-y-4 mb-8">
@@ -163,7 +156,7 @@
           </ul>
           
           <a href="/contact-us" class="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold text-center block hover:bg-gray-800 transition-colors">
-            Contact Sales
+            Start free for your chain
           </a>
         </div>
       </div>
@@ -231,28 +224,28 @@
       
       <div class="space-y-8">
         <div class="bg-gray-50 rounded-2xl p-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Can I change my plan anytime?</h3>
-          <p class="text-gray-600">Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences.</p>
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Is the software really free right now?</h3>
+          <p class="text-gray-600">Yes. There are no Dukaantech platform subscription fees at this time for Starter or Enterprise—you can use the product without paying us for the POS software today.</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-8">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Will pricing stay free forever?</h3>
+          <p class="text-gray-600">We don’t guarantee free pricing forever. If we introduce paid plans later, we’ll give advance notice so you can decide what works for your business.</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-2xl p-8">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Can I switch between Starter and Enterprise?</h3>
+          <p class="text-gray-600">Yes. Move to the feature set that fits you as you grow. While the platform is free, there’s no billing to worry about—just pick the right capabilities for your outlets and team.</p>
         </div>
         
         <div class="bg-gray-50 rounded-2xl p-8">
           <h3 class="text-xl font-bold text-gray-900 mb-4">Is there a setup fee?</h3>
-          <p class="text-gray-600">No setup fees, no hidden costs. What you see is what you pay. We also provide free training and onboarding for all new customers.</p>
+          <p class="text-gray-600">No setup fee for the POS platform in this phase. We also provide onboarding help for new customers.</p>
         </div>
         
         <div class="bg-gray-50 rounded-2xl p-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">What payment methods do you accept?</h3>
-          <p class="text-gray-600">We accept all major credit cards, UPI, net banking, and NEFT transfers. Enterprise customers can also pay via invoice.</p>
-        </div>
-        
-        <div class="bg-gray-50 rounded-2xl p-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Do you offer refunds?</h3>
-          <p class="text-gray-600">We offer a 30-day money-back guarantee. If you're not satisfied with our service, we'll refund your payment in full.</p>
-        </div>
-        
-        <div class="bg-gray-50 rounded-2xl p-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Can I try before I buy?</h3>
-          <p class="text-gray-600">Absolutely! Start with our free plan and upgrade when you're ready. All paid plans come with a 14-day free trial.</p>
+          <h3 class="text-xl font-bold text-gray-900 mb-4">What about payments to you in the future?</h3>
+          <p class="text-gray-600">Today you’re not paying platform fees. If we introduce optional add-ons or paid tiers later, we’ll explain them clearly—including how you can pay (e.g. UPI, cards, or invoice for larger teams).</p>
         </div>
       </div>
     </div>
@@ -263,15 +256,14 @@
     <div class="mx-auto max-w-7xl px-4 text-center">
       <h2 class="text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
       <p class="text-xl text-orange-100 mb-8 max-w-3xl mx-auto">
-        Join thousands of restaurants already using Dukaantech POS. 
-        Start your free trial today - no credit card required.
+        Join restaurants using Dukaantech POS while the platform is free—no subscription fees in this phase, no card required to get started.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/register" class="bg-white text-orange-600 px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1">
-          Start Free Trial
+          Start free
         </a>
         <a href="/contact-us" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-orange-600 transition-all">
-          Talk to Sales
+          Talk to our team
         </a>
       </div>
     </div>
@@ -280,51 +272,4 @@
   {{-- Footer Component --}}
   <x-footer />
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const monthlyBtn = document.getElementById('monthly-btn');
-  const yearlyBtn = document.getElementById('yearly-btn');
-  const pricingElements = document.querySelectorAll('[data-monthly][data-yearly]');
-  const periodElements = document.querySelectorAll('.pricing-period');
-  const savingsElements = document.querySelectorAll('.pricing-savings');
-
-  function updatePricing(isYearly) {
-    // Update button styles
-    if (isYearly) {
-      monthlyBtn.className = 'px-6 py-3 rounded-md font-semibold text-gray-600 hover:text-gray-900';
-      yearlyBtn.className = 'px-6 py-3 rounded-md font-semibold text-white bg-gradient-to-r from-orange-500 to-red-600';
-    } else {
-      monthlyBtn.className = 'px-6 py-3 rounded-md font-semibold text-white bg-gradient-to-r from-orange-500 to-red-600';
-      yearlyBtn.className = 'px-6 py-3 rounded-md font-semibold text-gray-600 hover:text-gray-900';
-    }
-
-    // Update pricing values
-    pricingElements.forEach(element => {
-      const monthlyPrice = element.getAttribute('data-monthly');
-      const yearlyPrice = element.getAttribute('data-yearly');
-      element.textContent = isYearly ? yearlyPrice : monthlyPrice;
-    });
-
-    // Update period text
-    periodElements.forEach(element => {
-      element.textContent = isYearly ? 'per year' : 'per month';
-    });
-
-    // Update savings text
-    savingsElements.forEach(element => {
-      const monthlySavings = element.getAttribute('data-monthly');
-      const yearlySavings = element.getAttribute('data-yearly');
-      element.textContent = isYearly ? yearlySavings : monthlySavings;
-    });
-  }
-
-  // Event listeners
-  monthlyBtn.addEventListener('click', () => updatePricing(false));
-  yearlyBtn.addEventListener('click', () => updatePricing(true));
-
-  // Initialize with monthly pricing
-  updatePricing(false);
-});
-</script>
 @endsection

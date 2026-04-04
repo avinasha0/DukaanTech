@@ -32,7 +32,7 @@
             
             <div class="flex items-center gap-4">
                 <a href="/login" class="text-gray-700 hover:text-orange-600 transition-colors">Login</a>
-                <a href="/register" class="text-orange-600 font-semibold">Start Free Trial</a>
+                <a href="/register" class="text-orange-600 font-semibold">Start free</a>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
                 </svg>
             </div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p class="text-gray-600">Start your free trial with Dukaantech POS</p>
+            <p class="text-gray-600">Get started free with Dukaantech POS</p>
         </div>
 
         <form method="POST" action="{{ route('register') }}" class="space-y-6">
@@ -171,7 +171,7 @@
                     <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                     </svg>
-                    <span class="text-xs text-gray-700">14-day free trial</span>
+                    <span class="text-xs text-gray-700">No platform fees right now</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">

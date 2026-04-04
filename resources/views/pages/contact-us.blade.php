@@ -274,12 +274,12 @@
     <div class="mx-auto max-w-7xl px-4 text-center">
       <h2 class="text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
       <p class="text-xl text-orange-100 mb-8 max-w-3xl mx-auto">
-        Don't wait! Start your free trial today and experience the power of Dukaantech POS. 
+        Don't wait! Get started free today—the platform has no subscription fees in this phase. 
         Our team is standing by to help you succeed.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/register" class="bg-white text-orange-600 px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1">
-          Start Free Trial
+          Start free
         </a>
         <a href="#contact-form" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-orange-600 transition-all">
           Schedule Demo
