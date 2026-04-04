@@ -155,13 +155,15 @@ class QROrderController extends Controller
             $defaultOutlet = $outlets->firstWhere('id', $tableModel->outlet_id) ?? $defaultOutlet;
         }
 
+        OrderType::ensureQrOrderingTypesExist($account->id);
+
         $orderTypes = OrderType::where('tenant_id', $account->id)
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
-        $orderTypes = $this->attachQrModeToOrderTypes($orderTypes);
+        $orderTypes = OrderType::attachQrModes($orderTypes);
         // QR ordering: dine-in and pickup/take-away only — no delivery
-        $orderTypes = $this->filterQrAllowedOrderTypes($orderTypes);
+        $orderTypes = OrderType::filterQrEligible($orderTypes);
 
         $qrApprovalEachSubmit = $account->qrApprovalEachSubmit();
         $forcedDineInOrderTypeId = $orderTypes->first(function ($ot) {
@@ -179,41 +181,6 @@ class QROrderController extends Controller
             'qrApprovalEachSubmit' => $qrApprovalEachSubmit,
             'forcedDineInOrderTypeId' => $forcedDineInOrderTypeId,
         ];
-    }
-
-    /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\OrderType>  $orderTypes
-     * @return \Illuminate\Support\Collection<int, \App\Models\OrderType>
-     */
-    protected function attachQrModeToOrderTypes($orderTypes)
-    {
-        return $orderTypes->map(function ($ot) {
-            $slug = strtolower((string) ($ot->slug ?? ''));
-            $name = strtolower((string) ($ot->name ?? ''));
-            $h = $slug.' '.$name;
-            if (str_contains($h, 'deliver')) {
-                $ot->qr_mode = 'DELIVERY';
-            } elseif (str_contains($h, 'take') || str_contains($h, 'pickup') || str_contains($h, 'away') || str_contains($h, 'pick')) {
-                $ot->qr_mode = 'TAKEAWAY';
-            } else {
-                $ot->qr_mode = 'DINE_IN';
-            }
-
-            return $ot;
-        });
-    }
-
-    /**
-     * Keep only order types suitable for QR (dine-in + pickup), excluding delivery.
-     *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\OrderType>  $orderTypes
-     * @return \Illuminate\Support\Collection<int, \App\Models\OrderType>
-     */
-    protected function filterQrAllowedOrderTypes($orderTypes)
-    {
-        return $orderTypes->filter(function ($ot) {
-            return in_array($ot->qr_mode ?? '', ['DINE_IN', 'TAKEAWAY'], true);
-        })->values();
     }
 
     /**
