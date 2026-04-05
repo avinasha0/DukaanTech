@@ -55,6 +55,7 @@ Route::patch('/api/tables/{table}/status', [RestaurantTableController::class, 'u
 Route::get('/settings', [SettingsController::class, 'index'])->name('tenant.settings');
 Route::post('/settings/general', [SettingsController::class, 'updateGeneral']);
 Route::post('/settings/qr-order', [SettingsController::class, 'updateQrOrder']);
+Route::post('/settings/payment-gateway', [SettingsController::class, 'updatePaymentGateway']);
 Route::get('/settings/bill-format', [SettingsController::class, 'getBillFormat']);
 Route::post('/settings/bill-format', [SettingsController::class, 'updateBillFormat']);
 Route::post('/settings/preview-bill', [SettingsController::class, 'previewBillFormat']);

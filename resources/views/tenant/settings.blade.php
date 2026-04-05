@@ -294,6 +294,60 @@
                 </button>
                 <p id="qr-order-settings-msg" class="text-sm mt-2 text-green-700 hidden"></p>
             </div>
+
+            <div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Payment gateway (Razorpay)</h3>
+                <p class="text-sm text-gray-600 mb-4">Let guests pay from the public QR menu. Orders are created and sent to the kitchen automatically after successful payment — no POS approval step.</p>
+                <label class="flex items-start gap-3 cursor-pointer mb-4">
+                    <input type="checkbox" id="payment_gateway_enabled" name="payment_gateway_enabled" value="1"
+                           class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                           {{ ($tenant->settings['payment_gateway_enabled'] ?? false) ? 'checked' : '' }}>
+                    <span class="text-sm text-gray-700">
+                        <span class="font-medium text-gray-900">Enable online payment for QR ordering</span>
+                        <span class="block text-gray-600 mt-0.5">Requires valid Razorpay API keys below. Guests see &quot;Pay online&quot; when dine-in uses a table QR or when they choose pickup.</span>
+                    </span>
+                </label>
+                <div class="space-y-4 max-w-xl">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Id</label>
+                        <input type="text" id="razorpay_key_id" autocomplete="off"
+                               value="{{ old('razorpay_key_id', $tenant->settings['razorpay_key_id'] ?? '') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                               placeholder="rzp_test_... or rzp_live_...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
+                        <input type="password" id="razorpay_key_secret" autocomplete="new-password"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                               placeholder="{{ !empty($tenant->settings['razorpay_key_secret_encrypted'] ?? null) ? 'Leave blank to keep existing secret' : 'Required when enabling payments' }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Webhook secret (optional)</label>
+                        <input type="password" id="razorpay_webhook_secret" autocomplete="new-password"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                               placeholder="{{ !empty($tenant->settings['razorpay_webhook_secret_encrypted'] ?? null) ? 'Leave blank to keep existing' : 'From Razorpay Dashboard → Webhooks' }}">
+                        <p class="text-xs text-gray-500 mt-1">If set, webhook requests must include a valid <code class="bg-gray-100 px-1 rounded">X-Razorpay-Signature</code> header.</p>
+                    </div>
+                </div>
+                <details class="mt-5 text-sm text-gray-700">
+                    <summary class="cursor-pointer font-medium text-gray-900">How to create and configure Razorpay</summary>
+                    <ol class="list-decimal pl-5 mt-3 space-y-2">
+                        <li>Create a <a href="https://razorpay.com/" target="_blank" rel="noopener noreferrer" class="text-purple-600 hover:underline">Razorpay</a> account and complete activation.</li>
+                        <li>Open <strong>Settings → API Keys</strong> in the Razorpay Dashboard. Generate <strong>Key Id</strong> and <strong>Key Secret</strong> (use Test mode while testing).</li>
+                        <li>Paste <strong>Key Id</strong> and <strong>Key Secret</strong> here, enable the toggle above, and save.</li>
+                        <li>Optional: add a Webhook with URL
+                            <code class="block mt-1 p-2 bg-gray-100 rounded text-xs break-all">{{ url('/api/'.$tenant->slug.'/public/razorpay/webhook') }}</code>
+                            and enable the <code class="bg-gray-100 px-1 rounded">payment.captured</code> event. Copy the webhook secret into the field above.</li>
+                        <li>Official docs: <a href="https://razorpay.com/docs/api/" target="_blank" rel="noopener noreferrer" class="text-purple-600 hover:underline">API reference</a> and <a href="https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/" target="_blank" rel="noopener noreferrer" class="text-purple-600 hover:underline">Checkout integration</a>.</li>
+                    </ol>
+                </details>
+                <button type="button" onclick="savePaymentGatewaySettings()"
+                        class="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                    Save payment settings
+                </button>
+                <p id="payment-gateway-settings-msg" class="text-sm mt-2 text-green-700 hidden"></p>
+            </div>
+
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                 <h3 class="text-lg font-semibold text-gray-900">Notification Settings</h3>
                 <button onclick="openAddSettingModal()" 
@@ -512,6 +566,46 @@ function saveQrOrderSettings() {
             alert(data.error);
             return;
         }
+        msg.textContent = data.message || 'Saved.';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+    })
+    .catch(e => alert(e.message));
+}
+
+function savePaymentGatewaySettings() {
+    const enabled = document.getElementById('payment_gateway_enabled');
+    const keyId = document.getElementById('razorpay_key_id');
+    const keySecret = document.getElementById('razorpay_key_secret');
+    const whSecret = document.getElementById('razorpay_webhook_secret');
+    const msg = document.getElementById('payment-gateway-settings-msg');
+    const body = {
+        payment_gateway_enabled: !!enabled?.checked,
+        razorpay_key_id: keyId ? keyId.value.trim() : '',
+    };
+    if (keySecret && keySecret.value) {
+        body.razorpay_key_secret = keySecret.value;
+    }
+    if (whSecret && whSecret.value) {
+        body.razorpay_webhook_secret = whSecret.value;
+    }
+    fetch('{{ route("tenant.settings", ["tenant" => $tenant->slug]) }}/payment-gateway', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        if (keySecret) keySecret.value = '';
+        if (whSecret) whSecret.value = '';
         msg.textContent = data.message || 'Saved.';
         msg.classList.remove('hidden');
         setTimeout(() => msg.classList.add('hidden'), 4000);

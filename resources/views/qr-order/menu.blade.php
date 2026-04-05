@@ -256,6 +256,7 @@
             document.getElementById('step-checkout').classList.remove('hidden');
             window.scrollTo(0, 0);
             syncModeFromOrderType();
+            if (typeof refreshPayOnlineButton === 'function') refreshPayOnlineButton();
         }
 
         function goBrowse() {
@@ -289,6 +290,7 @@
                     hint.textContent = 'Staff will confirm your order and send it to the kitchen — no table needed.';
                 }
             }
+            if (typeof refreshPayOnlineButton === 'function') refreshPayOnlineButton();
         }
 
         document.getElementById('order_type_id')?.addEventListener('change', syncModeFromOrderType);
@@ -420,22 +422,178 @@
             }
         }
 
-        // Continue button on checkout = submit (second bar)
-        (function addCheckoutActions() {
-            const panel = document.getElementById('step-checkout');
-            if (!panel) return;
-            const wrap = document.createElement('div');
-            wrap.className = 'fixed bottom-0 left-0 right-0 z-50 px-3 pb-4 pt-2 bg-white border-t border-slate-200';
-            wrap.innerHTML = `
-                <div class="max-w-lg mx-auto">
-                    <button type="button" id="btn-place" class="w-full rounded-xl bg-brand py-4 text-white font-bold text-base shadow-lg hover:opacity-95">
-                        Place order
-                    </button>
-                </div>
-            `;
-            panel.appendChild(wrap);
-            document.getElementById('btn-place')?.addEventListener('click', submitOrder);
-        })();
+        let paymentGatewayConfig = { enabled: false, key_id: null };
+
+        function loadRazorpayScript() {
+            return new Promise((resolve, reject) => {
+                if (window.Razorpay) {
+                    resolve();
+                    return;
+                }
+                const s = document.createElement('script');
+                s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                s.onload = () => resolve();
+                s.onerror = () => reject(new Error('Could not load Razorpay Checkout'));
+                document.body.appendChild(s);
+            });
+        }
+
+        function canPayOnlineWithRazorpay() {
+            if (!paymentGatewayConfig.enabled || !paymentGatewayConfig.key_id) return false;
+            const modeEl = document.getElementById('input_mode');
+            const mode = modeEl ? modeEl.value : 'DINE_IN';
+            if (mode === 'DINE_IN' && !tableId) return false;
+            return true;
+        }
+
+        async function submitRazorpayOrder() {
+            const lines = getCartLines();
+            if (lines.length === 0) {
+                alert('Add items to your cart first.');
+                return;
+            }
+            const orderTypeId = document.getElementById('order_type_id').value;
+            const phone = document.getElementById('customer_phone').value.trim();
+            if (!orderTypeId) {
+                alert('Please select an order type.');
+                return;
+            }
+            if (!phone) {
+                alert('Please enter your phone number.');
+                return;
+            }
+            const modeInput = document.getElementById('input_mode');
+            const mode = modeInput ? modeInput.value : 'DINE_IN';
+            if (mode === 'DINE_IN' && !tableId) {
+                alert('To pay online for dine-in, use the QR code on your table, or choose a pickup / takeaway order type.');
+                return;
+            }
+
+            const orderData = {
+                items: lines.map(l => ({ item_id: l.item_id, qty: l.qty })),
+                outlet_id: {{ (int) $defaultOutlet->id }},
+                order_type_id: parseInt(orderTypeId, 10),
+                customer_name: document.getElementById('customer_name').value.trim() || null,
+                customer_phone: phone,
+                special_instructions: document.getElementById('special_instructions').value.trim() || null,
+                mode: mode,
+            };
+            const tn = document.getElementById('input_table_no');
+            if (tn && tn.value) orderData.table_no = tn.value;
+            const tid = document.getElementById('input_table_id');
+            if (tid && tid.value) orderData.table_id = parseInt(tid.value, 10);
+
+            try {
+                await loadRazorpayScript();
+                const res = await fetch(`/api/${tenantSlug}/public/razorpay/order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(orderData),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    let err = data.message || data.error;
+                    if (data.errors && typeof data.errors === 'object') {
+                        err = Object.values(data.errors).flat().join(' ');
+                    }
+                    alert(err || ('Could not start payment (' + res.status + ')'));
+                    return;
+                }
+                const options = {
+                    key: data.key_id,
+                    amount: data.amount,
+                    currency: data.currency || 'INR',
+                    order_id: data.razorpay_order_id,
+                    name: @json($account->name),
+                    description: 'QR order',
+                    theme: { color: '#5b21b6' },
+                    prefill: { contact: phone },
+                    handler: function (response) {
+                        verifyRazorpayPayment(response);
+                    },
+                };
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } catch (e) {
+                qrWarn('razorpay', { message: e.message });
+                alert(e.message || 'Payment failed to start');
+            }
+        }
+
+        async function verifyRazorpayPayment(response) {
+            try {
+                const res = await fetch(`/api/${tenantSlug}/public/razorpay/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    alert(data.message || data.error || 'Payment verification failed');
+                    return;
+                }
+                const oid = data.order_id || data.order?.id;
+                alert('Payment successful! Order #' + (oid || '—') + '.');
+                quantities = {};
+                Object.keys(itemsMeta).forEach(id => {
+                    const el = document.getElementById('qty-' + id);
+                    if (el) el.textContent = '0';
+                });
+                document.getElementById('checkoutForm')?.reset();
+                document.getElementById('input_mode').value = 'DINE_IN';
+                goBrowse();
+                syncCartBar();
+            } catch (e) {
+                alert(e.message || 'Verification failed');
+            }
+        }
+
+        function refreshPayOnlineButton() {
+            const btn = document.getElementById('btn-pay-razorpay');
+            if (!btn) return;
+            const show = paymentGatewayConfig.enabled && paymentGatewayConfig.key_id;
+            btn.classList.toggle('hidden', !show);
+            btn.disabled = !canPayOnlineWithRazorpay();
+            btn.title = !canPayOnlineWithRazorpay() && show
+                ? 'Use table QR for dine-in, or choose pickup to pay online'
+                : '';
+        }
+
+        fetch(`/api/${tenantSlug}/public/payment-gateway/config`, { headers: { Accept: 'application/json' } })
+            .then((r) => r.json())
+            .then((cfg) => {
+                paymentGatewayConfig = cfg;
+            })
+            .catch(() => {
+                paymentGatewayConfig = { enabled: false, key_id: null };
+            })
+            .finally(() => {
+                const panel = document.getElementById('step-checkout');
+                if (!panel) return;
+                const wrap = document.createElement('div');
+                wrap.className = 'fixed bottom-0 left-0 right-0 z-50 px-3 pb-4 pt-2 bg-white border-t border-slate-200';
+                const showPay = paymentGatewayConfig.enabled && paymentGatewayConfig.key_id;
+                wrap.innerHTML = `
+                    <div class="max-w-lg mx-auto space-y-2">
+                        ${showPay ? `<button type="button" id="btn-pay-razorpay" class="w-full rounded-xl bg-accent py-4 text-white font-bold text-base shadow-lg hover:opacity-95 border border-teal-600">
+                            Pay online (UPI / card)
+                        </button>` : ''}
+                        <button type="button" id="btn-place" class="w-full rounded-xl bg-brand py-4 text-white font-bold text-base shadow-lg hover:opacity-95">
+                            Place order
+                        </button>
+                    </div>
+                `;
+                panel.appendChild(wrap);
+                document.getElementById('btn-place')?.addEventListener('click', submitOrder);
+                if (showPay) {
+                    document.getElementById('btn-pay-razorpay')?.addEventListener('click', submitRazorpayOrder);
+                    refreshPayOnlineButton();
+                }
+            });
 
         window.addEventListener('load', () => {
             const h = window.location.hash;

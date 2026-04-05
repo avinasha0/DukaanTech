@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Crypt;
 
 class Account extends Model
 {
@@ -113,5 +114,59 @@ class Account extends Model
     public function qrApprovalEachSubmit(): bool
     {
         return (bool) data_get($this->settings, 'qr_approval_each_submit', false);
+    }
+
+    public function paymentGatewayEnabled(): bool
+    {
+        return (bool) data_get($this->settings, 'payment_gateway_enabled', false);
+    }
+
+    /**
+     * Razorpay Key Id (public, safe for Checkout.js).
+     */
+    public function razorpayKeyId(): ?string
+    {
+        $v = data_get($this->settings, 'razorpay_key_id');
+
+        return is_string($v) && $v !== '' ? $v : null;
+    }
+
+    /**
+     * Decrypted Razorpay Key Secret for server-side API calls.
+     */
+    public function razorpayKeySecret(): ?string
+    {
+        $blob = data_get($this->settings, 'razorpay_key_secret_encrypted');
+        if (! is_string($blob) || $blob === '') {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($blob);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public function razorpayWebhookSecret(): ?string
+    {
+        $blob = data_get($this->settings, 'razorpay_webhook_secret_encrypted');
+        if (! is_string($blob) || $blob === '') {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($blob);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Gateway is on and both API keys are present.
+     */
+    public function razorpayQrPaymentReady(): bool
+    {
+        return $this->paymentGatewayEnabled()
+            && $this->razorpayKeyId() !== null
+            && $this->razorpayKeySecret() !== null;
     }
 }

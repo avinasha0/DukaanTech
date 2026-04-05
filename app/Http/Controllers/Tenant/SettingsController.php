@@ -7,6 +7,7 @@ use App\Models\BillTemplate;
 use App\Models\Account;
 use App\Models\Outlet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -153,6 +154,40 @@ class SettingsController extends Controller
         $tenant->update(['settings' => $settings]);
 
         return response()->json(['message' => 'Settings saved']);
+    }
+
+    public function updatePaymentGateway(Request $request)
+    {
+        $tenant = $this->getTenant();
+        if (! $tenant) {
+            return response()->json(['error' => 'Tenant not found'], 404);
+        }
+
+        $data = $request->validate([
+            'payment_gateway_enabled' => 'required|boolean',
+            'razorpay_key_id' => 'nullable|string|max:255',
+            'razorpay_key_secret' => 'nullable|string|max:2000',
+            'razorpay_webhook_secret' => 'nullable|string|max:2000',
+        ]);
+
+        $settings = $tenant->settings ?? [];
+        $settings['payment_gateway_enabled'] = $request->boolean('payment_gateway_enabled');
+
+        if (array_key_exists('razorpay_key_id', $data) && $data['razorpay_key_id'] !== null && trim((string) $data['razorpay_key_id']) !== '') {
+            $settings['razorpay_key_id'] = trim($data['razorpay_key_id']);
+        }
+
+        if ($request->filled('razorpay_key_secret')) {
+            $settings['razorpay_key_secret_encrypted'] = Crypt::encryptString($data['razorpay_key_secret']);
+        }
+
+        if ($request->filled('razorpay_webhook_secret')) {
+            $settings['razorpay_webhook_secret_encrypted'] = Crypt::encryptString($data['razorpay_webhook_secret']);
+        }
+
+        $tenant->update(['settings' => $settings]);
+
+        return response()->json(['message' => 'Payment gateway settings saved']);
     }
 
     /**

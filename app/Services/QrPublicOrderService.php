@@ -78,6 +78,11 @@ class QrPublicOrderService
     /**
      * Block a brand-new QR session when the table is already in use (POS or approved dine-in session).
      */
+    public function ensureTableAllowsNewQrOrder(Account $account, RestaurantTable $table): void
+    {
+        $this->assertTableAllowsNewQrOrder($account, $table);
+    }
+
     protected function assertTableAllowsNewQrOrder(Account $account, RestaurantTable $table): void
     {
         $table->refresh();

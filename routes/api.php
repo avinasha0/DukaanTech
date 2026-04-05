@@ -184,6 +184,11 @@ Route::group(['prefix' => '{tenant}/public', 'middleware' => []], function () {
     
     // QR Order Creation (bypasses CSRF)
     Route::post('/qr-order/create', [App\Http\Controllers\QROrderApiController::class, 'createOrder']);
+
+    Route::get('/payment-gateway/config', [App\Http\Controllers\RazorpayQrPublicController::class, 'paymentGatewayConfig']);
+    Route::post('/razorpay/order', [App\Http\Controllers\RazorpayQrPublicController::class, 'createOrder']);
+    Route::post('/razorpay/verify', [App\Http\Controllers\RazorpayQrPublicController::class, 'verify']);
+    Route::post('/razorpay/webhook', [App\Http\Controllers\RazorpayQrPublicController::class, 'webhook']);
     
     // Super simple QR order creation — delegates to main QR API (table sessions + append)
     Route::post('/simple-order', function ($tenant, Request $request) {
