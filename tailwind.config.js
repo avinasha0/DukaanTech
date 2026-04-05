@@ -71,6 +71,15 @@ export default {
             transitionDuration: {
                 '200': '200ms',
             },
+            keyframes: {
+                'free-badge': {
+                    '0%, 100%': { transform: 'scale(1)' },
+                    '50%': { transform: 'scale(1.07)' },
+                },
+            },
+            animation: {
+                'free-badge': 'free-badge 2.25s ease-in-out infinite',
+            },
         },
     },
 
