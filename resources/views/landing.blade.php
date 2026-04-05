@@ -143,7 +143,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">Lightning-Fast Order Processing</h3>
           <p class="text-gray-600 mb-4">Process orders in seconds with our intuitive interface. Split bills, merge tables, apply discounts, and generate kitchen tickets effortlessly. Perfect for busy restaurants.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
+          <a href="{{ route('features.order-processing') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
         </div>
         
         <!-- Inventory Management -->
@@ -155,7 +155,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">Smart Inventory Control</h3>
           <p class="text-gray-600 mb-4">Automate your inventory tracking with real-time updates. Get instant low-stock alerts, track consumption patterns, and generate detailed reports to optimize your food costs.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
+          <a href="{{ route('features.inventory-control') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
         </div>
         
         <!-- Real-Time Reporting -->
@@ -167,7 +167,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">Advanced Analytics & Reporting</h3>
           <p class="text-gray-600 mb-4">Make data-driven decisions with comprehensive reports. Track sales performance, analyze customer behavior, monitor staff productivity, and identify growth opportunities instantly.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
+          <a href="{{ route('features.analytics-reporting') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
         </div>
         
         <!-- Online Order System -->
@@ -179,7 +179,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">Unified Order Management</h3>
           <p class="text-gray-600 mb-4">Seamlessly handle dine-in, takeaway, and delivery orders from one central dashboard. Manage your digital menu, track order status, and process payments efficiently.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
+          <a href="{{ route('features.unified-order-management') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Explore all features →</a>
         </div>
       </div>
     </div>
@@ -205,7 +205,7 @@
           </div>
           <h3 class="text-2xl font-bold text-gray-900 mb-4">Customer Relationship Management</h3>
           <p class="text-gray-600 mb-6">Build lasting relationships with your customers. Track preferences, manage loyalty programs, send targeted promotions, and provide personalized service that keeps customers coming back.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Learn more →</a>
+          <a href="{{ route('features.customer-relationship-management') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Learn more →</a>
         </div>
         
         <!-- Analytics -->
@@ -217,7 +217,7 @@
           </div>
           <h3 class="text-2xl font-bold text-gray-900 mb-4">Business Intelligence</h3>
           <p class="text-gray-600 mb-6">Gain deep insights into your restaurant's performance with advanced analytics. Monitor key metrics, identify trends, and make informed decisions to boost profitability and efficiency.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Learn more →</a>
+          <a href="{{ route('features.business-intelligence') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">Learn more →</a>
         </div>
         
         <!-- Integrations -->
@@ -229,7 +229,7 @@
           </div>
           <h3 class="text-2xl font-bold text-gray-900 mb-4">Seamless Integrations</h3>
           <p class="text-gray-600 mb-6">Connect with popular delivery platforms, payment gateways, accounting software, and marketing tools. One dashboard to manage all your restaurant integrations.</p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">See all integrations →</a>
+          <a href="{{ route('features.seamless-integrations') }}" class="text-orange-600 font-semibold hover:text-red-600 transition-colors">See all integrations →</a>
         </div>
       </div>
     </div>

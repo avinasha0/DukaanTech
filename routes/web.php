@@ -23,6 +23,34 @@ Route::get('/features', function () {
     return view('pages.features');
 })->name('features');
 
+Route::get('/features/order-processing', function () {
+    return view('pages.order-processing');
+})->name('features.order-processing');
+
+Route::get('/features/inventory-control', function () {
+    return view('pages.inventory-control');
+})->name('features.inventory-control');
+
+Route::get('/features/analytics-reporting', function () {
+    return view('pages.analytics-reporting');
+})->name('features.analytics-reporting');
+
+Route::get('/features/unified-order-management', function () {
+    return view('pages.unified-order-management');
+})->name('features.unified-order-management');
+
+Route::get('/features/customer-relationship-management', function () {
+    return view('pages.customer-relationship-management');
+})->name('features.customer-relationship-management');
+
+Route::get('/features/business-intelligence', function () {
+    return view('pages.business-intelligence');
+})->name('features.business-intelligence');
+
+Route::get('/features/seamless-integrations', function () {
+    return view('pages.seamless-integrations');
+})->name('features.seamless-integrations');
+
 Route::get('/pricing', function () {
     return view('pages.pricing');
 })->name('pricing');
