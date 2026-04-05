@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tenant\KotSettingsController;
@@ -829,9 +828,7 @@ Route::prefix('{tenant}/api/public')->group(function () {
     });
 })->withoutMiddleware(['web', 'csrf']);
 
-// Login routes are handled in auth.php
-
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+// Login routes are handled in auth.php (includes POST /logout)
 
 Route::get('/register', function () {
     return view('auth.register-styled');

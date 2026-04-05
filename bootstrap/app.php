@@ -30,11 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.kot.tenant' => \App\Http\Middleware\EnsureWebUserMatchesKotTenant::class,
         ]);
         
-        // Disable CSRF for now to get the system working
-        $middleware->web(remove: [
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+        // Laravel 11 uses ValidateCsrfToken in the web group (not VerifyCsrfToken).
+        // The old remove targeted the wrong class, so CSRF stayed on and POST /logout could 419.
+        // Exclude logout so users can sign out even if the session token is stale.
+        $middleware->validateCsrfTokens(except: [
+            'logout',
+            '*/logout',
         ]);
-        
+
         // Add tenant middleware to web routes
         $middleware->web(append: [
             \App\Http\Middleware\ResolveTenant::class,
