@@ -8,7 +8,7 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <link rel="icon" type="image/png" href="/favicon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
         <link rel="apple-touch-icon" href="/favicon.png">
@@ -23,8 +23,8 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                <a href="/" class="inline-flex max-w-[min(92vw,28rem)]">
+                    <x-application-logo class="h-16 sm:h-20 w-auto max-w-full object-contain fill-current text-gray-500" />
                 </a>
             </div>
 

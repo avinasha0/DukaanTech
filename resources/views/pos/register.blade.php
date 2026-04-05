@@ -27,6 +27,8 @@
     
     <!-- Additional SEO Meta Tags -->
     <meta name="theme-color" content="#6E46AE">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
     <meta name="application-name" content="Dukaantech POS Terminal">
     <meta name="apple-mobile-web-app-title" content="POS Terminal">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -220,20 +222,18 @@
     </div>
 
     <!-- Top Header: brand + session/actions in four-dot overflow menu -->
-    <header class="relative z-30 bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 max-w-full w-full lg:w-[calc(100%-420px)] lg:max-w-[calc(100%-420px)]">
-        <div class="flex flex-nowrap items-center justify-between gap-2 w-full min-w-0">
+    <header class="relative z-30 bg-white shadow-sm border-b border-gray-200 px-2 sm:px-3 max-w-full w-full lg:w-[calc(100%-420px)] lg:max-w-[calc(100%-420px)]">
+        <div class="flex flex-nowrap items-center justify-between gap-2 w-full min-w-0 h-14 sm:h-16">
             <!-- Brand -->
-            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0 max-w-[min(100%-4rem,28rem)]">
                 <button type="button" @click="mobileMenuOpen = !mobileMenuOpen; headerMoreOpen = false" class="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0" aria-label="Open menu">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
-                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                        <img src="/favicon.png" alt="" class="w-full h-full object-cover">
-                    </div>
-                    <span class="text-sm sm:text-base font-bold text-gray-900 truncate">DukaanTech POS</span>
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="h-9 sm:h-10 w-auto max-w-[min(58vw,20rem)] object-contain object-left shrink-0" decoding="async">
+                    <span class="hidden min-[400px]:inline text-xs sm:text-sm md:text-base font-bold text-gray-900 truncate">DukaanTech POS</span>
                 </div>
             </div>
 

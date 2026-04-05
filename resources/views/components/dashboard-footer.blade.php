@@ -3,17 +3,15 @@
     <div class="mx-auto max-w-7xl px-4">
         <div class="grid md:grid-cols-4 gap-8 mb-12">
             <div>
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <span class="text-xl font-bold">Dukaantech</span>
-                        <span class="text-sm text-gray-400 ml-1">POS</span>
-                    </div>
-                </div>
+                <a href="/" class="inline-block mb-6">
+                    <img
+                        src="{{ asset('images/logos/dukaantech-pos-logo-footer.png') }}"
+                        alt="Dukaantech POS"
+                        class="h-12 w-auto max-w-[220px] object-contain object-left"
+                        width="220"
+                        height="48"
+                    />
+                </a>
                 <p class="text-gray-400 mb-6">Complete restaurant management solution trusted by 10,000+ restaurants across India.</p>
                 <div class="flex gap-4">
                     <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-600 transition-colors">

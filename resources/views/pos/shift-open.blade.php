@@ -29,7 +29,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
     <link rel="apple-touch-icon" href="/favicon.png">
@@ -46,8 +46,8 @@
     <div class="w-full max-w-md">
         <!-- Header -->
         <div class="text-center mb-8">
-            <div class="w-40 h-24 mx-auto mb-6 flex items-center justify-center">
-                <img src="/images/logos/dukaantech-logo-new.png" alt="DukaanTech Logo" class="w-full h-full object-contain">
+            <div class="w-full max-w-xs sm:max-w-sm h-28 sm:h-32 mx-auto mb-6 flex items-center justify-center">
+                <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="max-h-full w-auto max-w-full object-contain">
             </div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Open Shift</h1>
             <p class="text-gray-600">Welcome, {{ $terminalUser->name }} ({{ $terminalUser->terminal_id }})</p>

@@ -23,7 +23,7 @@
           <!-- Logo and Title -->
           <div class="text-center mb-8">
             <div class="flex items-center justify-center gap-3 mb-6">
-              <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="h-12 w-auto">
+              <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="h-14 sm:h-16 w-auto max-w-[min(90vw,24rem)] object-contain">
             </div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
             <p class="text-gray-600">No problem! Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.</p>

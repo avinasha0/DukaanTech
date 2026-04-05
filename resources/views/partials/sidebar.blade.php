@@ -12,16 +12,11 @@
         {{-- Header Section --}}
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
             <div class="flex items-center space-x-3" :class="{ 'justify-center': isCollapsed }">
-                {{-- Favicon --}}
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                        <img src="/favicon.png" alt="Favicon" class="w-full h-full object-cover">
-                    </div>
-                </div>
-                
-                {{-- Brand Name --}}
-                <div x-show="!isCollapsed" x-transition:enter="transition-opacity duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
-                    <h1 class="text-lg font-bold text-gray-900 font-dm">Dukaantech</h1>
+                {{-- Logo --}}
+                <div class="flex-shrink-0 min-w-0 max-w-[calc(100%-2.5rem)]" :class="{ 'max-w-8': isCollapsed }">
+                    <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech"
+                         class="object-contain object-left"
+                         :class="isCollapsed ? 'h-8 w-8' : 'h-10 w-auto max-w-[min(100%,15rem)] sm:max-w-[17rem]'">
                 </div>
             </div>
             

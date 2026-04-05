@@ -1,8 +1,9 @@
 {{-- resources/views/components/header.blade.php --}}
 <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200" x-data="{ mobileMenuOpen: false }" x-init="console.log('Header initialized, mobileMenuOpen:', mobileMenuOpen)" @click.away="mobileMenuOpen = false">
-  <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-3">
-      <img src="/images/logos/dukaantech-logo.png" alt="Dukaantech Logo" class="h-10 w-auto">
+  <div class="mx-auto max-w-7xl h-16 px-4 flex items-center justify-between gap-3">
+    {{-- Fixed 64px bar; logo fits inside (no width= on img — avoids flex min-width bug) --}}
+    <a href="/" class="flex h-full items-center min-w-0 shrink max-w-[min(100%-3.5rem,32rem)]">
+      <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="h-10 w-auto max-w-full object-contain object-left" decoding="async">
     </a>
     
     {{-- Desktop Navigation --}}

@@ -49,7 +49,7 @@
     <link rel="canonical" href="{{ request()->url() }}">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
     <link rel="apple-touch-icon" href="/favicon.png">
@@ -104,7 +104,7 @@
              ">
             {{-- Top Navigation Bar --}}
             <header class="bg-white shadow-sm border-b border-gray-200 lg:hidden">
-                <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex h-16 items-center justify-between px-4">
                     {{-- Hamburger Menu Button --}}
                     <button @click="sidebarOpen = !sidebarOpen" 
                             class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
@@ -113,12 +113,9 @@
                         </svg>
                     </button>
                     
-                    {{-- Favicon/Brand --}}
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                            <img src="/favicon.png" alt="Favicon" class="w-full h-full object-cover">
-                        </div>
-                        <h1 class="text-lg font-bold text-gray-900 font-dm">DukaanTech</h1>
+                    {{-- Logo / brand --}}
+                    <div class="flex items-center justify-center min-w-0 flex-1 px-1">
+                        <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="h-10 w-auto max-w-full object-contain object-center">
                     </div>
                     
                     {{-- User Menu --}}
@@ -243,11 +240,8 @@
         <div class="flex flex-col h-full">
             {{-- Header Section --}}
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                        <img src="/favicon.png" alt="Favicon" class="w-full h-full object-cover">
-                    </div>
-                    <h1 class="text-lg font-bold text-gray-900 font-dm">DukaanTech</h1>
+                <div class="flex items-center min-w-0 pr-2">
+                    <img src="/images/logos/dukaantech-pos-logo.png" alt="DukaanTech" class="h-10 w-auto max-w-[min(78vw,20rem)] object-contain object-left">
                 </div>
                 
                 {{-- Close Button --}}
