@@ -76,9 +76,14 @@ export default {
                     '0%, 100%': { transform: 'scale(1)' },
                     '50%': { transform: 'scale(1.07)' },
                 },
+                'free-ping': {
+                    '0%': { transform: 'scale(1)', opacity: '0.5' },
+                    '100%': { transform: 'scale(2.35)', opacity: '0' },
+                },
             },
             animation: {
                 'free-badge': 'free-badge 2.25s ease-in-out infinite',
+                'free-ping': 'free-ping 2.25s cubic-bezier(0, 0, 0.2, 1) infinite',
             },
         },
     },

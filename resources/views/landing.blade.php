@@ -28,7 +28,10 @@
           </div>
           
           <h1 class="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            <span class="inline-block rounded-lg bg-orange-100 px-2 py-1 text-orange-700 font-extrabold ring-2 ring-orange-200/80 animate-free-badge motion-reduce:animate-none">Free</span>
+            <span class="relative inline-block align-middle">
+              <span class="pointer-events-none absolute inset-0 rounded-lg bg-orange-400/35 animate-free-ping motion-reduce:animate-none" aria-hidden="true"></span>
+              <span class="relative z-10 inline-block rounded-lg bg-orange-100 px-2 py-1 text-orange-700 font-extrabold ring-2 ring-orange-200/80 animate-free-badge motion-reduce:animate-none">Free</span>
+            </span>
             <span class="ml-1 sm:ml-2">Smart Restaurant Management</span>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">
               Made Effortless!
