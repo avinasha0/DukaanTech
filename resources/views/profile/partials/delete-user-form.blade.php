@@ -28,13 +28,12 @@
             </p>
 
             <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
+                <x-input-label for="password_delete_confirm" value="{{ __('Password') }}" class="sr-only" />
 
-                <x-text-input
-                    id="password"
+                <x-password-field
+                    id="password_delete_confirm"
                     name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
+                    class="mt-1 block w-3/4 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm pr-12"
                     placeholder="{{ __('Password') }}"
                 />
 

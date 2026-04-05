@@ -98,10 +98,22 @@ class RegisterController extends Controller
         $user = User::where('activation_token', $token)->first();
 
         if (!$user) {
+            // Login route uses guest middleware: already-signed-in users get bounced to HOME
+            // without seeing the flash error, which looks like the link "still works".
+            if (Auth::check()) {
+                return redirect()->route('organization.setup')
+                    ->with('info', 'This activation link is no longer valid. You are already signed in.');
+            }
+
             return redirect()->route('login')->with('error', 'Invalid activation link.');
         }
 
         if ($user->email_verified_at) {
+            if (Auth::check() && Auth::id() === $user->id) {
+                return redirect()->route('organization.setup')
+                    ->with('info', 'Your account is already activated.');
+            }
+
             return redirect()->route('login')->with('error', 'Account already activated.');
         }
 

@@ -87,6 +87,23 @@ class Account extends Model
         return $this->hasMany(TaxRate::class, 'tenant_id');
     }
 
+    /**
+     * True when the first-run organization flow has created an outlet and saved basic account settings.
+     * Used to gate the tenant dashboard until setup is finished.
+     */
+    public function hasCompletedOrganizationSetup(): bool
+    {
+        if (! $this->outlets()->exists()) {
+            return false;
+        }
+
+        if (! $this->settings || ! isset($this->settings['currency'])) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'tenant_id');

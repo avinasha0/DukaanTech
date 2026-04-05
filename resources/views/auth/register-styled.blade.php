@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Dukaantech POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/js/password-toggle.js'])
 </head>
 <body class="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen">
     {{-- Header Component --}}
@@ -95,7 +96,13 @@
             <div>
                 <label class="block mb-4">
                     <span class="block mb-1 font-semibold text-gray-700">Password</span>
-                    <input type="password" name="password" required class="w-full h-11 px-3 border border-gray-300 rounded-xl bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-colors @error('password') border-red-500 @enderror text-[15px] placeholder:text-gray-400" placeholder="Create a password">
+                    <x-password-field
+                        name="password"
+                        required
+                        autocomplete="new-password"
+                        class="w-full h-11 px-3 pr-12 border border-gray-300 rounded-xl bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-colors @error('password') border-red-500 @enderror text-[15px] placeholder:text-gray-400"
+                        placeholder="Create a password"
+                    />
                 </label>
                 @error('password')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -105,7 +112,13 @@
             <div>
                 <label class="block mb-4">
                     <span class="block mb-1 font-semibold text-gray-700">Confirm Password</span>
-                    <input type="password" name="password_confirmation" required class="w-full h-11 px-3 border border-gray-300 rounded-xl bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-colors text-[15px] placeholder:text-gray-400" placeholder="Confirm your password">
+                    <x-password-field
+                        name="password_confirmation"
+                        required
+                        autocomplete="new-password"
+                        class="w-full h-11 px-3 pr-12 border border-gray-300 rounded-xl bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-colors text-[15px] placeholder:text-gray-400"
+                        placeholder="Confirm your password"
+                    />
                 </label>
             </div>
 

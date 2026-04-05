@@ -68,13 +68,23 @@
 
                             <div>
                                 <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                                <input id="password" name="password" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 @error('password') border-red-300 @enderror" required>
+                                <x-password-field
+                                    id="password"
+                                    name="password"
+                                    required
+                                    class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 @error('password') border-red-300 @enderror"
+                                />
                                 @error('password')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                             </div>
 
                             <div>
                                 <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
-                                <input id="password_confirmation" name="password_confirmation" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
+                                <x-password-field
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    required
+                                    class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                />
                             </div>
                         </div>
 

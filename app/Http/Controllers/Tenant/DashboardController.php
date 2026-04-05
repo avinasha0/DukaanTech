@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Shift;
+use Illuminate\Http\RedirectResponse;
 use App\Services\ShiftService;
 use App\Services\SetupStatusService;
 use Illuminate\Http\Request;
@@ -17,11 +18,16 @@ class DashboardController extends Controller
         private SetupStatusService $setupStatusService
     ) {}
 
-    public function index()
+    public function index(): RedirectResponse|\Illuminate\View\View
     {
         $tenant = app('tenant');
         if (!$tenant) {
             abort(404, 'Tenant not found');
+        }
+
+        if (! $tenant->hasCompletedOrganizationSetup()) {
+            return redirect()->route('organization.setup')
+                ->with('warning', 'Please complete your organization setup before accessing the dashboard.');
         }
         
         // Get setup status for dynamic getting started steps

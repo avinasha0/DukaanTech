@@ -37,6 +37,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @vite(['resources/js/password-toggle.js'])
     <style>
         [x-cloak] { display: none !important; }
         .keypad-button {
@@ -84,16 +85,17 @@
                 <!-- PIN Input -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">PIN</label>
-                    <input 
-                        type="password" 
+                    <x-password-field
                         x-model="form.pin"
-                        @input="clearError"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
-                        placeholder="••••"
+                        x-on:input="clearError"
+                        x-bind:class="{ 'border-red-500': error }"
                         maxlength="6"
                         autocomplete="off"
-                        :class="{ 'border-red-500': error }"
-                    >
+                        name="pin"
+                        toggle-button-class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                        class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
+                        placeholder="••••"
+                    />
                 </div>
 
                 <!-- reCAPTCHA Widget -->

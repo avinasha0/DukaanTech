@@ -123,11 +123,13 @@
 
                 <div>
                     <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                    <input type="password" 
-                           id="current_password" 
-                           name="current_password" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent @error('current_password') border-red-500 @enderror"
-                           autocomplete="current-password">
+                    <x-password-field
+                        id="current_password"
+                        name="current_password"
+                        autocomplete="current-password"
+                        toggle-button-class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                        class="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent @error('current_password') border-red-500 @enderror"
+                    />
                     @error('current_password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -136,11 +138,13 @@
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                        <input type="password" 
-                               id="password" 
-                               name="password" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent @error('password') border-red-500 @enderror"
-                               autocomplete="new-password">
+                        <x-password-field
+                            id="password"
+                            name="password"
+                            autocomplete="new-password"
+                            toggle-button-class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                            class="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent @error('password') border-red-500 @enderror"
+                        />
                         @error('password')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -148,11 +152,13 @@
 
                     <div>
                         <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                        <input type="password" 
-                               id="password_confirmation" 
-                               name="password_confirmation" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent"
-                               autocomplete="new-password">
+                        <x-password-field
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            autocomplete="new-password"
+                            toggle-button-class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                            class="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-royal-purple focus:border-transparent"
+                        />
                     </div>
                 </div>
 
@@ -233,13 +239,15 @@
                 @method('delete')
 
                 <div>
-                    <label for="password" class="block text-sm font-medium text-red-700 mb-2">Password</label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           class="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent @error('password') border-red-500 @enderror"
-                           placeholder="Enter your password to confirm deletion"
-                           required>
+                    <label for="delete_account_password" class="block text-sm font-medium text-red-700 mb-2">Password</label>
+                    <x-password-field
+                        id="delete_account_password"
+                        name="password"
+                        required
+                        toggle-button-class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                        class="w-full px-3 py-2 pr-12 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent @error('password') border-red-500 @enderror"
+                        placeholder="Enter your password to confirm deletion"
+                    />
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

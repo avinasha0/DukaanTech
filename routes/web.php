@@ -851,6 +851,10 @@ Route::middleware(['auth'])->group(function () {
         if ($user && $user->tenant_id) {
             $tenant = $user->tenant;
             if ($tenant) {
+                if (! $tenant->hasCompletedOrganizationSetup()) {
+                    return redirect()->route('organization.setup')
+                        ->with('warning', 'Please complete your organization setup before accessing the dashboard.');
+                }
                 if ($user->isKotDisplayOnly()) {
                     return redirect()->to(url("/{$tenant->slug}/kot"));
                 }

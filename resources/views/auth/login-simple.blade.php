@@ -14,7 +14,7 @@
       </div>
       <div class="mb-6">
         <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-        <input type="password" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-orange-500">
+        <x-password-field class="w-full px-3 py-2 pr-12 border rounded-lg focus:outline-none focus:border-orange-500" />
       </div>
       <button type="submit" class="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors">
         Login

@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
             $tenant = $user->tenant;
             
             // Check if organization setup is complete
-            if ($this->isOrganizationSetupComplete($tenant)) {
+            if ($tenant->hasCompletedOrganizationSetup()) {
                 if ($user->isKotDisplayOnly()) {
                     return redirect()->to(url("/{$tenant->slug}/kot"));
                 }
@@ -58,24 +58,6 @@ class AuthenticatedSessionController extends Controller
         
         // If no tenant, redirect to organization setup
         return redirect()->route('organization.setup');
-    }
-
-    /**
-     * Check if organization setup is complete
-     */
-    private function isOrganizationSetupComplete($tenant): bool
-    {
-        // Check if tenant has at least one outlet
-        if (!$tenant->outlets()->exists()) {
-            return false;
-        }
-        
-        // Check if tenant has basic settings
-        if (!$tenant->settings || !isset($tenant->settings['currency'])) {
-            return false;
-        }
-        
-        return true;
     }
 
     /**

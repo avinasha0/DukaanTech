@@ -62,15 +62,14 @@
               <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                 New Password
               </label>
-              <input 
-                id="password" 
-                type="password" 
-                name="password" 
-                required 
+              <x-password-field
+                id="password"
+                name="password"
+                required
                 autocomplete="new-password"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors @error('password') border-red-500 @enderror"
+                class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors @error('password') border-red-500 @enderror"
                 placeholder="Enter your new password"
-              >
+              />
               @error('password')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
               @enderror
@@ -81,15 +80,14 @@
               <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
                 Confirm New Password
               </label>
-              <input 
-                id="password_confirmation" 
-                type="password" 
-                name="password_confirmation" 
-                required 
+              <x-password-field
+                id="password_confirmation"
+                name="password_confirmation"
+                required
                 autocomplete="new-password"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors @error('password_confirmation') border-red-500 @enderror"
+                class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors @error('password_confirmation') border-red-500 @enderror"
                 placeholder="Confirm your new password"
-              >
+              />
               @error('password_confirmation')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
               @enderror

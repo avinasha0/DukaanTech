@@ -317,15 +317,23 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
-                        <input type="password" id="razorpay_key_secret" autocomplete="new-password"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
-                               placeholder="{{ !empty($tenant->settings['razorpay_key_secret_encrypted'] ?? null) ? 'Leave blank to keep existing secret' : 'Required when enabling payments' }}">
+                        <x-password-field
+                            id="razorpay_key_secret"
+                            autocomplete="new-password"
+                            toggle-button-class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                            placeholder="{{ !empty($tenant->settings['razorpay_key_secret_encrypted'] ?? null) ? 'Leave blank to keep existing secret' : 'Required when enabling payments' }}"
+                        />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Webhook secret (optional)</label>
-                        <input type="password" id="razorpay_webhook_secret" autocomplete="new-password"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
-                               placeholder="{{ !empty($tenant->settings['razorpay_webhook_secret_encrypted'] ?? null) ? 'Leave blank to keep existing' : 'From Razorpay Dashboard → Webhooks' }}">
+                        <x-password-field
+                            id="razorpay_webhook_secret"
+                            autocomplete="new-password"
+                            toggle-button-class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                            placeholder="{{ !empty($tenant->settings['razorpay_webhook_secret_encrypted'] ?? null) ? 'Leave blank to keep existing' : 'From Razorpay Dashboard → Webhooks' }}"
+                        />
                         <p class="text-xs text-gray-500 mt-1">If set, webhook requests must include a valid <code class="bg-gray-100 px-1 rounded">X-Razorpay-Signature</code> header.</p>
                     </div>
                 </div>

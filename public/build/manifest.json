@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-behHYu_e.css",
+    "file": "assets/app-CTbND2wV.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "names": [
@@ -8,9 +8,18 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-CXDpL9bK.js",
+    "file": "assets/app-BQuvLQ2y.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "resources/js/password-toggle.js"
+    ]
+  },
+  "resources/js/password-toggle.js": {
+    "file": "assets/password-toggle-CddoHLr2.js",
+    "name": "password-toggle",
+    "src": "resources/js/password-toggle.js",
     "isEntry": true
   }
 }

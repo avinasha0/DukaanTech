@@ -72,6 +72,7 @@
         body { font-family: 'Inter', sans-serif; }
         .font-dm { font-family: 'DM Sans', sans-serif; }
     </style>
+    @vite(['resources/js/password-toggle.js'])
 </head>
 <body class="bg-gray-50 min-h-screen" x-data="{ sidebarOpen: false, profileDropdownOpen: false }">
     <div class="flex h-screen">
