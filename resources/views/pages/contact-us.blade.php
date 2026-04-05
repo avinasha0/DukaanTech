@@ -173,7 +173,7 @@
               </div>
             </div>
 
-            {{-- Phone Numbers --}}
+            {{-- WhatsApp --}}
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,9 +181,9 @@
                 </svg>
               </div>
               <div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Phone Numbers</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">WhatsApp</h3>
                 <div class="space-y-1">
-                  <p class="text-gray-600">Support: <span class="font-semibold">9789956322</span></p>
+                  <p class="text-gray-600">Support: <a href="https://wa.me/9789956322" class="font-semibold text-green-600 hover:text-green-700 underline" target="_blank" rel="noopener noreferrer">9789956322</a></p>
                 </div>
               </div>
             </div>
@@ -202,7 +202,6 @@
                   <p class="text-gray-600">Monday - Friday: <span class="font-semibold">9:00 AM - 6:00 PM</span></p>
                   <p class="text-gray-600">Saturday: <span class="font-semibold">10:00 AM - 4:00 PM</span></p>
                   <p class="text-gray-600">Sunday: <span class="font-semibold">Closed</span></p>
-                  <p class="text-sm text-orange-600 font-semibold">Email Support Available</p>
                 </div>
               </div>
             </div>
