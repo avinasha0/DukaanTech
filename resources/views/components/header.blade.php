@@ -18,7 +18,7 @@
     <div class="hidden md:flex items-center gap-4">
       <a href="/login" class="text-gray-700 hover:text-orange-600 transition-colors">Login</a>
       <a href="/register" class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all">
-        Start free
+        Start Free
       </a>
     </div>
 
@@ -52,7 +52,7 @@
         <div class="px-3 space-y-2">
           <a href="/login" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors">Login</a>
           <a href="/register" class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-md hover:shadow-lg transition-all text-center">
-            Start free
+            Start Free
           </a>
         </div>
       </div>

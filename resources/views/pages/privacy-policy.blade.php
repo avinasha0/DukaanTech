@@ -147,7 +147,7 @@
         Contact Us
       </a>
       <a href="/register" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-orange-600 transition-all">
-        Start free
+        Start Free
       </a>
     </div>
   </div>

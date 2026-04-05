@@ -44,7 +44,7 @@
           
           <div class="flex flex-col sm:flex-row gap-4 mb-8">
             <a href="/register" class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1">
-              Take a free demo
+              Start For Free
             </a>
             <a href="#features" class="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all">
               Explore Features
@@ -127,7 +127,7 @@
   <section id="features" class="py-20 bg-white">
     <div class="mx-auto max-w-7xl px-4">
       <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">COMPREHENSIVE RESTAURANT FEATURES</h2>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Comprehensive Restaurant Features</h2>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
           Everything you need to run a successful restaurant. Our intuitive platform makes managing high-volume operations seamless and efficient.
         </p>
@@ -189,7 +189,7 @@
   <section class="py-20 bg-gradient-to-br from-orange-50 to-red-50">
     <div class="mx-auto max-w-7xl px-4">
       <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">POWERFUL ADD-ONS</h2>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Powerful Add-ons</h2>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
           Enhance your restaurant operations with our integrated solutions and third-party integrations
         </p>
@@ -582,7 +582,7 @@
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/register" class="bg-white text-orange-600 px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transition-all transform hover:-translate-y-1">
-          Start free
+          Start Free
         </a>
         <a href="/contact-us" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-orange-600 transition-all">
           Schedule Demo

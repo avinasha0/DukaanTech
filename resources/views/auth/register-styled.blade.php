@@ -33,7 +33,7 @@
             
             <div class="flex items-center gap-4">
                 <a href="/login" class="text-gray-700 hover:text-orange-600 transition-colors">Login</a>
-                <a href="/register" class="text-orange-600 font-semibold">Start free</a>
+                <a href="/register" class="text-orange-600 font-semibold">Start Free</a>
             </div>
         </div>
     </div>
