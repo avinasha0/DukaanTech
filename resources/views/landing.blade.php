@@ -34,7 +34,7 @@
             </span>
             <span class="ml-1 sm:ml-2">Smart Restaurant Management</span>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">
-              Made Effortless!
+              POS!
             </span>
           </h1>
           
