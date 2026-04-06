@@ -76,8 +76,63 @@ Route::get('/careers', function () {
 })->name('careers');
 
 Route::get('/blog', function () {
-    return view('pages.blog');
+    $blog = config('blog');
+    $articles = collect($blog['articles'])
+        ->map(fn ($meta, $slug) => array_merge($meta, ['slug' => $slug]))
+        ->sortByDesc(fn ($a) => $a['date'])
+        ->values();
+
+    $featuredSlug = $blog['featured_slug'] ?? $articles->first()['slug'];
+    $featuredMeta = $blog['articles'][$featuredSlug] ?? null;
+    abort_if($featuredMeta === null, 500);
+    $featuredArticle = array_merge($featuredMeta, ['slug' => $featuredSlug]);
+
+    $latestOthers = $articles->where('slug', '!=', $featuredSlug)->take(3)->values();
+
+    $blogCategories = collect($blog['categories'])->map(function ($meta, $key) use ($blog) {
+        $articleCount = collect($blog['articles'])->where('category', $key)->count();
+
+        return array_merge($meta, [
+            'key' => $key,
+            'article_count' => $articleCount,
+        ]);
+    });
+
+    return view('pages.blog', [
+        'featuredArticle' => $featuredArticle,
+        'latestArticles' => $latestOthers,
+        'blogCategories' => $blogCategories,
+    ]);
 })->name('blog');
+
+Route::get('/blog/category/{category}', function (string $category) {
+    $blog = config('blog');
+    if (! isset($blog['categories'][$category])) {
+        abort(404);
+    }
+
+    $categoryArticles = collect($blog['articles'])
+        ->filter(fn ($meta) => $meta['category'] === $category)
+        ->map(fn ($meta, $slug) => array_merge($meta, ['slug' => $slug]))
+        ->sortByDesc('date')
+        ->values();
+
+    return view('pages.blog-category', [
+        'categoryKey' => $category,
+        'categoryMeta' => $blog['categories'][$category],
+        'categoryArticles' => $categoryArticles,
+    ]);
+})->name('blog.category')->where('category', '[a-z0-9\-]+');
+
+$blogSlugs = array_keys(config('blog.articles'));
+
+Route::get('/blog/{slug}', function (string $slug) use ($blogSlugs) {
+    if (! in_array($slug, $blogSlugs, true)) {
+        abort(404);
+    }
+
+    return view('pages.blog.'.$slug);
+})->name('blog.show')->where('slug', '[a-z0-9\-]+');
 
 Route::get('/press', function () {
     return view('pages.press');

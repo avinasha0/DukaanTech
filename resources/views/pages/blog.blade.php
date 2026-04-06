@@ -36,12 +36,11 @@
             </svg>
             Featured Article
           </div>
-          <h2 class="text-3xl font-bold mb-4">10 Essential Tips for Restaurant Inventory Management</h2>
+          <h2 class="text-3xl font-bold mb-4">{{ $featuredArticle['title'] }}</h2>
           <p class="text-orange-100 mb-6">
-            Learn how to optimize your inventory management to reduce waste, control costs, and improve profitability. 
-            These proven strategies have helped thousands of restaurants streamline their operations.
+            {{ $featuredArticle['excerpt'] }}
           </p>
-          <a href="#" class="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all">
+          <a href="{{ route('blog.show', ['slug' => $featuredArticle['slug']]) }}" class="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all">
             Read More
           </a>
         </div>
@@ -53,8 +52,8 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                 </svg>
               </div>
-              <h3 class="text-xl font-bold mb-2">Inventory Management</h3>
-              <p class="text-orange-100 text-sm">Essential strategies for restaurant success</p>
+              <h3 class="text-xl font-bold mb-2">{{ config('blog.categories.'.$featuredArticle['category'].'.label', 'Featured') }}</h3>
+              <p class="text-orange-100 text-sm">{{ config('blog.categories.'.$featuredArticle['category'].'.description', '') }}</p>
             </div>
           </div>
         </div>
@@ -72,53 +71,25 @@
     </div>
     
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <article class="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="h-48 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-        <div class="p-6">
-          <div class="text-sm text-gray-500 mb-2">December 15, 2023</div>
-          <h3 class="text-xl font-bold text-gray-900 mb-3">How to Increase Restaurant Sales with Data Analytics</h3>
-          <p class="text-gray-600 mb-4">
-            Discover how data analytics can help you identify trends, optimize menu pricing, and increase your restaurant's revenue.
-          </p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-orange-700">Read More →</a>
-        </div>
-      </article>
-      
-      <article class="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="h-48 bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-          </svg>
-        </div>
-        <div class="p-6">
-          <div class="text-sm text-gray-500 mb-2">December 10, 2023</div>
-          <h3 class="text-xl font-bold text-gray-900 mb-3">Staff Management Best Practices for Restaurants</h3>
-          <p class="text-gray-600 mb-4">
-            Learn effective strategies for hiring, training, and retaining restaurant staff to build a strong team.
-          </p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-orange-700">Read More →</a>
-        </div>
-      </article>
-      
-      <article class="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="h-48 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <div class="p-6">
-          <div class="text-sm text-gray-500 mb-2">December 5, 2023</div>
-          <h3 class="text-xl font-bold text-gray-900 mb-3">Mobile POS: The Future of Restaurant Operations</h3>
-          <p class="text-gray-600 mb-4">
-            Explore how mobile POS systems are revolutionizing restaurant operations and improving customer experience.
-          </p>
-          <a href="#" class="text-orange-600 font-semibold hover:text-orange-700">Read More →</a>
-        </div>
-      </article>
+      @foreach ($latestArticles as $article)
+        @php
+          $cat = config('blog.categories')[$article['category']] ?? null;
+          $grad = $cat['card_gradient'] ?? 'from-orange-500 to-red-600';
+        @endphp
+        <article class="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-48 bg-gradient-to-br {{ $grad }} flex items-center justify-center">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div class="p-6">
+            <div class="text-sm text-gray-500 mb-2">{{ \Illuminate\Support\Carbon::parse($article['date'])->format('F j, Y') }}</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ $article['title'] }}</h3>
+            <p class="text-gray-600 mb-4">{{ $article['excerpt'] }}</p>
+            <a href="{{ route('blog.show', ['slug' => $article['slug']]) }}" class="text-orange-600 font-semibold hover:text-orange-700">Read More →</a>
+          </div>
+        </article>
+      @endforeach
     </div>
   </div>
 </section>
@@ -132,49 +103,36 @@
     </div>
     
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-      <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-3">POS Tips</h3>
-        <p class="text-gray-600 mb-4">Tips and tricks for getting the most out of your POS system</p>
-        <div class="text-sm text-gray-500">12 articles</div>
-      </div>
-      
-      <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-3">Inventory</h3>
-        <p class="text-gray-600 mb-4">Best practices for restaurant inventory management</p>
-        <div class="text-sm text-gray-500">8 articles</div>
-      </div>
-      
-      <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-3">Staff Management</h3>
-        <p class="text-gray-600 mb-4">Strategies for effective restaurant staff management</p>
-        <div class="text-sm text-gray-500">6 articles</div>
-      </div>
-      
-      <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-3">Analytics</h3>
-        <p class="text-gray-600 mb-4">Using data to make better business decisions</p>
-        <div class="text-sm text-gray-500">10 articles</div>
-      </div>
+      @foreach ($blogCategories as $cat)
+        <a href="{{ route('blog.category', ['category' => $cat['key']]) }}" class="block bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <div class="w-16 h-16 bg-gradient-to-br {{ $cat['card_gradient'] }} rounded-2xl flex items-center justify-center mx-auto mb-6">
+            @switch($cat['icon'])
+              @case('inventory')
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                @break
+              @case('staff')
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                @break
+              @case('analytics')
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                @break
+              @default
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            @endswitch
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">{{ $cat['label'] }}</h3>
+          <p class="text-gray-600 mb-4">{{ $cat['description'] }}</p>
+          <div class="text-sm text-gray-500">{{ $cat['article_count'] }} {{ Str::plural('article', $cat['article_count']) }}</div>
+        </a>
+      @endforeach
     </div>
   </div>
 </section>
